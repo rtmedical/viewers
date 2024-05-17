@@ -1,8 +1,34 @@
 window.config = {
   routerBasename: '/',
-  // whiteLabeling: {},
+  whiteLabeling: {
+    createLogoComponentFn: function(React) {
+      return React.createElement(
+   
+        React.createElement('h5', {}, 'VoxelViewer')
+      );
+    },
+  },
   extensions: [],
-  modes: [],
+  modes: [
+    {
+      id: 'default',
+      routeName: 'default',
+      displaySetsToDisplay: [],
+      layoutTemplate: {
+        id: 'rtmedicalLayout',
+        props: {
+          leftPanels: ['seriesList', 'measurements'],
+          rightPanels: ['studies'],
+          viewports: [
+            {
+              namespace: 'vtk',
+              displaySetsToDisplay: [],
+            },
+          ],
+        },
+      },
+    },
+  ],
   customizationService: {},
   showStudyList: true,
   // some windows systems have issues with more than 3 web workers

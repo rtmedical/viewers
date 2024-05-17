@@ -1,0 +1,17 @@
+version: '3'
+services:
+  app:
+    container_name: connectviewer
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: yarn run dev
+    environment:
+      - NODE_OPTIONS=${NODE_OPTIONS}
+      - WEBSOCKET_URL=websocket:3000/ws
+    ports:
+      - '5000:5000'
+      - '3000:3000'
+    volumes:
+      - /app/node_modules
+      - .:/app
