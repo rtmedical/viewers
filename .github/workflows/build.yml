@@ -23,10 +23,13 @@ jobs:
 
       - name: Build the project
         run: yarn run build:voxelview
-
+        
+      - name: Verify files
+        run: ls ./platform/app/
+        
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: voxelview-build
-          path: platform/app/compressed/voxelview-build.tar.gz
+          path: ./platform/app/compressed/voxelview-build.tar.gz
           retention-days: 30  # Ajuste o número de dias conforme necessário
