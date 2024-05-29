@@ -28,5 +28,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: voxelview-build
-          path: compressed/voxelview-build.tar.gz
+          path: platform/app/compressed/voxelview-build.tar.gz
           retention-days: 30  # Ajuste o número de dias conforme necessário
