@@ -35,4 +35,4 @@ jobs:
         with:
           name: voxelview-build
           path: ./platform/app/compressed/voxelview-build.tar.gz
-          retention-days: 30  # Ajuste o número de dias conforme necessário
+          retention-days: 30
