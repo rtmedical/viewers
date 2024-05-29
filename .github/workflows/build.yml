@@ -27,6 +27,9 @@ jobs:
       - name: Verify files
         run: ls ./platform/app/
         
+      - name: Verify artifact folder
+        run: ls ./platform/app/compressed
+        
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
