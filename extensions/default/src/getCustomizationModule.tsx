@@ -1,7 +1,7 @@
 import { CustomizationService } from '@ohif/core';
 import React from 'react';
 import DataSourceSelector from './Panels/DataSourceSelector';
-import ProgressDropdownWithService from './components/ProgressDropdownWithService';
+import { ProgressDropdownWithService } from './Components/ProgressDropdownWithService';
 import DataSourceConfigurationComponent from './Components/DataSourceConfigurationComponent';
 import { GoogleCloudDataSourceConfigurationAPI } from './DataSourceConfigurationAPI/GoogleCloudDataSourceConfigurationAPI';
 
@@ -18,6 +18,7 @@ export default function getCustomizationModule({ servicesManager, extensionManag
   return [
     {
       name: 'helloPage',
+      merge: 'Append',
       value: {
         id: 'customRoutes',
         routes: [
@@ -32,6 +33,7 @@ export default function getCustomizationModule({ servicesManager, extensionManag
     // Example customization to list a set of datasources
     {
       name: 'datasources',
+      merge: 'Append',
       value: {
         id: 'customRoutes',
         routes: [

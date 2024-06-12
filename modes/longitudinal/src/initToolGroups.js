@@ -77,11 +77,17 @@ function initDefaultToolGroup(
       { toolName: toolNames.Magnify },
       { toolName: toolNames.SegmentationDisplay },
       { toolName: toolNames.CalibrationLine },
-
+      {
+        toolName: toolNames.PlanarFreehandContourSegmentation,
+        configuration: {
+          displayOnePointAsCrosshairs: true,
+        },
+      },
       { toolName: toolNames.UltrasoundDirectional },
       { toolName: toolNames.PlanarFreehandROI },
       { toolName: toolNames.SplineROI },
       { toolName: toolNames.LivewireContour },
+      { toolName: toolNames.WindowLevelRegion },
     ],
     enabled: [{ toolName: toolNames.ImageOverlayViewer }, { toolName: toolNames.ReferenceLines }],
     disabled: [
@@ -148,6 +154,13 @@ function initSRToolGroup(extensionManager, toolGroupService) {
       { toolName: SRToolNames.SRCircleROI },
       { toolName: SRToolNames.SRPlanarFreehandROI },
       { toolName: SRToolNames.SRRectangleROI },
+      { toolName: toolNames.WindowLevelRegion },
+      {
+        toolName: SRToolNames.SRPlanarFreehandContourSegmentation,
+        configuration: {
+          displayOnePointAsCrosshairs: true,
+        },
+      },
     ],
     enabled: [
       {
@@ -225,12 +238,24 @@ function initMPRToolGroup(extensionManager, toolGroupService, commandsManager, m
       { toolName: toolNames.CobbAngle },
       { toolName: toolNames.PlanarFreehandROI },
       { toolName: toolNames.SegmentationDisplay },
+      { toolName: toolNames.WindowLevelRegion },
+      {
+        toolName: toolNames.PlanarFreehandContourSegmentation,
+        configuration: {
+          displayOnePointAsCrosshairs: true,
+        },
+      },
     ],
     disabled: [
       {
         toolName: toolNames.Crosshairs,
         configuration: {
-          viewportIndicators: false,
+          viewportIndicators: true,
+          viewportIndicatorsConfig: {
+            circleRadius: 5,
+            xOffset: 0.95,
+            yOffset: 0.05,
+          },
           disableOnPassive: true,
           autoPan: {
             enabled: false,

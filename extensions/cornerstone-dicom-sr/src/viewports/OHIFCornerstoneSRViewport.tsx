@@ -270,17 +270,23 @@ function OHIFCornerstoneSRViewport(props: withAppTypes) {
       updateViewport(measurementSelected);
     };
     loadSR();
-  }, [dataSource, srDisplaySet]);
+  }, [srDisplaySet]);
 
   /**
    * Hook to update the tracking identifiers when the selected measurement changes or
    * the element changes
    */
   useEffect(() => {
+    const updateSR = async () => {
+    if (!srDisplaySet.isLoaded) {
+      await srDisplaySet.load();
+    }
     if (!element || !srDisplaySet.isLoaded) {
       return;
     }
     setTrackingIdentifiers(measurementSelected);
+    }
+    updateSR();
   }, [measurementSelected, element, setTrackingIdentifiers, srDisplaySet]);
 
   /**
@@ -367,14 +373,9 @@ OHIFCornerstoneSRViewport.propTypes = {
   dataSource: PropTypes.object,
   children: PropTypes.node,
   viewportLabel: PropTypes.string,
-  customProps: PropTypes.object,
   viewportOptions: PropTypes.object,
   servicesManager: PropTypes.object.isRequired,
   extensionManager: PropTypes.instanceOf(ExtensionManager).isRequired,
-};
-
-OHIFCornerstoneSRViewport.defaultProps = {
-  customProps: {},
 };
 
 async function _getViewportReferencedDisplaySetData(
