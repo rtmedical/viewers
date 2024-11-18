@@ -15,7 +15,7 @@ Para instalar o ConnectViewer, siga os passos abaixo:
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/carlosqueiroz/connectviewer.git
+git clone https://github.com/rtmedical/viewers.git
 cd connectviewer
 ```
 
