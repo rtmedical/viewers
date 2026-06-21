@@ -1,42 +1,12 @@
-import { hotkeys } from '@ohif/core';
 import { id } from './id';
 import toolbarButtons from './toolbarButtons';
-import segmentationButtons from './segmentationButtons';
 import initToolGroups from './initToolGroups';
-
-const DEFAULT_TOOL_GROUP_ID = 'default';
-const VOLUME3D_TOOL_GROUP_ID = 'volume3d';
-
-const ohif = {
-  layout: '@ohif/extension-default.layoutTemplateModule.viewerLayout',
-  sopClassHandler: '@ohif/extension-default.sopClassHandlerModule.stack',
-  hangingProtocol: '@ohif/extension-default.hangingProtocolModule.default',
-  leftPanel: '@ohif/extension-default.panelModule.seriesList',
-  rightPanel: '@ohif/extension-default.panelModule.measure',
-};
-
-const cornerstone = {
-  viewport: '@ohif/extension-cornerstone.viewportModule.cornerstone',
-};
-
-const segmentation = {
-  panel: '@ohif/extension-cornerstone-dicom-seg.panelModule.panelSegmentation',
-  panelTool: '@ohif/extension-cornerstone-dicom-seg.panelModule.panelSegmentationWithTools',
-  sopClassHandler: '@ohif/extension-cornerstone-dicom-seg.sopClassHandlerModule.dicom-seg',
-  viewport: '@ohif/extension-cornerstone-dicom-seg.viewportModule.dicom-seg',
-};
-
-/**
- * Just two dependencies to be able to render a viewport with panels in order
- * to make sure that the mode is working.
- */
-const extensionDependencies = {
-  '@ohif/extension-default': '^3.0.0',
-  '@ohif/extension-cornerstone': '^3.0.0',
-  '@ohif/extension-cornerstone-dicom-seg': '^3.0.0',
-};
+import setUpAutoTabSwitchHandler from './utils/setUpAutoTabSwitchHandler';
+import { ohif, cornerstone, extensionDependencies, dicomRT, segmentation } from '@ohif/mode-basic';
+export * from './toolbarButtons';
 
 function modeFactory({ modeConfiguration }) {
+  const _unsubscriptions = [];
   return {
     /**
      * Mode ID, which should be unique among modes used by the viewer. This ID
@@ -54,17 +24,23 @@ function modeFactory({ modeConfiguration }) {
      * Services and other resources.
      */
     onModeEnter: ({ servicesManager, extensionManager, commandsManager }: withAppTypes) => {
-      const { measurementService, toolbarService, toolGroupService } = servicesManager.services;
+      const {
+        measurementService,
+        toolbarService,
+        toolGroupService,
+        segmentationService,
+        viewportGridService,
+        panelService,
+      } = servicesManager.services;
 
       measurementService.clearMeasurements();
 
       // Init Default and SR ToolGroups
       initToolGroups(extensionManager, toolGroupService, commandsManager);
 
-      toolbarService.addButtons(toolbarButtons);
-      toolbarService.addButtons(segmentationButtons);
+      toolbarService.register(toolbarButtons);
 
-      toolbarService.createButtonSection('primary', [
+      toolbarService.updateSection(toolbarService.sections.primary, [
         'WindowLevel',
         'Pan',
         'Zoom',
@@ -74,20 +50,110 @@ function modeFactory({ modeConfiguration }) {
         'Crosshairs',
         'MoreTools',
       ]);
-      toolbarService.createButtonSection('segmentationToolbox', ['BrushTools', 'Shapes']);
+
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topLeft, [
+        'orientationMenu',
+        'dataOverlayMenu',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.bottomMiddle, [
+        'AdvancedRenderingControls',
+      ]);
+
+      toolbarService.updateSection('AdvancedRenderingControls', [
+        'windowLevelMenuEmbedded',
+        'voiManualControlMenu',
+        'Colorbar',
+        'opacityMenu',
+        'thresholdMenu',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.topRight, [
+        'modalityLoadBadge',
+        'trackingStatus',
+        'navigationComponent',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.viewportActionMenu.bottomLeft, [
+        'windowLevelMenu',
+      ]);
+
+      toolbarService.updateSection('MoreTools', [
+        'Reset',
+        'rotate-right',
+        'flipHorizontal',
+        'ReferenceLines',
+        'ImageOverlayViewer',
+        'StackScroll',
+        'invert',
+        'Cine',
+        'Magnify',
+        'TagBrowser',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.labelMapSegmentationToolbox, [
+        'LabelMapTools',
+      ]);
+      toolbarService.updateSection(toolbarService.sections.contourSegmentationToolbox, [
+        'ContourTools',
+      ]);
+
+      toolbarService.updateSection('LabelMapTools', [
+        'LabelmapSlicePropagation',
+        'BrushTools',
+        'MarkerLabelmap',
+        'RegionSegmentPlus',
+        'Shapes',
+        'LabelMapEditWithContour',
+      ]);
+      toolbarService.updateSection('ContourTools', [
+        'PlanarFreehandContourSegmentationTool',
+        'SculptorTool',
+        'SplineContourSegmentationTool',
+        'LivewireContourSegmentationTool',
+      ]);
+
+      toolbarService.updateSection(toolbarService.sections.labelMapSegmentationUtilities, [
+        'LabelMapUtilities',
+      ]);
+      toolbarService.updateSection(toolbarService.sections.contourSegmentationUtilities, [
+        'ContourUtilities',
+      ]);
+
+      toolbarService.updateSection('LabelMapUtilities', [
+        'InterpolateLabelmap',
+        'SegmentBidirectional',
+      ]);
+      toolbarService.updateSection('ContourUtilities', [
+        'LogicalContourOperations',
+        'SimplifyContours',
+        'SmoothContours',
+      ]);
+
+      toolbarService.updateSection('BrushTools', ['Brush', 'Eraser', 'Threshold']);
+
+      const { unsubscribeAutoTabSwitchEvents } = setUpAutoTabSwitchHandler({
+        segmentationService,
+        viewportGridService,
+        panelService,
+      });
+
+      _unsubscriptions.push(...unsubscribeAutoTabSwitchEvents);
     },
     onModeExit: ({ servicesManager }: withAppTypes) => {
       const {
         toolGroupService,
         syncGroupService,
-        toolbarService,
         segmentationService,
         cornerstoneViewportService,
         uiDialogService,
         uiModalService,
       } = servicesManager.services;
 
-      uiDialogService.dismissAll();
+      _unsubscriptions.forEach(unsubscribe => unsubscribe());
+      _unsubscriptions.length = 0;
+
+      uiDialogService.hideAll();
       uiModalService.hide();
       toolGroupService.destroy();
       syncGroupService.destroy();
@@ -111,10 +177,10 @@ function modeFactory({ modeConfiguration }) {
       return {
         valid:
           modalitiesArray.length === 1
-            ? !['SM', 'US', 'MG', 'OT', 'DOC', 'CR'].includes(modalitiesArray[0])
+            ? !['SM', 'ECG', 'OT', 'DOC'].includes(modalitiesArray[0])
             : true,
         description:
-          'The mode does not support studies that ONLY include the following modalities: SM, US, MG, OT, DOC, CR',
+          'The mode does not support studies that ONLY include the following modalities: SM, OT, DOC',
       };
     },
     /**
@@ -136,8 +202,14 @@ function modeFactory({ modeConfiguration }) {
           return {
             id: ohif.layout,
             props: {
-              leftPanels: [ohif.leftPanel],
-              rightPanels: [segmentation.panelTool],
+              leftPanels: [ohif.thumbnailList],
+              leftPanelResizable: true,
+              rightPanels: [
+                cornerstone.labelMapSegmentationPanel,
+                cornerstone.contourSegmentationPanel,
+              ],
+              rightPanelResizable: true,
+              // leftPanelClosed: true,
               viewports: [
                 {
                   namespace: cornerstone.viewport,
@@ -146,6 +218,10 @@ function modeFactory({ modeConfiguration }) {
                 {
                   namespace: segmentation.viewport,
                   displaySetsToDisplay: [segmentation.sopClassHandler],
+                },
+                {
+                  namespace: dicomRT.viewport,
+                  displaySetsToDisplay: [dicomRT.sopClassHandler],
                 },
               ],
             },
@@ -156,11 +232,11 @@ function modeFactory({ modeConfiguration }) {
     /** List of extensions that are used by the mode */
     extensions: extensionDependencies,
     /** HangingProtocol used by the mode */
+    // Commented out to just use the most applicable registered hanging protocol
+    // The example is used for a grid layout to specify that as a preferred layout
     hangingProtocol: ['@ohif/mnGrid'],
     /** SopClassHandlers used by the mode */
-    sopClassHandlers: [ohif.sopClassHandler, segmentation.sopClassHandler],
-    /** hotkeys for mode */
-    hotkeys: [...hotkeys.defaults.hotkeyBindings],
+    sopClassHandlers: [ohif.sopClassHandler, segmentation.sopClassHandler, dicomRT.sopClassHandler],
   };
 }
 

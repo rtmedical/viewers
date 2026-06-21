@@ -22,8 +22,8 @@ export default class MicroscopyService extends PubSubService {
     return {
       name: 'microscopyService',
       altName: 'MicroscopyService',
-      create: ({ configuration = {} }) => {
-        return new MicroscopyService(servicesManager);
+      create: props => {
+        return new MicroscopyService(props);
       },
     };
   };
@@ -36,9 +36,10 @@ export default class MicroscopyService extends PubSubService {
   selectedAnnotation = null;
   pendingFocus = false;
 
-  constructor(servicesManager) {
+  constructor({ servicesManager, extensionManager }) {
     super(EVENTS);
     this.servicesManager = servicesManager;
+    this.peerImport = extensionManager.appConfig.peerImport;
     this._onRoiAdded = this._onRoiAdded.bind(this);
     this._onRoiModified = this._onRoiModified.bind(this);
     this._onRoiRemoved = this._onRoiRemoved.bind(this);
@@ -67,6 +68,10 @@ export default class MicroscopyService extends PubSubService {
     Object.keys(this.annotations).forEach(uid => {
       this.removeAnnotation(this.annotations[uid]);
     });
+  }
+
+  public importDicomMicroscopyViewer(): Promise<any> {
+    return this.peerImport('dicom-microscopy-viewer');
   }
 
   /**
@@ -255,6 +260,11 @@ export default class MicroscopyService extends PubSubService {
     return Array.from(this.managedViewers).filter(filter);
   }
 
+  getManagedViewersForViewport(viewportId) {
+    const filter = managedViewer => managedViewer.viewportId === viewportId;
+    return Array.from(this.managedViewers).filter(filter);
+  }
+
   /**
    * Restores the created annotations for the viewer being added
    *
@@ -285,6 +295,13 @@ export default class MicroscopyService extends PubSubService {
    * @returns {ViewerManager} managed viewer
    */
   addViewer(viewer, viewportId, container, studyInstanceUID, seriesInstanceUID) {
+    // Check if a viewer already exists for this viewportId
+    const existingViewer = Array.from(this.managedViewers).find(mv => mv.viewportId === viewportId);
+    if (existingViewer) {
+      // If a viewer exists, remove it first
+      this.removeViewer(existingViewer.viewer);
+    }
+
     const managedViewer = new ViewerManager(
       viewer,
       viewportId,
@@ -349,6 +366,10 @@ export default class MicroscopyService extends PubSubService {
         recentDisplaySet = ds;
       }
     });
+
+    if (recentDisplaySet.isLoading) {
+      return;
+    }
 
     recentDisplaySet.isLoading = true;
 

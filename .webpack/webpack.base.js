@@ -7,23 +7,26 @@ const fs = require('fs');
 const webpack = require('webpack');
 
 // ~~ PLUGINS
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+// const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const TerserJSPlugin = require('terser-webpack-plugin');
 
 // ~~ PackageJSON
 // const vtkRules = require('vtk.js/Utilities/config/dependency.js').webpack.core
 //   .rules;
 // ~~ RULES
-const loadShadersRule = require('./rules/loadShaders.js');
+// const loadShadersRule = require('./rules/loadShaders.js');
 const loadWebWorkersRule = require('./rules/loadWebWorkers.js');
 const transpileJavaScriptRule = require('./rules/transpileJavaScript.js');
 const cssToJavaScript = require('./rules/cssToJavaScript.js');
-const stylusToJavaScript = require('./rules/stylusToJavaScript.js');
+// Only uncomment for old v2 stylus
+// const stylusToJavaScript = require('./rules/stylusToJavaScript.js');
+const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
 // ~~ ENV VARS
 const NODE_ENV = process.env.NODE_ENV;
 const QUICK_BUILD = process.env.QUICK_BUILD;
 const BUILD_NUM = process.env.CIRCLE_BUILD_NUM || '0';
+const IS_COVERAGE = process.env.COVERAGE === 'true';
 
 // read from ../version.txt
 const VERSION_NUMBER = fs.readFileSync(path.join(__dirname, '../version.txt'), 'utf8') || '';
@@ -47,6 +50,7 @@ const defineValues = {
   'process.env.LOCIZE_PROJECTID': JSON.stringify(process.env.LOCIZE_PROJECTID || ''),
   'process.env.LOCIZE_API_KEY': JSON.stringify(process.env.LOCIZE_API_KEY || ''),
   'process.env.REACT_APP_I18N_DEBUG': JSON.stringify(process.env.REACT_APP_I18N_DEBUG || ''),
+  'process.env.TEST_ENV': JSON.stringify(process.env.TEST_ENV || ''),
 };
 
 // Only redefine updated values.  This avoids warning messages in the logs
@@ -55,10 +59,6 @@ if (!process.env.APP_CONFIG) {
 }
 
 module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
-  if (!process.env.NODE_ENV) {
-    throw new Error('process.env.NODE_ENV not set');
-  }
-
   const mode = NODE_ENV === 'production' ? 'production' : 'development';
   const isProdBuild = NODE_ENV === 'production';
   const isQuickBuild = QUICK_BUILD === 'true';
@@ -96,8 +96,36 @@ module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
       type: 'filesystem',
     },
     module: {
-      noParse: [/(codec)/, /(dicomicc)/],
+      noParse: [/(dicomicc)/],
       rules: [
+        ...(isProdBuild
+          ? []
+          : [
+              ...(IS_COVERAGE
+                ? [
+                    {
+                      test: /\.[jt]sx?$/,
+                      exclude: /node_modules/,
+                      use: {
+                        loader: 'babel-loader',
+                        options: {
+                          presets: ['@babel/preset-typescript', '@babel/preset-react'],
+                          plugins: ['istanbul'],
+                        },
+                      },
+                    },
+                  ]
+                : [
+                    {
+                      test: /\.[jt]sx?$/,
+                      exclude: /node_modules/,
+                      loader: 'babel-loader',
+                      options: {
+                        plugins: isProdBuild ? [] : ['react-refresh/babel'],
+                      },
+                    },
+                  ]),
+            ]),
         {
           test: /\.svg?$/,
           oneOf: [
@@ -112,11 +140,11 @@ module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
                           name: 'preset-default',
                           params: {
                             overrides: {
-                              removeViewBox: false
+                              removeViewBox: false,
                             },
                           },
                         },
-                      ]
+                      ],
                     },
                     prettier: false,
                     svgo: true,
@@ -129,11 +157,6 @@ module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
               },
             },
           ],
-        },
-        {
-          test: /\.js$/,
-          enforce: 'pre',
-          use: 'source-map-loader',
         },
         transpileJavaScriptRule(mode),
         loadWebWorkersRule,
@@ -163,6 +186,10 @@ module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
             },
           ],
         },
+        {
+          test: /\.(woff|woff2|eot|ttf|otf)$/i,
+          type: 'asset/resource',
+        },
       ], //.concat(vtkRules),
     },
     resolve: {
@@ -174,10 +201,6 @@ module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
         '@hooks': path.resolve(__dirname, '../platform/app/src/hooks'),
         '@routes': path.resolve(__dirname, '../platform/app/src/routes'),
         '@state': path.resolve(__dirname, '../platform/app/src/state'),
-        'dicom-microscopy-viewer':
-          'dicom-microscopy-viewer/dist/dynamic-import/dicomMicroscopyViewer.min.js',
-        '@cornerstonejs/dicom-image-loader':
-          '@cornerstonejs/dicom-image-loader/dist/dynamic-import/cornerstoneDICOMImageLoader.min.js',
       },
       // Which directories to search when resolving modules
       modules: [
@@ -205,6 +228,7 @@ module.exports = (env, argv, { SRC_DIR, ENTRY }) => {
       new webpack.ProvidePlugin({
         Buffer: ['buffer', 'Buffer'],
       }),
+      ...(isProdBuild ? [] : [new ReactRefreshWebpackPlugin({ overlay: false })]),
       // Uncomment to generate bundle analyzer
       // new BundleAnalyzerPlugin(),
     ],
