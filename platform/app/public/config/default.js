@@ -1,9 +1,6 @@
 /** @type {AppTypes.Config} */
 
 const config = {
-/** @type {AppTypes.Config} */
-
-const config = {
   routerBasename: '/',
   // whiteLabeling: {},
   extensions: [],

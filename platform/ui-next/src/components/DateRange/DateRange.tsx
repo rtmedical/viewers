@@ -1,9 +1,10 @@
 import * as React from 'react';
 import { format, parse, isValid } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
-import Calendar from '../Calendar';
-import Popover from '../Popover';
+import { Calendar } from '../Calendar';
+import * as Popover from '../Popover';
 
 export type DatePickerWithRangeProps = {
   id: string;
@@ -23,6 +24,7 @@ export function DatePickerWithRange({
   onChange,
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & DatePickerWithRangeProps) {
+  const { t } = useTranslation('DatePicker');
   const [start, setStart] = React.useState<string>(
     startDate ? format(parse(startDate, 'yyyyMMdd', new Date()), 'yyyy-MM-dd') : ''
   );
@@ -85,12 +87,12 @@ export function DatePickerWithRange({
             <input
               id={`${id}-start`}
               type="text"
-              placeholder="Start date"
+              placeholder={t('Start Date', 'Start date')}
               autoComplete="off"
               value={start}
               onChange={e => handleInputChange(e, 'start')}
               className={cn(
-                'border-inputfield-main focus:border-inputfield-focus  h-[32px] w-full justify-start rounded border bg-black py-[6.5px] pl-[6.5px] pr-[6.5px] text-left text-sm font-normal hover:bg-black hover:text-white',
+                'border-inputfield-main focus:border-inputfield-focus h-[32px] w-full justify-start rounded border bg-black py-[6.5px] pl-[6.5px] pr-[6.5px] text-left text-base font-normal hover:bg-black hover:text-white',
                 !start && 'text-muted-foreground'
               )}
               data-cy="input-date-range-start"
@@ -122,12 +124,12 @@ export function DatePickerWithRange({
             <input
               id={`${id}-end`}
               type="text"
-              placeholder="End date"
+              placeholder={t('End Date', 'End date')}
               autoComplete="off"
               value={end}
               onChange={e => handleInputChange(e, 'end')}
               className={cn(
-                'border-inputfield-main focus:border-inputfield-focus h-full w-full justify-start rounded border bg-black py-[6.5px] pl-[6.5px] pr-[6.5px] text-left text-sm font-normal hover:bg-black hover:text-white',
+                'border-inputfield-main focus:border-inputfield-focus h-full w-full justify-start rounded border bg-black py-[6.5px] pl-[6.5px] pr-[6.5px] text-left text-base font-normal hover:bg-black hover:text-white',
                 !end && 'text-muted-foreground'
               )}
               data-cy="input-date-range-end"

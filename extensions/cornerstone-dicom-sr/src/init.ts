@@ -10,15 +10,19 @@ import {
   PlanarFreehandROITool,
   RectangleROITool,
 } from '@cornerstonejs/tools';
+import { Types } from '@ohif/core';
+
 import DICOMSRDisplayTool from './tools/DICOMSRDisplayTool';
 import addToolInstance from './utils/addToolInstance';
-import { Types } from '@ohif/core';
 import toolNames from './tools/toolNames';
 
 /**
  * @param {object} configuration
  */
-export default function init({ configuration = {} }: Types.Extensions.ExtensionParams): void {
+export default function init({
+  configuration = {},
+  servicesManager,
+}: Types.Extensions.ExtensionParams): void {
   addToolInstance(toolNames.DICOMSRDisplay, DICOMSRDisplayTool);
   addToolInstance(toolNames.SRLength, LengthTool);
   addToolInstance(toolNames.SRBidirectional, BidirectionalTool);
