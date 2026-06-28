@@ -14,6 +14,7 @@
  * The RT-specific toolbar (RTV-117), the full radiology panel set (RTV-118),
  * hanging protocols (RTV-119) and inline laudo (RTV-121) extend this base.
  */
+import { ToolbarService } from '@ohif/core';
 import { id } from './id';
 import {
   cornerstone,
@@ -51,6 +52,22 @@ export const radiologyRoute = {
   layoutInstance: radiologyLayout,
 };
 
+const { TOOLBAR_SECTIONS } = ToolbarService;
+
+/**
+ * Clean diagnostic toolbar (RTV-117): general radiology tools only — no RT
+ * tooling (dose/beam/MLC/grid/contour). Applied by the inherited onModeEnter,
+ * which registers `this.toolbarButtons` and calls `toolbarService.updateSection`
+ * per entry. App-level CustomizationService can override these sections further.
+ * All button ids below are provided by @ohif/mode-basic's toolbarButtons.
+ */
+export const radiologyToolbarSections = {
+  ...basicModeInstance.toolbarSections,
+  [TOOLBAR_SECTIONS.primary]: ['MeasurementTools', 'Zoom', 'Pan', 'WindowLevel', 'MoreTools'],
+  MeasurementTools: ['Length', 'Angle', 'EllipticalROI', 'RectangleROI', 'PlanarFreehandROI'],
+  MoreTools: ['Reset', 'rotate-right', 'flipHorizontal', 'invert', 'Magnify', 'Cine'],
+};
+
 export const modeInstance = {
   ...basicModeInstance,
   id,
@@ -58,6 +75,7 @@ export const modeInstance = {
   displayName: 'Radiologia',
   hide: false,
   routes: [radiologyRoute],
+  toolbarSections: radiologyToolbarSections,
   extensions: extensionDependencies,
 };
 
