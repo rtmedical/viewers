@@ -8,9 +8,9 @@ follows the **RTV-114** extension-first / zero-fork policy: it does **not** modi
 
 ## Status
 
-This first slice delivers the **framework-free, fully unit-tested core** that the
-OHIF wiring layer will consume. The viewport/panel UI and DICOM byte writing are
-tracked as follow-ups below.
+The extension is **feature-complete** for RTV-148: a framework-free, unit-tested
+core plus the full OHIF wiring (service, commands, right panel) and round-trip
+DICOM KOS support (write via `dcmjs`, read existing KOS via a SopClassHandler).
 
 | Layer | State |
 | --- | --- |
@@ -19,10 +19,11 @@ tracked as follow-ups below.
 | KOS descriptor (`buildKosDescriptor`, CID 7010 titles, SOP Class UID) | ✅ implemented + tested |
 | Display utils (`sortKeyImages`, `groupKeyImagesBySeries`) | ✅ implemented + tested |
 | OHIF metadata adapter + label (`toKeyImageReference`, `describeKeyImage`) | ✅ implemented + tested |
-| `KeyImageService` (preRegistration) | ⏳ follow-up |
-| Commands module (add/remove/toggle/clear, export-to-KOS) | ⏳ follow-up |
-| Right-panel component (Carbon-inspired) | ⏳ follow-up |
-| DICOM KOS serialization (dcmjs) + SopClassHandler (read existing KOS) | ⏳ follow-up |
+| `KeyImageService` (preRegistration) | ✅ implemented + tested |
+| Commands module (add/remove/toggle/clear, export + download KOS) | ✅ implemented + tested |
+| Right-panel component (Carbon-inspired) | ✅ implemented |
+| DICOM KOS serialization → Part-10 (`dcmjs`, TID 2010 / CID 7010) | ✅ implemented + tested core |
+| SopClassHandler — read existing KOS into references | ✅ implemented + tested core |
 
 ## Public API
 
@@ -68,21 +69,28 @@ defaults to *Of Interest* (CID 7010 / `113000`, `DCM`).
 ```bash
 # from the repo root (node_modules installed)
 node node_modules/.bin/jest --config extensions/rtmedical-key-images/jest.config.js --ci
-# 5 suites / 43 tests
+# 10 suites / 82 tests
 ```
 
-## Wiring (follow-up)
+## KOS read/write
 
-1. `KeyImageService` registered via `preRegistration`, wrapping `KeyImageManager`
-   and bridging events to OHIF's `pubSubServiceInterface`.
-2. `getCommandsModule` exposing `addKeyImage`, `removeKeyImage`, `toggleKeyImage`,
-   `clearKeyImages`, `exportKeyImagesToKOS`. Commands map the active viewport's
-   metadata through `toKeyImageReference` (already implemented) into the service;
-   `exportKeyImagesToKOS` calls `buildKosDescriptor` then `dcmjs` to produce the
-   KOS and stores via the active data source.
-3. `getPanelModule` providing the right-panel UI (Carbon-inspired, using
-   `@ohif/ui` primitives — no fork), driven by `groupKeyImagesBySeries` and
-   `describeKeyImage` (both already implemented) for row rendering.
-4. Register in `platform/app/pluginConfig.json` and add a `keyImage` toolbar
-   button per mode (no changes to `@ohif/extension-default`).
-5. `getSopClassHandlerModule` to read existing KOS instances into the model.
+- **Write:** `serializeKosToArrayBuffer(descriptor, opts)` / `downloadKosDocument(...)`
+  ({@link ./kosSerialize}) turn a descriptor into a Part-10 DICOM KOS document via
+  `dcmjs` (Explicit VR LE). The IOD shaping is the pure, unit-tested
+  `buildKosNaturalizedDataset` ({@link ./kosDataset}) — KO Document template
+  TID 2010, CID 7010 title, Current Requested Procedure Evidence + IMAGE content
+  items (with `ReferencedFrameNumber` for multiframe). The `downloadKeyImagesKOS`
+  command serializes the current selection and triggers a browser download.
+- **Read:** `getSopClassHandlerModule` registers a handler for the KOS SOP Class
+  (`1.2.840.10008.5.1.4.1.1.88.59`). It builds a display set per KOS instance,
+  parsing it back to `KeyImageReference[]` with the pure `parseKosInstance`
+  ({@link ./parseKosInstance}); `build → parse` is covered by a round-trip test.
+
+## Integration notes
+
+- Registered in `platform/app/pluginConfig.json` as
+  `@ohif/extension-rtmedical-key-images`; a mode opts the panel in via
+  `@ohif/extension-rtmedical-key-images.panelModule.keyImages` in its `rightPanels`.
+- The SopClassHandler avoids importing `@ohif/core` (it generates the display-set
+  UID locally): under pnpm the extension's nested `@ohif/core` peer build fails to
+  bundle against Cornerstone3D 5.x. Pure modules stay `@ohif/*`-free by design.

@@ -6,17 +6,18 @@
  * extension. It follows the RTV-114 extension-first / zero-fork policy: no
  * changes to @ohif/core, @ohif/app or @ohif/ui.
  *
- * This entry point exports the framework-free selection model and KOS
- * descriptor logic (all unit-tested) plus the KeyImageService that wraps them.
- * The service is registered via `preRegistration`. The remaining wiring layer —
- * a commands module (add/remove/toggle/clear, export-to-KOS) and the right-panel
- * component — consumes these primitives and is tracked as a follow-up in the
- * README.
+ * This entry point exports the framework-free selection model, KOS descriptor
+ * logic, KOS serialization (dcmjs) and KOS parsing (all unit-tested at their
+ * pure core), plus the OHIF wiring: KeyImageService (preRegistration), commands,
+ * the right-panel module and the SopClassHandler that reads existing KOS objects.
  */
 export * from './types';
 export * from './keyImageId';
 export * from './keyImageLabel';
 export * from './kos';
+export * from './kosDataset';
+export * from './kosSerialize';
+export * from './parseKosInstance';
 export * from './utils';
 export { KeyImageManager } from './KeyImageManager';
 export { KeyImageService } from './KeyImageService';
@@ -27,10 +28,12 @@ export type {
 } from './KeyImageService';
 
 export { getCommandsModule } from './getCommandsModule';
+export { getSopClassHandlerModule } from './getSopClassHandlerModule';
 
 import { KeyImageService } from './KeyImageService';
 import { getCommandsModule } from './getCommandsModule';
 import getPanelModule from './getPanelModule';
+import getSopClassHandlerModule from './getSopClassHandlerModule';
 
 const id = '@ohif/extension-rtmedical-key-images';
 
@@ -42,8 +45,9 @@ interface ServicesManagerLike {
 /**
  * OHIF extension manifest. `preRegistration` registers the KeyImageService so
  * it is available to every mode that includes this extension, `getCommandsModule`
- * exposes the selection/export commands, and `getPanelModule` provides the
- * Key Images right panel (RTV-148). A mode opts the panel in via
+ * exposes the selection/export commands, `getPanelModule` provides the Key
+ * Images right panel and `getSopClassHandlerModule` turns existing KOS objects
+ * into display sets (RTV-148). A mode opts the panel in via
  * '@ohif/extension-rtmedical-key-images.panelModule.keyImages' in its rightPanels.
  */
 const rtmedicalKeyImagesExtension = {
@@ -55,6 +59,7 @@ const rtmedicalKeyImagesExtension = {
 
   getCommandsModule,
   getPanelModule,
+  getSopClassHandlerModule,
 };
 
 export default rtmedicalKeyImagesExtension;
