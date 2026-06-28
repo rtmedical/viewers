@@ -2,6 +2,7 @@ import { rtRadiologyProtocols } from './hangingProtocols/rtRadiologyProtocols';
 import { rtRadiotherapyProtocols } from './hangingProtocols/rtRadiotherapyProtocols';
 import { rtHangingProtocolLibrary } from './hangingProtocols/library';
 import { rtComparisonProtocols } from './hangingProtocols/rtComparisonProtocol';
+import { rtSpecialtyProtocols } from './hangingProtocols/rtSpecialtyProtocols';
 
 /**
  * Registers RT Medical hanging protocols with the HangingProtocolService:
@@ -15,6 +16,7 @@ function getHangingProtocolModule() {
     ...rtRadiotherapyProtocols,
     ...rtHangingProtocolLibrary,
     ...rtComparisonProtocols,
+    ...rtSpecialtyProtocols,
   ].map(protocol => ({
     name: protocol.id,
     protocol,
