@@ -77,6 +77,9 @@ export const modeInstance = {
   hide: false,
   routes: [radiologyRoute],
   toolbarSections: radiologyToolbarSections,
+  // RTV-119: radiology HPs registered by rtmedical-theme; engine matches by
+  // modality and falls back to this universal 1x1 default.
+  hangingProtocol: 'rt-radiology-default',
   extensions: extensionDependencies,
 };
 
