@@ -8,6 +8,8 @@ import getCommandsModule from './src/getCommandsModule';
 import WorklistQueueService from './src/worklist/WorklistQueueService';
 import i18n from 'i18next';
 import { RT_NAMESPACE, rtPtBR, rtEn } from './src/i18n/rtPtBR';
+import { defaultBranding } from './src/whiteLabeling/defaultBranding';
+import { buildThemeCssVars } from './src/whiteLabeling/applyThemeOverride';
 
 export default {
   id: 'rtmedical-theme',
@@ -16,6 +18,18 @@ export default {
     // RTV-9: RT-specific PT-BR strings (OHIF already ships the base pt-BR locale).
     i18n.addResourceBundle('pt-BR', RT_NAMESPACE, rtPtBR, true, true);
     i18n.addResourceBundle('en-US', RT_NAMESPACE, rtEn, true, true);
+    // RTV-7: apply the default RT Medical theme palette (dark) at startup as
+    // :root CSS variables. Tenant white-labeling (RTV-156) overrides these.
+    try {
+      if (typeof document !== 'undefined') {
+        const vars = buildThemeCssVars(defaultBranding.theme);
+        Object.entries(vars).forEach(([name, value]) =>
+          document.documentElement.style.setProperty(name, value)
+        );
+      }
+    } catch (e) {
+      /* theming is non-fatal */
+    }
   },
   getCustomizationModule,
   getPanelModule,
