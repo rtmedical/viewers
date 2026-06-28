@@ -11,6 +11,10 @@ const seriesWithImages = [
   { weight: 10, attribute: 'numImageFrames', constraint: { greaterThan: { value: 0 } } },
 ];
 
+// RTV-42: window-level (VOI) sync between the current and prior viewports.
+// Scroll sync is left to the native ImageSliceSync toolbar toggle (optional).
+const COMPARISON_VOI_SYNC = { type: 'voi', id: 'rtComparisonVoiSync', source: true, target: true } as const;
+
 const studyAtIndex = (value: number) => [
   {
     attribute: 'studyInstanceUIDsIndex',
@@ -48,11 +52,19 @@ export const rtComparison2up = {
       viewportStructure: { layoutType: 'grid', properties: { rows: 1, columns: 2 } },
       viewports: [
         {
-          viewportOptions: { toolGroupId: 'default', allowUnmatchedView: true },
+          viewportOptions: {
+            toolGroupId: 'default',
+            allowUnmatchedView: true,
+            syncGroups: [COMPARISON_VOI_SYNC],
+          },
           displaySets: [{ id: 'currentDisplaySet' }],
         },
         {
-          viewportOptions: { toolGroupId: 'default', allowUnmatchedView: true },
+          viewportOptions: {
+            toolGroupId: 'default',
+            allowUnmatchedView: true,
+            syncGroups: [COMPARISON_VOI_SYNC],
+          },
           displaySets: [{ id: 'priorDisplaySet' }],
         },
       ],
