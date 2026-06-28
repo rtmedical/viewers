@@ -27,6 +27,12 @@ export interface KeyImageReference {
   SeriesNumber?: number;
   InstanceNumber?: number;
   SeriesDescription?: string;
+  /**
+   * SOP Class UID of the referenced image. Not part of the identity, but
+   * required to emit a valid KOS (`ReferencedSOPClassUID`). When absent, the
+   * generic Secondary Capture SOP Class is used as a fallback at serialization.
+   */
+  SOPClassUID?: string;
 }
 
 /**

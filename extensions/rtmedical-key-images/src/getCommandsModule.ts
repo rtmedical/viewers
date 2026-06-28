@@ -1,5 +1,6 @@
 import { KeyImageService } from './KeyImageService';
 import { buildKosDescriptor, KosDescriptor } from './kos';
+import { downloadKosDocument, SerializeKosOptions } from './kosSerialize';
 import { KeyImageReference, KosDocumentTitle } from './types';
 
 /** Minimal shape of the OHIF services manager passed to module getters. */
@@ -68,6 +69,31 @@ export function getCommandsModule({ servicesManager }: CommandsModuleParams) {
       }
       return buildKosDescriptor(references, { title, seriesDescription });
     },
+
+    /**
+     * Serialize the current selection to a Part-10 DICOM KOS file and trigger a
+     * browser download. Returns `false` for an empty selection (no-op), `true`
+     * once the document has been written. The dcmjs byte-writing lives in
+     * {@link downloadKosDocument}; this command only resolves the selection.
+     */
+    downloadKeyImagesKOS: ({
+      title,
+      seriesDescription,
+      filename,
+      ...context
+    }: {
+      title?: KosDocumentTitle;
+      seriesDescription?: string;
+      filename?: string;
+    } & SerializeKosOptions = {}): boolean => {
+      const references = getService().getKeyImages();
+      if (references.length === 0) {
+        return false;
+      }
+      const descriptor = buildKosDescriptor(references, { title, seriesDescription });
+      downloadKosDocument(descriptor, { filename, ...context });
+      return true;
+    },
   };
 
   const definitions = {
@@ -77,6 +103,7 @@ export function getCommandsModule({ servicesManager }: CommandsModuleParams) {
     clearKeyImages: { commandFn: actions.clearKeyImages },
     getKeyImages: { commandFn: actions.getKeyImages },
     exportKeyImagesToKOS: { commandFn: actions.exportKeyImagesToKOS },
+    downloadKeyImagesKOS: { commandFn: actions.downloadKeyImagesKOS },
   };
 
   return { actions, definitions, defaultContext: 'DEFAULT' };

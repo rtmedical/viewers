@@ -27,6 +27,7 @@ describe('getCommandsModule', () => {
       [
         'addKeyImage',
         'clearKeyImages',
+        'downloadKeyImagesKOS',
         'exportKeyImagesToKOS',
         'getKeyImages',
         'removeKeyImage',
@@ -89,5 +90,12 @@ describe('getCommandsModule.exportKeyImagesToKOS', () => {
     });
     expect(descriptor?.title).toEqual(KOS_DOCUMENT_TITLES.FOR_TEACHING);
     expect(descriptor?.seriesDescription).toBe('Teaching file');
+  });
+});
+
+describe('getCommandsModule.downloadKeyImagesKOS', () => {
+  it('returns false for an empty selection (no-op, no dcmjs touched)', () => {
+    const { actions } = setup();
+    expect(actions.downloadKeyImagesKOS()).toBe(false);
   });
 });

@@ -25,6 +25,8 @@ export const DEFAULT_KOS_TITLE: KosDocumentTitle = KOS_DOCUMENT_TITLES.OF_INTERE
 
 export interface KosSopInstance {
   SOPInstanceUID: string;
+  /** SOP Class UID of the referenced image (for `ReferencedSOPClassUID`). */
+  SOPClassUID?: string;
   /** Sorted, de-duplicated 1-based frame numbers (omitted for single-frame). */
   frames?: number[];
 }
@@ -118,7 +120,7 @@ export function buildKosDescriptor(
 
     let instance = series.sopInstances.find(i => i.SOPInstanceUID === ref.SOPInstanceUID);
     if (!instance) {
-      instance = { SOPInstanceUID: ref.SOPInstanceUID };
+      instance = { SOPInstanceUID: ref.SOPInstanceUID, SOPClassUID: ref.SOPClassUID };
       series.sopInstances.push(instance);
     }
 
