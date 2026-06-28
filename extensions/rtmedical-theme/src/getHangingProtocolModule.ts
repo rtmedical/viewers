@@ -1,13 +1,18 @@
 import { rtRadiologyProtocols } from './hangingProtocols/rtRadiologyProtocols';
 import { rtRadiotherapyProtocols } from './hangingProtocols/rtRadiotherapyProtocols';
+import { rtHangingProtocolLibrary } from './hangingProtocols/library';
 
 /**
- * Registers RT Medical hanging protocols (RTV-119 radiology + RTV-127
- * radiotherapy 4-up MPR) with the HangingProtocolService. Each entry's `name`
- * is the protocol id referenced by modes.
+ * Registers RT Medical hanging protocols with the HangingProtocolService:
+ * RTV-119 radiology defaults, RTV-127 radiotherapy 4-up MPR, and the RTV-25
+ * ≥30-protocol modality library. Each entry's `name` is the protocol id.
  */
 function getHangingProtocolModule() {
-  return [...rtRadiologyProtocols, ...rtRadiotherapyProtocols].map(protocol => ({
+  return [
+    ...rtRadiologyProtocols,
+    ...rtRadiotherapyProtocols,
+    ...rtHangingProtocolLibrary,
+  ].map(protocol => ({
     name: protocol.id,
     protocol,
   }));
