@@ -64,8 +64,8 @@ export const modeInstance = {
   displayName: 'Radioterapia',
   hide: false,
   routes: [radiotherapyRoute],
-  // 4-up grid now (rt-cross-sectional-2x2 from rtmedical-theme); RTV-127 swaps in MPR orientations.
-  hangingProtocol: 'rt-cross-sectional-2x2',
+  // RTV-127: 4-up MPR (axial/sagittal/coronal/3D-bone) from rtmedical-theme.
+  hangingProtocol: 'rt-radiotherapy-4up',
   extensions: extensionDependencies,
 };
 
