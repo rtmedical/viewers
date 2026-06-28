@@ -1,6 +1,7 @@
 import React from 'react';
 import LaudoPanel from './LaudoPanel/LaudoPanel';
 import MeasurementsPanel from './measurements/MeasurementsPanel';
+import RTTreePanel from './rtTree/RTTreePanel';
 
 /**
  * Panels contributed by the RT theme/shell extension:
@@ -29,6 +30,13 @@ function getPanelModule({ servicesManager, commandsManager }) {
           commandsManager={commandsManager}
         />
       ),
+    },
+    {
+      name: 'rtTree',
+      iconName: 'tab-segmentation',
+      iconLabel: 'RT Tree',
+      label: 'RT Tree',
+      component: props => <RTTreePanel {...props} servicesManager={servicesManager} />,
     },
   ];
 }
