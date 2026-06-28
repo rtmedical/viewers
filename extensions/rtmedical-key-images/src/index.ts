@@ -30,6 +30,7 @@ export { getCommandsModule } from './getCommandsModule';
 
 import { KeyImageService } from './KeyImageService';
 import { getCommandsModule } from './getCommandsModule';
+import getPanelModule from './getPanelModule';
 
 const id = '@ohif/extension-rtmedical-key-images';
 
@@ -40,10 +41,10 @@ interface ServicesManagerLike {
 
 /**
  * OHIF extension manifest. `preRegistration` registers the KeyImageService so
- * it is available to every mode that includes this extension, and
- * `getCommandsModule` exposes the selection/export commands. The panel module
- * getter is intentionally omitted until that UI layer lands, so the extension
- * can be registered without further side effects.
+ * it is available to every mode that includes this extension, `getCommandsModule`
+ * exposes the selection/export commands, and `getPanelModule` provides the
+ * Key Images right panel (RTV-148). A mode opts the panel in via
+ * '@ohif/extension-rtmedical-key-images.panelModule.keyImages' in its rightPanels.
  */
 const rtmedicalKeyImagesExtension = {
   id,
@@ -53,6 +54,7 @@ const rtmedicalKeyImagesExtension = {
   },
 
   getCommandsModule,
+  getPanelModule,
 };
 
 export default rtmedicalKeyImagesExtension;
