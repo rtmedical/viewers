@@ -2,6 +2,7 @@ import React from 'react';
 import LaudoPanel from './LaudoPanel/LaudoPanel';
 import MeasurementsPanel from './measurements/MeasurementsPanel';
 import RTTreePanel from './rtTree/RTTreePanel';
+import SrTreePanel from './srTree/SrTreePanel';
 
 /**
  * Panels contributed by the RT theme/shell extension:
@@ -37,6 +38,19 @@ function getPanelModule({ servicesManager, commandsManager }) {
       iconLabel: 'RT Tree',
       label: 'RT Tree',
       component: props => <RTTreePanel {...props} servicesManager={servicesManager} />,
+    },
+    {
+      name: 'srTree',
+      iconName: 'tab-studies',
+      iconLabel: 'SR',
+      label: 'SR',
+      component: props => (
+        <SrTreePanel
+          {...props}
+          servicesManager={servicesManager}
+          commandsManager={commandsManager}
+        />
+      ),
     },
   ];
 }
