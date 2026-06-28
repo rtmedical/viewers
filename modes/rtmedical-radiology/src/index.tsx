@@ -66,7 +66,17 @@ export const radiologyToolbarSections = {
   ...basicModeInstance.toolbarSections,
   [TOOLBAR_SECTIONS.primary]: ['MeasurementTools', 'Zoom', 'Pan', 'WindowLevel', 'MoreTools'],
   MeasurementTools: ['Length', 'Angle', 'EllipticalROI', 'RectangleROI', 'PlanarFreehandROI'],
-  MoreTools: ['Reset', 'rotate-right', 'flipHorizontal', 'invert', 'Magnify', 'Cine'],
+  // RTV-43: expose viewport sync toggles (scroll sync + reference lines).
+  MoreTools: [
+    'Reset',
+    'rotate-right',
+    'flipHorizontal',
+    'invert',
+    'Magnify',
+    'Cine',
+    'ImageSliceSync',
+    'ReferenceLines',
+  ],
 };
 
 export const modeInstance = {
