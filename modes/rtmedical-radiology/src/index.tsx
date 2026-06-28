@@ -28,6 +28,7 @@ import {
 /** Panel ids contributed by RT Medical extensions. */
 export const rtmedical = {
   keyImages: '@ohif/extension-rtmedical-key-images.panelModule.keyImages',
+  laudo: 'rtmedical-theme.panelModule.laudo',
 };
 
 export const extensionDependencies = {
@@ -41,7 +42,7 @@ export const radiologyLayout = {
   ...basicLayout,
   props: {
     ...basicLayout.props,
-    rightPanels: [rtmedical.keyImages, cornerstone.measurements],
+    rightPanels: [rtmedical.keyImages, cornerstone.measurements, rtmedical.laudo],
     rightPanelClosed: false,
   },
 };

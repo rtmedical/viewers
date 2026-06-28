@@ -2,10 +2,12 @@
 
 import ViewerLayout from './src/ViewerLayout';
 import getCustomizationModule from './src/getCustomizationModule';
+import getPanelModule from './src/getPanelModule';
 
 export default {
   id: 'rtmedical-theme',
   getCustomizationModule,
+  getPanelModule,
   getLayoutTemplateModule({ commandsManager, extensionManager, hotkeysManager, servicesManager }) {
     return [
       {
