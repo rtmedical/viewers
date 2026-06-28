@@ -1185,6 +1185,42 @@ importers:
         specifier: 17.3.1
         version: 17.3.1
 
+  modes/rtmedical-radiotherapy:
+    dependencies:
+      '@babel/runtime':
+        specifier: 7.29.7
+        version: 7.29.7
+      '@ohif/core':
+        specifier: workspace:*
+        version: link:../../platform/core
+      '@ohif/extension-cornerstone':
+        specifier: workspace:*
+        version: link:../../extensions/cornerstone
+      '@ohif/extension-cornerstone-dicom-rt':
+        specifier: workspace:*
+        version: link:../../extensions/cornerstone-dicom-rt
+      '@ohif/extension-cornerstone-dicom-seg':
+        specifier: workspace:*
+        version: link:../../extensions/cornerstone-dicom-seg
+      '@ohif/extension-cornerstone-dicom-sr':
+        specifier: workspace:*
+        version: link:../../extensions/cornerstone-dicom-sr
+      '@ohif/extension-default':
+        specifier: workspace:*
+        version: link:../../extensions/default
+      '@ohif/extension-rtmedical-key-images':
+        specifier: workspace:*
+        version: link:../../extensions/rtmedical-key-images
+      '@ohif/extension-rtmedical-theme':
+        specifier: workspace:*
+        version: link:../../extensions/rtmedical-theme
+      '@ohif/mode-basic':
+        specifier: workspace:*
+        version: link:../basic
+      i18next:
+        specifier: 17.3.1
+        version: 17.3.1
+
   modes/segmentation:
     dependencies:
       '@babel/runtime':

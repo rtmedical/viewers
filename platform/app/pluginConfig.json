@@ -108,6 +108,9 @@
     },
     {
       "packageName": "@rt/mode-radiology"
+    },
+    {
+      "packageName": "@rt/mode-radiotherapy"
     }
   ],
   "public": [
