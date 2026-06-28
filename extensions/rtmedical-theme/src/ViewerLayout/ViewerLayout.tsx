@@ -1,14 +1,17 @@
 // extensions/rtmedical-theme/src/ViewerLayout/index.jsx
 
 import React from 'react';
-import { SidePanel } from '@ohif/ui';
+// v3.13: SidePanel moved from @ohif/ui to @ohif/ui-next (RTV OHIF v3.13 upgrade).
+import { SidePanel } from '@ohif/ui-next';
 
 function Toolbar({ servicesManager }) {
   const { ToolBarService } = servicesManager.services;
   const toolbarButtons = ToolBarService.getButtonSection('primary');
 
   return (
-    <>
+    // v3.13 rspack parses .jsx via the TS path; a bare <> fragment reads as an
+    // empty type-parameter list, so use an explicit React.Fragment.
+    <React.Fragment>
       {toolbarButtons.map((toolDef, index) => {
         const { id, Component, componentProps } = toolDef;
         return (
@@ -21,7 +24,7 @@ function Toolbar({ servicesManager }) {
           />
         );
       })}
-    </>
+    </React.Fragment>
   );
 }
 

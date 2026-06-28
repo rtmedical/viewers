@@ -1,0 +1,28 @@
+name: RTV Arch Guard (RTV-114)
+
+# Gate de arquitetura extension-first / zero fork do @ohif/core.
+# Política: ARCH.md (raiz). Reprova PRs que modificam pacotes core do OHIF.
+
+on:
+  pull_request:
+    branches: ['**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  no-core-fork:
+    name: zero fork do @ohif/core
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run RTV-114 core-fork guard
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: bash .github/scripts/check-no-core-fork.sh

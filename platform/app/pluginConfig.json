@@ -65,6 +65,12 @@
     {
       "packageName": "@ohif/extension-ultrasound-pleura-bline",
       "version": "3.0.0"
+    },
+    {
+      "packageName": "@ohif/extension-rtmedical-theme"
+    },
+    {
+      "packageName": "@ohif/extension-rtmedical-key-images"
     }
   ],
   "modes": [

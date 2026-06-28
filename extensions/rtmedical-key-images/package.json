@@ -1,0 +1,36 @@
+{
+  "name": "@ohif/extension-rtmedical-key-images",
+  "version": "3.12.5",
+  "description": "RT Medical Key Images panel and DICOM Key Object Selection (KOS) support for OHIF v3 (RTV-148). Net-new feature: OHIF v3 has no native Key Images panel.",
+  "author": "RT Medical",
+  "license": "MIT",
+  "repository": "rtmedical/viewers",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6",
+    "yarn": ">=1.18.0"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "ohif-extension",
+    "rtmedical",
+    "key-images",
+    "kos",
+    "key-object-selection"
+  ],
+  "scripts": {
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@ohif/core": "3.12.5",
+    "prop-types": "15.8.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
