@@ -83,6 +83,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-struct"
+    },
+    {
+      "packageName": "@ohif/extension-rt-record"
     }
   ],
   "modes": [
