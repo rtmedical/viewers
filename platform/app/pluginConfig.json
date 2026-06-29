@@ -71,6 +71,9 @@
     },
     {
       "packageName": "@ohif/extension-rtmedical-key-images"
+    },
+    {
+      "packageName": "@ohif/extension-rt-plan"
     }
   ],
   "modes": [
