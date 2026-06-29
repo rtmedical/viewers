@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import RtRecordPanel from './RtRecordPanel';
+import DoseInformationPanel from './DoseInformationPanel';
 
 interface PanelModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -20,6 +21,15 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
       label: 'RT Records',
       component: (props: Record<string, unknown>) => (
         <RtRecordPanel {...props} servicesManager={servicesManager} />
+      ),
+    },
+    {
+      name: 'doseInformation',
+      iconName: 'tab-studies',
+      iconLabel: 'Dose Info',
+      label: 'Dose Information',
+      component: (props: Record<string, unknown>) => (
+        <DoseInformationPanel {...props} servicesManager={servicesManager} />
       ),
     },
   ];
