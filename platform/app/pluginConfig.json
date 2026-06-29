@@ -86,6 +86,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-record"
+    },
+    {
+      "packageName": "@ohif/extension-rt-timeline"
     }
   ],
   "modes": [
