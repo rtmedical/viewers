@@ -74,6 +74,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-plan"
+    },
+    {
+      "packageName": "@ohif/extension-rt-dvh"
     }
   ],
   "modes": [
