@@ -95,6 +95,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-print"
+    },
+    {
+      "packageName": "@ohif/extension-rt-isodose"
     }
   ],
   "modes": [
