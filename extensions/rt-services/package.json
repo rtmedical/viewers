@@ -1,0 +1,34 @@
+{
+  "name": "@ohif/extension-rt-services",
+  "version": "3.12.5",
+  "description": "RT Medical shared services/commands for OHIF v3 — local-file drag-drop classification/validation (RTV-160).",
+  "author": "RT Medical",
+  "license": "MIT",
+  "repository": "rtmedical/viewers",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6",
+    "yarn": ">=1.18.0"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "ohif-extension",
+    "rtmedical",
+    "local-files",
+    "drag-drop"
+  ],
+  "scripts": {
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage --passWithNoTests"
+  },
+  "peerDependencies": {
+    "prop-types": "15.8.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
