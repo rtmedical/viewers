@@ -101,6 +101,9 @@
     },
     {
       "packageName": "@ohif/extension-mammography"
+    },
+    {
+      "packageName": "@ohif/extension-rt-fusion"
     }
   ],
   "modes": [
