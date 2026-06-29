@@ -80,6 +80,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-services"
+    },
+    {
+      "packageName": "@ohif/extension-rt-struct"
     }
   ],
   "modes": [
