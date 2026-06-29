@@ -98,6 +98,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-isodose"
+    },
+    {
+      "packageName": "@ohif/extension-mammography"
     }
   ],
   "modes": [
