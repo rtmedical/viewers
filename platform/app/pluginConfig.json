@@ -89,6 +89,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-timeline"
+    },
+    {
+      "packageName": "@ohif/extension-dose-tracking"
     }
   ],
   "modes": [
