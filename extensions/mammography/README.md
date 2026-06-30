@@ -19,8 +19,11 @@ ACR BI-RADS (5th ed.) reporting form + finding labels. Follows **RTV-114**
   distribution), recommended management, structured report text + copy.
 - ✅ **Categorized markings (labels)**: BI-RADS finding labels exposed via
   customization for annotation tools.
-- 🟡 **Overlay** (drawing finding markers on the image) and **DICOM SR TID 2000
-  export** are viewport / SR follow-ups (epic 5).
+- ✅ **DICOM SR TID 2000 export** (RTV-37): `buildMammographyCadSr` (pure,
+  unit-tested) builds a Mammography CAD SR from a BI-RADS assessment; `srExport`
+  writes a Part-10 file via dcmjs; "Export SR" button + `downloadBiradsSr`
+  command. STOW-RS push to PACS is a separate backend ticket (RTV-39).
+- 🟡 **Overlay** (drawing finding markers on the image) is a viewport follow-up.
 
 ## Tests
 

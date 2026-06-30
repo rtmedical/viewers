@@ -15,6 +15,7 @@ import {
   buildBiradsReport,
   BiradsFinding,
 } from '../birads';
+import { downloadBiradsSr } from '../srExport';
 
 const LATERALITIES = ['Right', 'Left', 'Bilateral'] as const;
 
@@ -71,7 +72,16 @@ export function BiradsPanel(): React.ReactElement {
     <div className="ohif-scrollbar flex h-full flex-col overflow-auto px-2 py-2 text-sm text-white" data-cy="birads-panel">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-base font-medium">BI-RADS</span>
-        <Button variant="ghost" size="sm" onClick={copy}>Copy report</Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={copy}>Copy report</Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => downloadBiradsSr({ laterality, density, findings, category }, { filename: 'birads-sr.dcm' })}
+          >
+            Export SR
+          </Button>
+        </div>
       </div>
 
       {sel(laterality, LATERALITIES, v => setLaterality(v as any), 'Laterality')}

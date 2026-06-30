@@ -10,9 +10,13 @@
  * (TID 2000) export are viewport/SR follow-ups.
  */
 export * from './birads';
+export * from './mammographyCadSr';
+export * from './srExport';
 export { getCustomizationModule } from './getCustomizationModule';
+export { getCommandsModule } from './getCommandsModule';
 
 import getCustomizationModule from './getCustomizationModule';
+import getCommandsModule from './getCommandsModule';
 import getPanelModule from './getPanelModule';
 
 const id = '@ohif/extension-mammography';
@@ -20,6 +24,7 @@ const id = '@ohif/extension-mammography';
 const mammographyExtension = {
   id,
   getCustomizationModule,
+  getCommandsModule,
   getPanelModule,
 };
 
