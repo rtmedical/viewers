@@ -10,6 +10,7 @@ import {
   SrMeasurement,
   COMPREHENSIVE_SR_SOP_CLASS_UID,
 } from './measurementSr';
+import { buildCadRadsSr, BuildCadRadsSrOptions, CadRadsAssessment } from './cadRadsSr';
 
 const EXPLICIT_VR_LITTLE_ENDIAN = '1.2.840.10008.1.2.1';
 const IMPLEMENTATION_CLASS_UID = '1.2.826.0.1.3680043.10.999.1.4';
@@ -67,6 +68,43 @@ export function downloadMeasurementSr(
     const a = document.createElement('a');
     a.href = url;
     a.download = filename ?? 'measurement-sr.dcm';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  return buffer;
+}
+
+export type CadRadsSrSerializeOptions = Omit<BuildCadRadsSrOptions, 'generateUID' | 'now'>;
+
+/** Build a TID 3000 CAD-RADS SR (real UIDs + timestamp) and serialize to Part-10. */
+export function serializeCadRadsSr(
+  assessment: CadRadsAssessment,
+  options: CadRadsSrSerializeOptions = {}
+): ArrayBuffer {
+  const { DicomMetaDictionary } = (dcmjs as any).data;
+  const now = new Date();
+  const dataset = buildCadRadsSr(assessment, {
+    generateUID: () => DicomMetaDictionary.uid(),
+    now: { date: toDa(now), time: toTm(now) },
+    ...options,
+  });
+  return serializeSrToArrayBuffer(dataset);
+}
+
+/** Build + download a CAD-RADS SR. No-op outside a DOM. */
+export function downloadCadRadsSr(
+  assessment: CadRadsAssessment,
+  options: CadRadsSrSerializeOptions & { filename?: string } = {}
+): ArrayBuffer {
+  const { filename, ...rest } = options;
+  const buffer = serializeCadRadsSr(assessment, rest);
+  if (typeof document !== 'undefined' && typeof URL?.createObjectURL === 'function') {
+    const url = URL.createObjectURL(new Blob([buffer], { type: 'application/dicom' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename ?? 'cad-rads-sr.dcm';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

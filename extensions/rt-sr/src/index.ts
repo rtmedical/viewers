@@ -10,6 +10,7 @@
  * separate backend ticket (RTV-39).
  */
 export * from './measurementSr';
+export * from './cadRadsSr';
 export * from './srExport';
 export { getCommandsModule } from './getCommandsModule';
 
