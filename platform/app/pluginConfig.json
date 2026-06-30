@@ -104,6 +104,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-fusion"
+    },
+    {
+      "packageName": "@ohif/extension-rt-fusion-timeline"
     }
   ],
   "modes": [
