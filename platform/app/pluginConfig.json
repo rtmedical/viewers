@@ -107,6 +107,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-fusion-timeline"
+    },
+    {
+      "packageName": "@ohif/extension-cad"
     }
   ],
   "modes": [
