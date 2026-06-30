@@ -113,6 +113,9 @@
     },
     {
       "packageName": "@ohif/extension-deid"
+    },
+    {
+      "packageName": "@ohif/extension-measurements"
     }
   ],
   "modes": [
