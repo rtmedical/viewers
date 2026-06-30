@@ -110,6 +110,9 @@
     },
     {
       "packageName": "@ohif/extension-cad"
+    },
+    {
+      "packageName": "@ohif/extension-deid"
     }
   ],
   "modes": [
