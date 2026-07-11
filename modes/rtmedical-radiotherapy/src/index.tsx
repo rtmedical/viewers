@@ -45,6 +45,7 @@ export const rtmedical = {
   isodose: '@ohif/extension-rt-isodose.panelModule.isodose',
   fusionTimeline: '@ohif/extension-rt-fusion-timeline.panelModule.fusionTimeline',
   rtPrint: '@ohif/extension-rt-print.panelModule.rtPrint',
+  lineProfile: '@ohif/extension-measurements.panelModule.lineProfile',
 };
 
 export const extensionDependencies = {
@@ -58,6 +59,8 @@ export const extensionDependencies = {
   '@ohif/extension-rt-fusion-timeline': '^3.0.0',
   '@ohif/extension-rt-print': '^3.0.0',
   '@ohif/extension-rt-record': '^3.0.0',
+  // RTV-32: density line-profile tool + panel.
+  '@ohif/extension-measurements': '^3.0.0',
 };
 
 /**
@@ -94,6 +97,7 @@ export const radiotherapyLayout = {
       rtmedical.fusionTimeline,
       rtmedical.keyImages,
       cornerstone.measurements,
+      rtmedical.lineProfile,
       rtmedical.rtPrint,
       rtmedical.laudo,
     ],
@@ -133,7 +137,20 @@ function onModeEnter(props) {
   basicOnModeEnter.call(this, props);
 
   const { servicesManager } = props;
-  const { displaySetService, panelService } = servicesManager.services;
+  const { displaySetService, panelService, toolGroupService } = servicesManager.services;
+
+  // RTV-32: add the LineProfile tool (registered globally by the measurements
+  // extension's preRegistration) to the default tool group so the toolbar
+  // button can activate it. Passive so drawn profiles keep rendering.
+  try {
+    const tg = toolGroupService?.getToolGroup?.('default');
+    if (tg && !tg.hasTool?.('LineProfile')) {
+      tg.addTool('LineProfile');
+      tg.setToolPassive?.('LineProfile');
+    }
+  } catch (e) {
+    /* tool group not ready / tool unavailable — non-fatal */
+  }
 
   // Reveal RT data already present when the mode is entered...
   activateRtPanel(panelService, displaySetService.getActiveDisplaySets());
@@ -188,6 +205,8 @@ export const radiotherapyToolbarSections = {
     'CircleROI',
     'PlanarFreehandROI',
     'ArrowAnnotate',
+    // RTV-32: density line-profile tool.
+    'LineProfile',
   ],
   // 3D/MPR + view manipulation for planning review.
   MoreTools: [
@@ -214,7 +233,26 @@ export const radiotherapyToolbarSections = {
  * panelService.activatePanel — the same call the RTV-126 auto-reveal uses). Uses
  * the stock `ohif.toolButton` uiType, so no getToolbarModule is needed.
  */
+/** Same shape as mode-basic's setToolActiveToolbar (activates the tool named by the button id). */
+const setToolActiveToolbar = {
+  commandName: 'setToolActiveToolbar',
+  commandOptions: { toolGroupIds: ['default', 'mpr', 'SRToolGroup', 'volume3d'] },
+};
+
 const rtPanelButtons = [
+  {
+    // RTV-32: density line-profile drawing tool (added to the 'default' tool
+    // group in onModeEnter; the LineProfile panel renders the sampled profile).
+    id: 'LineProfile',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-length',
+      label: 'Perfil',
+      tooltip: 'Perfil de densidade (linha)',
+      commands: setToolActiveToolbar,
+      evaluate: 'evaluate.cornerstoneTool',
+    },
+  },
   {
     id: 'rtFusionPanel',
     uiType: 'ohif.toolButton',
