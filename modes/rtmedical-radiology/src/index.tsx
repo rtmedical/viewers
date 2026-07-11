@@ -74,6 +74,7 @@ export const radiologyToolbarSections = {
     'invert',
     'Magnify',
     'Cine',
+    'CalibrationLine',
     'ImageSliceSync',
     'ReferenceLines',
   ],
