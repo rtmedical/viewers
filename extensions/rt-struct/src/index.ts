@@ -14,12 +14,14 @@
 export * from './rtStructParser';
 
 import getPanelModule from './getPanelModule';
+import getCommandsModule from './getCommandsModule';
 
 const id = '@ohif/extension-rt-struct';
 
 const rtStructExtension = {
   id,
   getPanelModule,
+  getCommandsModule,
 };
 
 export default rtStructExtension;

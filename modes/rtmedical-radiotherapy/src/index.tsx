@@ -61,6 +61,8 @@ export const extensionDependencies = {
   '@ohif/extension-rt-record': '^3.0.0',
   // RTV-32: density line-profile tool + panel.
   '@ohif/extension-measurements': '^3.0.0',
+  // RTV-146 (Wave 3a): RTSTRUCT-in-MPR command (contour→labelmap).
+  '@ohif/extension-rt-struct': '^3.0.0',
 };
 
 /**
@@ -193,6 +195,8 @@ export const radiotherapyToolbarSections = {
     'rtFusionPanel',
     'rtLaudoPanel',
     'rtPrintPanel',
+    // RTV-146 (Wave 3a): render RTSTRUCT in MPR (contour→labelmap).
+    'rtStructMpr',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -251,6 +255,17 @@ const rtPanelButtons = [
       tooltip: 'Perfil de densidade (linha)',
       commands: setToolActiveToolbar,
       evaluate: 'evaluate.cornerstoneTool',
+    },
+  },
+  {
+    // RTV-146 (Wave 3a): render RTSTRUCT contours in MPR (adds a labelmap rep).
+    id: 'rtStructMpr',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tab-segmentation',
+      label: 'Estruturas MPR',
+      tooltip: 'Renderizar estruturas RT em MPR (labelmap)',
+      commands: 'showRtStructInMpr',
     },
   },
   {
