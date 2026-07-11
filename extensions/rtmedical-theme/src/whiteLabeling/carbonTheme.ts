@@ -53,3 +53,32 @@ export function applyCarbonTheme(element?: HTMLElement | null): void {
     target.style.setProperty(name, value);
   });
 }
+
+/** Stylesheet id so the icon refinement is injected only once. */
+export const CARBON_ICON_STYLE_ID = 'rt-carbon-icon-style';
+
+/**
+ * Carbon-like icon weight (RTV-7). OHIF renders each icon as an `<svg>` inside a
+ * `.inline-flex.items-center.justify-center` wrapper; cornerstone's annotation
+ * SVGs (contours/measurements/reference-lines) live in the viewport render layer,
+ * NOT in that wrapper, so this rule leaves them untouched. Icons are already
+ * currentColor (follow --foreground) + mostly 1–1.5 stroke; we just unify the
+ * stroke weight toward Carbon's ~1.5 line and render crisply. Fill-based icons
+ * (no stroke attr) are unaffected.
+ */
+export const CARBON_ICON_CSS = `
+.inline-flex.items-center.justify-center > svg { shape-rendering: geometricPrecision; }
+.inline-flex.items-center.justify-center > svg [stroke]:not([stroke="none"]):not([stroke-width="6"]) { stroke-width: 1.5px; }
+`;
+
+/** Injects the Carbon icon stylesheet once (no-op outside the browser). */
+export function applyCarbonIconStyle(doc?: Document | null): void {
+  const d = doc ?? (typeof document !== 'undefined' ? document : null);
+  if (!d || d.getElementById(CARBON_ICON_STYLE_ID)) {
+    return;
+  }
+  const style = d.createElement('style');
+  style.id = CARBON_ICON_STYLE_ID;
+  style.textContent = CARBON_ICON_CSS;
+  d.head.appendChild(style);
+}

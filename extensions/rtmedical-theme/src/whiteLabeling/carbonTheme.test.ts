@@ -1,4 +1,9 @@
-import { CARBON_G100_TOKENS, applyCarbonTheme } from './carbonTheme';
+import {
+  CARBON_G100_TOKENS,
+  applyCarbonTheme,
+  applyCarbonIconStyle,
+  CARBON_ICON_STYLE_ID,
+} from './carbonTheme';
 
 describe('carbonTheme (RTV-7)', () => {
   it('maps the core OHIF ui-next design tokens', () => {
@@ -22,5 +27,20 @@ describe('carbonTheme (RTV-7)', () => {
 
   it('is a no-op without a DOM (no throw)', () => {
     expect(() => applyCarbonTheme(null)).not.toThrow();
+  });
+
+  it('injects the icon stylesheet once', () => {
+    const appended: any[] = [];
+    const store: Record<string, any> = {};
+    const doc = {
+      getElementById: (id: string) => store[id] || null,
+      createElement: () => ({ id: '', textContent: '' }),
+      head: { appendChild: (el: any) => { appended.push(el); store[el.id] = el; } },
+    } as unknown as Document;
+    applyCarbonIconStyle(doc);
+    applyCarbonIconStyle(doc); // second call is a no-op (already present)
+    expect(appended.length).toBe(1);
+    expect(appended[0].id).toBe(CARBON_ICON_STYLE_ID);
+    expect(appended[0].textContent).toContain('stroke-width');
   });
 });
