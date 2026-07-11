@@ -40,6 +40,7 @@ export const rtmedical = {
   keyImages: '@ohif/extension-rtmedical-key-images.panelModule.keyImages',
   laudo: 'rtmedical-theme.panelModule.laudo',
   rtTree: 'rtmedical-theme.panelModule.rtTree',
+  roiWorkspace: '@ohif/extension-rt-struct.panelModule.roiWorkspace',
   plan: '@ohif/extension-rt-plan.panelModule.rtPlan',
   dvh: '@ohif/extension-rt-dvh.panelModule.dvh',
   isodose: '@ohif/extension-rt-isodose.panelModule.isodose',
@@ -95,8 +96,9 @@ export const radiotherapyLayout = {
   id: '@ohif/extension-rt-tps.layoutTemplateModule.tps',
   props: {
     ...basicLayout.props,
-    // Left = Eclipse Context Window: study browser + RT course tree (Scope).
-    leftPanels: [...basicLayout.props.leftPanels, rtmedical.rtTree],
+    // Left = Eclipse Context Window: study browser + RT course tree (Scope) +
+    // grouped structures workspace (Focus, autoseg-style — Wave 4/Phase 3).
+    leftPanels: [...basicLayout.props.leftPanels, rtmedical.rtTree, rtmedical.roiWorkspace],
     leftPanelClosed: false,
     rightPanels: [
       // rtTree moved to the LEFT (Eclipse Context Window). Ficha/DVH/Isodoses
