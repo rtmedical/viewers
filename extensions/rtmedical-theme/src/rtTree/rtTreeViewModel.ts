@@ -7,11 +7,14 @@
  * handler exposes (Modality, SeriesDescription, structureSet.StructureSetROISequence)
  * — zero-fork (RTV-114).
  *
- * The full legacy RTTreeViewer also had DvhNode and detailed BeamLinesNode;
- * those need dose computation / RTPLAN beam geometry (RTV-130 + dose) and are
- * follow-ups. Click-to-viewport navigation is wired in the panel/integration layer.
+ * Six node types (RTV-133): the four RT-object roots (rtstruct/rtplan/rtdose/
+ * rtimage) plus their leaf children — `roi` under an RTSTRUCT (from the
+ * cornerstone-dicom-rt structure set) and `beam` under an RTPLAN (from the
+ * rt-plan display set's parsed `rtPlan.beams`). The legacy RTTreeViewer's
+ * DvhNode needs dose computation (RTV-130 + dose) and stays a follow-up.
+ * Click-to-viewport navigation is wired in the panel/integration layer.
  */
-export type RtNodeType = 'rtstruct' | 'rtplan' | 'rtdose' | 'rtimage' | 'roi';
+export type RtNodeType = 'rtstruct' | 'rtplan' | 'rtdose' | 'rtimage' | 'roi' | 'beam';
 
 export interface RtTreeNode {
   id: string;
@@ -30,6 +33,10 @@ export interface RtDisplaySetLike {
     StructureSetLabel?: string;
     StructureSetROISequence?: Array<{ ROIName?: string; ROINumber?: number | string }>;
     ROIContours?: Array<{ ROIName?: string; ROINumber?: number | string }>;
+  };
+  /** Parsed plan model attached by the rt-plan SopClassHandler (RTPLAN only). */
+  rtPlan?: {
+    beams?: Array<{ number?: number | string; name?: string }>;
   };
 }
 
@@ -54,6 +61,19 @@ function buildRoiNodes(ds: RtDisplaySetLike): RtTreeNode[] {
   }));
 }
 
+function buildBeamNodes(ds: RtDisplaySetLike): RtTreeNode[] {
+  const beams = ds.rtPlan?.beams ?? [];
+  if (!Array.isArray(beams)) {
+    return [];
+  }
+  return beams.map((beam, index) => ({
+    id: `${ds.displaySetInstanceUID}-beam-${beam.number ?? index}`,
+    type: 'beam' as const,
+    label: beam.name || `Beam ${beam.number ?? index + 1}`,
+    displaySetInstanceUID: ds.displaySetInstanceUID,
+  }));
+}
+
 export function buildRtTreeModel(displaySets: RtDisplaySetLike[]): RtTreeNode[] {
   return (displaySets || [])
     .filter(ds => ds && RT_MODALITY_TO_TYPE[String(ds.Modality || '').toUpperCase()])
@@ -71,6 +91,11 @@ export function buildRtTreeModel(displaySets: RtDisplaySetLike[]): RtTreeNode[] 
       };
       if (type === 'rtstruct') {
         const children = buildRoiNodes(ds);
+        if (children.length) {
+          node.children = children;
+        }
+      } else if (type === 'rtplan') {
+        const children = buildBeamNodes(ds);
         if (children.length) {
           node.children = children;
         }

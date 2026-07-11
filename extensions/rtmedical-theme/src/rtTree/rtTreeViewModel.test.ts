@@ -48,8 +48,34 @@ describe('buildRtTreeModel', () => {
     expect(tree[0].children?.[0].label).toBe('ROI 5');
   });
 
+  it('nests RTPLAN beams under the RTPLAN node (6th node type)', () => {
+    const tree = buildRtTreeModel([
+      {
+        displaySetInstanceUID: 'rp2',
+        Modality: 'RTPLAN',
+        SeriesDescription: 'IMRT Plan',
+        rtPlan: {
+          beams: [
+            { number: 1, name: 'AP' },
+            { number: 2, name: 'PA' },
+          ],
+        },
+      },
+    ]);
+    const rp = tree.find(n => n.type === 'rtplan');
+    expect(rp?.children?.map(c => c.label)).toEqual(['AP', 'PA']);
+    expect(rp?.children?.every(c => c.type === 'beam')).toBe(true);
+  });
+
+  it('falls back to synthetic beam labels', () => {
+    const tree = buildRtTreeModel([
+      { displaySetInstanceUID: 'rp3', Modality: 'RTPLAN', rtPlan: { beams: [{ number: 7 }] } },
+    ]);
+    expect(tree[0].children?.[0].label).toBe('Beam 7');
+  });
+
   it('counts nodes recursively', () => {
-    // rtstruct(1) + 2 ROIs + rtdose(1) + rtplan(1) = 5
+    // rtstruct(1) + 2 ROIs + rtdose(1) + rtplan(1, no beams) = 5
     expect(countRtNodes(buildRtTreeModel(displaySets))).toBe(5);
   });
 
