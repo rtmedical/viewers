@@ -54,6 +54,19 @@ export interface RtPlanBeam {
   meterset?: number;
   /** BeamDose per fraction (Gy), joined from the fraction group. */
   beamDoseGy?: number;
+  // --- Eclipse "Fields" Info Window columns (from the first control point) ---
+  /** SourceToSurfaceDistance in cm (DICOM stores mm). */
+  ssdCm?: number;
+  /** IsocenterPosition [x, y, z] in mm. */
+  isocenter?: [number, number, number];
+  /** X jaw positions [X1, X2] in cm (BeamLimitingDevicePositionSequence ASYMX/X). */
+  jawX?: [number, number];
+  /** Y jaw positions [Y1, Y2] in cm (BeamLimitingDevicePositionSequence ASYMY/Y). */
+  jawY?: [number, number];
+  /** True when the beam carries an MLC (BeamLimitingDeviceSequence has MLCX/MLCY). */
+  hasMlc?: boolean;
+  /** FractionGroupNumber this beam belongs to (Eclipse "Group" column). */
+  fractionGroupNumber?: number;
 }
 
 export interface RtPlanFractionGroup {
@@ -98,6 +111,37 @@ function toNum(value: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/** Coerce a multi-valued DICOM numeric (DS array) to number[] (drops non-finite). */
+function toNumArray(value: unknown): number[] {
+  return toArray(value)
+    .map(v => {
+      const n = Number(v as any);
+      return Number.isFinite(n) ? n : undefined;
+    })
+    .filter((n): n is number => n != null);
+}
+
+/**
+ * First [pos0, pos1] jaw pair (in cm) from a control point's
+ * BeamLimitingDevicePositionSequence matching one of `types`. DICOM stores the
+ * positions in mm; Eclipse displays cm, so divide by 10.
+ */
+function jawPositionsCm(
+  cp0: Record<string, any> | undefined,
+  types: string[]
+): [number, number] | undefined {
+  for (const d of toArray(cp0?.BeamLimitingDevicePositionSequence)) {
+    const t = ((d as any)?.RTBeamLimitingDeviceType || '').toUpperCase();
+    if (types.includes(t)) {
+      const pos = toNumArray((d as any)?.LeafJawPositions);
+      if (pos.length >= 2) {
+        return [pos[0] / 10, pos[1] / 10];
+      }
+    }
+  }
+  return undefined;
+}
+
 function energyLabel(radiationType?: string, nominalEnergy?: number): string | undefined {
   if (nominalEnergy == null) {
     return undefined;
@@ -136,6 +180,8 @@ export function parseRtPlan(instance: Record<string, any>): RtPlan {
   plan.beams = toArray(instance.BeamSequence).map((b: any) => {
     const cp0 = toArray(b?.ControlPointSequence)[0] as Record<string, any> | undefined;
     const nominalEnergy = toNum(cp0?.NominalBeamEnergy);
+    const iso = toNumArray(cp0?.IsocenterPosition);
+    const ssdMm = toNum(cp0?.SourceToSurfaceDistance);
     const beam: RtPlanBeam = {
       number: toNum(b?.BeamNumber),
       name: b?.BeamName,
@@ -151,6 +197,13 @@ export function parseRtPlan(instance: Record<string, any>): RtPlan {
       numberOfControlPoints: toNum(b?.NumberOfControlPoints),
       numberOfWedges: toNum(b?.NumberOfWedges),
       numberOfBlocks: toNum(b?.NumberOfBlocks),
+      ssdCm: ssdMm != null ? ssdMm / 10 : undefined,
+      isocenter: iso.length >= 3 ? [iso[0], iso[1], iso[2]] : undefined,
+      jawX: jawPositionsCm(cp0, ['X', 'ASYMX']),
+      jawY: jawPositionsCm(cp0, ['Y', 'ASYMY']),
+      hasMlc: toArray(b?.BeamLimitingDeviceSequence).some(d =>
+        /MLC/.test(((d as any)?.RTBeamLimitingDeviceType || '').toUpperCase())
+      ),
     };
     if (beam.number != null) {
       beamByNumber.set(beam.number, beam);
@@ -160,6 +213,7 @@ export function parseRtPlan(instance: Record<string, any>): RtPlan {
 
   // ---- Fraction groups; join meterset/dose onto beams ----
   plan.fractionGroups = toArray(instance.FractionGroupSequence).map((fg: any) => {
+    const fgNumber = toNum(fg?.FractionGroupNumber);
     let fractionDoseGy: number | undefined;
     for (const rb of toArray(fg?.ReferencedBeamSequence)) {
       const refNum = toNum((rb as any)?.ReferencedBeamNumber);
@@ -169,13 +223,14 @@ export function parseRtPlan(instance: Record<string, any>): RtPlan {
         const beam = beamByNumber.get(refNum)!;
         if (meterset != null) beam.meterset = meterset;
         if (beamDose != null) beam.beamDoseGy = beamDose;
+        beam.fractionGroupNumber = fgNumber;
       }
       if (beamDose != null) {
         fractionDoseGy = (fractionDoseGy ?? 0) + beamDose;
       }
     }
     return {
-      number: toNum(fg?.FractionGroupNumber),
+      number: fgNumber,
       numberOfFractionsPlanned: toNum(fg?.NumberOfFractionsPlanned),
       numberOfBeams: toNum(fg?.NumberOfBeams),
       fractionDoseGy,
@@ -206,6 +261,7 @@ export function parseRtPlan(instance: Record<string, any>): RtPlan {
 /** Build a CSV (one row per beam) for export. Pure and testable. */
 export function buildRtPlanCsv(plan: RtPlan): string {
   const header = [
+    'Group',
     'Beam',
     'Name',
     'Type',
@@ -215,6 +271,8 @@ export function buildRtPlanCsv(plan: RtPlan): string {
     'Gantry',
     'Collimator',
     'Couch',
+    'MLC',
+    'SSD(cm)',
     'MU',
     'BeamDose(Gy)',
   ];
@@ -224,6 +282,7 @@ export function buildRtPlanCsv(plan: RtPlan): string {
   };
   const rows = plan.beams.map(b =>
     [
+      b.fractionGroupNumber,
       b.number,
       b.name,
       b.type,
@@ -233,6 +292,8 @@ export function buildRtPlanCsv(plan: RtPlan): string {
       b.gantryAngle,
       b.collimatorAngle,
       b.patientSupportAngle,
+      b.hasMlc ? 'MLC' : 'None',
+      b.ssdCm != null ? b.ssdCm.toFixed(1) : '',
       b.meterset,
       b.beamDoseGy,
     ]

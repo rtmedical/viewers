@@ -25,8 +25,24 @@ const sampleRtPlan = () => ({
       NumberOfControlPoints: 2,
       NumberOfWedges: 0,
       NumberOfBlocks: 0,
+      BeamLimitingDeviceSequence: [
+        { RTBeamLimitingDeviceType: 'ASYMX', NumberOfLeafJawPairs: 1 },
+        { RTBeamLimitingDeviceType: 'ASYMY', NumberOfLeafJawPairs: 1 },
+        { RTBeamLimitingDeviceType: 'MLCX', NumberOfLeafJawPairs: 60 },
+      ],
       ControlPointSequence: [
-        { NominalBeamEnergy: '6', GantryAngle: '0', BeamLimitingDeviceAngle: '0', PatientSupportAngle: '0' },
+        {
+          NominalBeamEnergy: '6',
+          GantryAngle: '0',
+          BeamLimitingDeviceAngle: '0',
+          PatientSupportAngle: '0',
+          SourceToSurfaceDistance: '905.3',
+          IsocenterPosition: ['-12.5', '34', '-105.1'],
+          BeamLimitingDevicePositionSequence: [
+            { RTBeamLimitingDeviceType: 'ASYMX', LeafJawPositions: ['-43', '46'] },
+            { RTBeamLimitingDeviceType: 'ASYMY', LeafJawPositions: ['-57', '44'] },
+          ],
+        },
       ],
     },
     {
@@ -91,6 +107,23 @@ describe('parseRtPlan', () => {
     expect(p.beams[0].meterset).toBe(120.5);
     expect(p.beams[0].beamDoseGy).toBe(1);
     expect(p.beams[1].meterset).toBe(100);
+  });
+
+  it('parses Eclipse "Fields" columns: SSD (cm), isocenter, jaws (cm), MLC, group', () => {
+    const p = parseRtPlan(sampleRtPlan());
+    const b1 = p.beams[0];
+    expect(b1.ssdCm).toBeCloseTo(90.53, 2); // 905.3 mm -> cm
+    expect(b1.isocenter).toEqual([-12.5, 34, -105.1]); // mm, verbatim
+    expect(b1.jawX).toEqual([-4.3, 4.6]); // mm -> cm
+    expect(b1.jawY).toEqual([-5.7, 4.4]);
+    expect(b1.hasMlc).toBe(true);
+    expect(b1.fractionGroupNumber).toBe(1);
+    // Beam 2 has no BLD info -> those columns stay undefined, MLC false.
+    expect(p.beams[1].ssdCm).toBeUndefined();
+    expect(p.beams[1].isocenter).toBeUndefined();
+    expect(p.beams[1].jawX).toBeUndefined();
+    expect(p.beams[1].hasMlc).toBe(false);
+    expect(p.beams[1].fractionGroupNumber).toBe(1);
   });
 
   it('computes fraction-group fraction dose and plan totals', () => {
