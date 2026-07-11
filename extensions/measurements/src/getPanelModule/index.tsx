@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import MeasurementsPanel from './MeasurementsPanel';
+import LineProfilePanel from './LineProfilePanel';
 
 interface PanelModuleParams {
   servicesManager?: { services: Record<string, any> };
@@ -19,6 +20,13 @@ function getPanelModule(_params: PanelModuleParams) {
       iconLabel: 'Measurements',
       label: 'Advanced Measurements',
       component: () => <MeasurementsPanel />,
+    },
+    {
+      name: 'lineProfile',
+      iconName: 'tab-linear',
+      iconLabel: 'Perfil',
+      label: 'Perfil de Densidade',
+      component: () => <LineProfilePanel />,
     },
   ];
 }
