@@ -28,6 +28,7 @@ import {
   modeInstance as basicModeInstance,
   onModeEnter as basicOnModeEnter,
   onModeExit as basicOnModeExit,
+  sopClassHandlers as basicSopClassHandlers,
   modeFactory,
 } from '@ohif/mode-basic';
 
@@ -55,7 +56,22 @@ export const extensionDependencies = {
   '@ohif/extension-rt-isodose': '^3.0.0',
   '@ohif/extension-rt-fusion-timeline': '^3.0.0',
   '@ohif/extension-rt-print': '^3.0.0',
+  '@ohif/extension-rt-record': '^3.0.0',
 };
+
+/**
+ * SOP Class handlers used to CREATE display sets in this mode. Mode.tsx calls
+ * displaySetService.init(extensionManager, mode.sopClassHandlers), so a handler
+ * that isn't listed here never runs — the RTPLAN/RT-record objects would fall to
+ * the "unsupported" handler and their parsed models (ds.rtPlan, ds.rtRecord)
+ * would never be attached, leaving the Ficha/Record panels empty. RTSTRUCT/RTDOSE
+ * are already handled by the cornerstone-dicom-rt handler inherited from basic.
+ */
+export const sopClassHandlers = [
+  ...basicSopClassHandlers,
+  '@ohif/extension-rt-plan.sopClassHandlerModule.rtplan',
+  '@ohif/extension-rt-record.sopClassHandlerModule.rtRecord',
+];
 
 /**
  * Planning layout: study browser left; right stack ordered for an RT planning
@@ -193,6 +209,7 @@ export const modeInstance = {
   displayName: 'Radioterapia',
   hide: false,
   routes: [radiotherapyRoute],
+  sopClassHandlers,
   toolbarSections: radiotherapyToolbarSections,
   onModeEnter,
   onModeExit,
