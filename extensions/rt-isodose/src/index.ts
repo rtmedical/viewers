@@ -10,6 +10,7 @@
  * an integration follow-up.
  */
 export * from './isodose';
+export * from './doseBands';
 
 import getPanelModule from './getPanelModule';
 
