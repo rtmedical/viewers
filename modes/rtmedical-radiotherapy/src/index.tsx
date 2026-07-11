@@ -63,6 +63,8 @@ export const extensionDependencies = {
   '@ohif/extension-measurements': '^3.0.0',
   // RTV-146 (Wave 3a): RTSTRUCT-in-MPR command (contour→labelmap).
   '@ohif/extension-rt-struct': '^3.0.0',
+  // RTV Wave 4: TPS-style Eclipse layout (custom ViewerLayout + Info Window).
+  '@ohif/extension-rt-tps': '^3.0.0',
 };
 
 /**
@@ -88,11 +90,18 @@ export const sopClassHandlers = [
  */
 export const radiotherapyLayout = {
   ...basicLayout,
+  // RTV Wave 4: TPS-style Eclipse layout (custom layoutTemplateModule) — header +
+  // left course tree + center MPR + Info Window bottom bar.
+  id: '@ohif/extension-rt-tps.layoutTemplateModule.tps',
   props: {
     ...basicLayout.props,
+    // Left = Eclipse Context Window: study browser + RT course tree (Scope).
+    leftPanels: [...basicLayout.props.leftPanels, rtmedical.rtTree],
+    leftPanelClosed: false,
     rightPanels: [
-      rtmedical.plan,
-      rtmedical.rtTree,
+      // rtTree moved to the LEFT (Eclipse Context Window). Ficha/DVH/Isodoses
+      // now live in the bottom Info Window; the right stack keeps segmentation
+      // + documentation panels.
       cornerstone.segmentation,
       rtmedical.dvh,
       rtmedical.isodose,
