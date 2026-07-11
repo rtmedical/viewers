@@ -11,6 +11,7 @@ import { RT_NAMESPACE, rtPtBR, rtEn } from './src/i18n/rtPtBR';
 import { defaultBranding } from './src/whiteLabeling/defaultBranding';
 import { buildThemeCssVars } from './src/whiteLabeling/applyThemeOverride';
 import { applyCarbonTheme, applyCarbonIconStyle } from './src/whiteLabeling/carbonTheme';
+import { applyCarbonIcons } from './src/whiteLabeling/carbonIcons';
 
 export default {
   id: 'rtmedical-theme',
@@ -28,7 +29,9 @@ export default {
         // autoseg Carbon look. Icons use currentColor, so they follow along.
         applyCarbonTheme();
         applyCarbonIconStyle();
+        applyCarbonIcons();
         // Tenant white-labeling accent vars (RTV-156) layered on top.
+
         const vars = buildThemeCssVars(defaultBranding.theme);
         Object.entries(vars).forEach(([name, value]) =>
           document.documentElement.style.setProperty(name, value)
