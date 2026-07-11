@@ -10,6 +10,7 @@ import i18n from 'i18next';
 import { RT_NAMESPACE, rtPtBR, rtEn } from './src/i18n/rtPtBR';
 import { defaultBranding } from './src/whiteLabeling/defaultBranding';
 import { buildThemeCssVars } from './src/whiteLabeling/applyThemeOverride';
+import { applyCarbonTheme } from './src/whiteLabeling/carbonTheme';
 
 export default {
   id: 'rtmedical-theme',
@@ -22,6 +23,11 @@ export default {
     // :root CSS variables. Tenant white-labeling (RTV-156) overrides these.
     try {
       if (typeof document !== 'undefined') {
+        // RTV-7: repaint OHIF's ui-next design tokens with the IBM Carbon g100
+        // palette (neutral greys + focused blue) so the whole viewer matches the
+        // autoseg Carbon look. Icons use currentColor, so they follow along.
+        applyCarbonTheme();
+        // Tenant white-labeling accent vars (RTV-156) layered on top.
         const vars = buildThemeCssVars(defaultBranding.theme);
         Object.entries(vars).forEach(([name, value]) =>
           document.documentElement.style.setProperty(name, value)
