@@ -119,6 +119,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-sr"
+    },
+    {
+      "packageName": "@ohif/extension-rt-tps"
     }
   ],
   "modes": [
