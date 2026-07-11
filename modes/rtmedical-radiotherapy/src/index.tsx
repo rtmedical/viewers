@@ -4,7 +4,10 @@
  * RTV-114 extension-first / zero-fork: composes @ohif/mode-basic (which already
  * carries the RTSTRUCT/RTDOSE/RTPLAN sopClassHandlers + dicom-rt viewport) and
  * adds RT Medical panels. RT-specific tooling lands in follow-ups:
- *   - RTV-124 RT toolbar (FERRAMENTAS/LAYOUT/3D/FUSÃO/ANOTAÇÕES/LAUDO/IMPRESSÃO)
+ *   - RTV-124 RT toolbar (FERRAMENTAS/LAYOUT/3D/ANOTAÇÕES + window/pan/zoom) —
+ *     DONE via radiotherapyToolbarSections. The panel-action buttons
+ *     (FUSÃO/LAUDO/IMPRESSÃO) need custom toolbar buttons + commands and are a
+ *     follow-up; those panels are already reachable via their right-panel tabs.
  *   - RTV-125 RT panels (RT Tree, DVH, Isodoses, Fusion Timeline, RT Print, RT
  *     Report) — DONE: the panels below are contributed by the sibling @rt
  *     extensions (rt-dvh, rt-isodose, rt-fusion-timeline, rt-print) plus the
@@ -15,6 +18,7 @@
  *   - RTV-127 proper 4-up MPR hanging protocol (axial/sagittal/coronal/3D) — DONE
  *   - RTV-128 RT hotkeys, RTV-129 PYLINAC QA sidecar
  */
+import { ToolbarService } from '@ohif/core';
 import { id } from './id';
 import {
   cornerstone,
@@ -26,6 +30,8 @@ import {
   onModeExit as basicOnModeExit,
   modeFactory,
 } from '@ohif/mode-basic';
+
+const { TOOLBAR_SECTIONS } = ToolbarService;
 
 /** Panel ids contributed by RT Medical extensions (RTV-125). */
 export const rtmedical = {
@@ -131,6 +137,55 @@ function onModeExit(props) {
   basicOnModeExit.call(this, props);
 }
 
+/**
+ * RT planning toolbar (RTV-124). Keeps the full measurement/annotation tool set
+ * plus the 3D/MPR tooling the 4-up hanging protocol (RTV-127) needs — Crosshairs
+ * and TrackballRotate — which the clean radiology toolbar (RTV-117) omits.
+ * Primary row groups: FERRAMENTAS (measurement/annotation), zoom/pan, window,
+ * LAYOUT, 3D (Crosshairs), and MoreTools. Only these three sections are
+ * overridden; the viewport action-menu sections inherit from @ohif/mode-basic.
+ */
+export const radiotherapyToolbarSections = {
+  ...basicModeInstance.toolbarSections,
+  [TOOLBAR_SECTIONS.primary]: [
+    'MeasurementTools',
+    'Zoom',
+    'Pan',
+    'WindowLevel',
+    'Layout',
+    'Crosshairs',
+    'MoreTools',
+  ],
+  // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
+  MeasurementTools: [
+    'Length',
+    'Bidirectional',
+    'Angle',
+    'CobbAngle',
+    'EllipticalROI',
+    'RectangleROI',
+    'CircleROI',
+    'PlanarFreehandROI',
+    'ArrowAnnotate',
+  ],
+  // 3D/MPR + view manipulation for planning review.
+  MoreTools: [
+    'Reset',
+    'rotate-right',
+    'flipHorizontal',
+    'invert',
+    'TrackballRotate',
+    'StackScroll',
+    'ImageSliceSync',
+    'ReferenceLines',
+    'Magnify',
+    'Probe',
+    'Cine',
+    'Capture',
+    'TagBrowser',
+  ],
+};
+
 export const modeInstance = {
   ...basicModeInstance,
   id,
@@ -138,6 +193,7 @@ export const modeInstance = {
   displayName: 'Radioterapia',
   hide: false,
   routes: [radiotherapyRoute],
+  toolbarSections: radiotherapyToolbarSections,
   onModeEnter,
   onModeExit,
   // RTV-127: 4-up MPR (axial/sagittal/coronal/3D-bone) from rtmedical-theme.
