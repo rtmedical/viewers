@@ -9,7 +9,9 @@
  *     Report) — DONE: the panels below are contributed by the sibling @rt
  *     extensions (rt-dvh, rt-isodose, rt-fusion-timeline, rt-print) plus the
  *     rtmedical-theme RT Tree/Laudo panels, wired into the right-panel stack.
- *   - RTV-126 auto-load RT data on mode enter
+ *   - RTV-126 auto-load RT data (FICHA/DVH/CONTORNO) on mode enter — DONE:
+ *     onModeEnter reveals the matching RT panel as soon as an RTPLAN/RTDOSE/
+ *     RTSTRUCT display set is present (the panels self-parse on render).
  *   - RTV-127 proper 4-up MPR hanging protocol (axial/sagittal/coronal/3D) — DONE
  *   - RTV-128 RT hotkeys, RTV-129 PYLINAC QA sidecar
  */
@@ -20,6 +22,8 @@ import {
   basicRoute,
   extensionDependencies as basicDependencies,
   modeInstance as basicModeInstance,
+  onModeEnter as basicOnModeEnter,
+  onModeExit as basicOnModeExit,
   modeFactory,
 } from '@ohif/mode-basic';
 
@@ -28,6 +32,7 @@ export const rtmedical = {
   keyImages: '@ohif/extension-rtmedical-key-images.panelModule.keyImages',
   laudo: 'rtmedical-theme.panelModule.laudo',
   rtTree: 'rtmedical-theme.panelModule.rtTree',
+  plan: '@ohif/extension-rt-plan.panelModule.rtPlan',
   dvh: '@ohif/extension-rt-dvh.panelModule.dvh',
   isodose: '@ohif/extension-rt-isodose.panelModule.isodose',
   fusionTimeline: '@ohif/extension-rt-fusion-timeline.panelModule.fusionTimeline',
@@ -39,6 +44,7 @@ export const extensionDependencies = {
   '@ohif/extension-rtmedical-theme': '^3.0.0',
   '@ohif/extension-rtmedical-key-images': '^3.0.0',
   // RTV-125: RT analysis panels contributed by the sibling @rt extensions.
+  '@ohif/extension-rt-plan': '^3.0.0',
   '@ohif/extension-rt-dvh': '^3.0.0',
   '@ohif/extension-rt-isodose': '^3.0.0',
   '@ohif/extension-rt-fusion-timeline': '^3.0.0',
@@ -57,6 +63,7 @@ export const radiotherapyLayout = {
   props: {
     ...basicLayout.props,
     rightPanels: [
+      rtmedical.plan,
       rtmedical.rtTree,
       cornerstone.segmentation,
       rtmedical.dvh,
@@ -77,6 +84,53 @@ export const radiotherapyRoute = {
   layoutInstance: radiotherapyLayout,
 };
 
+/**
+ * RTV-126 — RT data auto-load. When the modality on the left is present, reveal
+ * the RT panel that parses it so the plan/dose/contour data show without a
+ * manual click. Priority is plan → dose → contour: the highest-priority
+ * modality present wins the active tab. The panels self-parse their display
+ * sets on render, so activating the panel *is* the "load".
+ */
+const RT_AUTOLOAD = [
+  { modality: 'RTPLAN', panelId: rtmedical.plan }, // FICHA
+  { modality: 'RTDOSE', panelId: rtmedical.dvh }, // DVH
+  { modality: 'RTSTRUCT', panelId: rtmedical.rtTree }, // CONTORNO
+];
+
+function activateRtPanel(panelService, displaySets = []) {
+  const modalities = new Set((displaySets || []).map(ds => ds?.Modality).filter(Boolean));
+  const rule = RT_AUTOLOAD.find(r => modalities.has(r.modality));
+  if (rule) {
+    panelService.activatePanel(rule.panelId, true);
+  }
+}
+
+/** Extends @ohif/mode-basic's onModeEnter with RT auto-reveal (RTV-126). */
+function onModeEnter(props) {
+  basicOnModeEnter.call(this, props);
+
+  const { servicesManager } = props;
+  const { displaySetService, panelService } = servicesManager.services;
+
+  // Reveal RT data already present when the mode is entered...
+  activateRtPanel(panelService, displaySetService.getActiveDisplaySets());
+
+  // ...and whenever new RT display sets arrive.
+  this._rtAutoloadSubscriptions = [
+    displaySetService.subscribe(
+      displaySetService.EVENTS.DISPLAY_SETS_ADDED,
+      ({ displaySetsAdded }) => activateRtPanel(panelService, displaySetsAdded)
+    ),
+  ];
+}
+
+/** Tears down the RTV-126 subscription, then runs the base onModeExit. */
+function onModeExit(props) {
+  (this._rtAutoloadSubscriptions || []).forEach(sub => sub?.unsubscribe?.());
+  this._rtAutoloadSubscriptions = [];
+  basicOnModeExit.call(this, props);
+}
+
 export const modeInstance = {
   ...basicModeInstance,
   id,
@@ -84,6 +138,8 @@ export const modeInstance = {
   displayName: 'Radioterapia',
   hide: false,
   routes: [radiotherapyRoute],
+  onModeEnter,
+  onModeExit,
   // RTV-127: 4-up MPR (axial/sagittal/coronal/3D-bone) from rtmedical-theme.
   hangingProtocol: 'rt-radiotherapy-4up',
   extensions: extensionDependencies,
