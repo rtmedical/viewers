@@ -208,6 +208,8 @@ export const radiotherapyToolbarSections = {
     'rtPrintPanel',
     // RTV-146 (Wave 3a): render RTSTRUCT in MPR (contour→labelmap).
     'rtStructMpr',
+    // Wave 4 (Phase 4): render RTSTRUCT as 3D Surface in the Model View.
+    'rtStruct3D',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -277,6 +279,17 @@ const rtPanelButtons = [
       label: 'Estruturas MPR',
       tooltip: 'Renderizar estruturas RT em MPR (labelmap)',
       commands: 'showRtStructInMpr',
+    },
+  },
+  {
+    // Wave 4 (Phase 4): render RTSTRUCT as a 3D Surface in the Model View.
+    id: 'rtStruct3D',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-3d-rotate',
+      label: 'Estruturas 3D',
+      tooltip: 'Renderizar estruturas RT como superfície 3D (Model View)',
+      commands: 'showRtStructIn3D',
     },
   },
   {
