@@ -3,8 +3,9 @@
  * (RTSTRUCT/RTPLAN/RTDOSE/RTIMAGE + structure-set ROIs). Subscribes to the
  * native DisplaySetService and renders the tested buildRtTreeModel with
  * expand/collapse. RTV-114: public service APIs only; display logic in the
- * React-free view model. Click-to-viewport navigation + DVH/beam nodes are
- * follow-ups (RT viewport commands / dose computation).
+ * React-free view model. RTPLAN beam nodes are included (RTV-133); DVH nodes
+ * and click-to-viewport navigation are follow-ups (dose computation / RT
+ * viewport commands).
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { buildRtTreeModel, type RtTreeNode } from './rtTreeViewModel';
@@ -28,6 +29,7 @@ const NODE_ICON: Record<string, string> = {
   rtdose: '▦',
   rtimage: '▢',
   roi: '•',
+  beam: '↯',
 };
 
 const readDisplaySets = (svc?: DisplaySetServiceLike): any[] => {
