@@ -29,6 +29,7 @@ import {
   onModeEnter as basicOnModeEnter,
   onModeExit as basicOnModeExit,
   sopClassHandlers as basicSopClassHandlers,
+  toolbarButtons as basicToolbarButtons,
   modeFactory,
 } from '@ohif/mode-basic';
 
@@ -171,6 +172,10 @@ export const radiotherapyToolbarSections = {
     'Layout',
     'Crosshairs',
     'MoreTools',
+    // RTV-124: quick-access buttons that reveal the RT panels.
+    'rtFusionPanel',
+    'rtLaudoPanel',
+    'rtPrintPanel',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -203,6 +208,47 @@ export const radiotherapyToolbarSections = {
   ],
 };
 
+/**
+ * RTV-124 panel-action buttons: FUSÃO / LAUDO / IMPRESSÃO reveal the matching RT
+ * side panel via the rtmedical-theme `activateRtPanel` command (which wraps
+ * panelService.activatePanel — the same call the RTV-126 auto-reveal uses). Uses
+ * the stock `ohif.toolButton` uiType, so no getToolbarModule is needed.
+ */
+const rtPanelButtons = [
+  {
+    id: 'rtFusionPanel',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-fusion-color',
+      label: 'Fusão',
+      tooltip: 'Abrir painel de Fusão',
+      commands: [{ commandName: 'activateRtPanel', commandOptions: { panelId: rtmedical.fusionTimeline } }],
+    },
+  },
+  {
+    id: 'rtLaudoPanel',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tab-studies',
+      label: 'Laudo',
+      tooltip: 'Abrir painel de Laudo',
+      commands: [{ commandName: 'activateRtPanel', commandOptions: { panelId: rtmedical.laudo } }],
+    },
+  },
+  {
+    id: 'rtPrintPanel',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-capture',
+      label: 'Impressão',
+      tooltip: 'Abrir painel de Impressão',
+      commands: [{ commandName: 'activateRtPanel', commandOptions: { panelId: rtmedical.rtPrint } }],
+    },
+  },
+];
+
+export const radiotherapyToolbarButtons = [...basicToolbarButtons, ...rtPanelButtons];
+
 export const modeInstance = {
   ...basicModeInstance,
   id,
@@ -211,6 +257,7 @@ export const modeInstance = {
   hide: false,
   routes: [radiotherapyRoute],
   sopClassHandlers,
+  toolbarButtons: radiotherapyToolbarButtons,
   toolbarSections: radiotherapyToolbarSections,
   onModeEnter,
   onModeExit,

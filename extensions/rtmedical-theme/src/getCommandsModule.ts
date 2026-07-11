@@ -31,11 +31,23 @@ export default function getCommandsModule({
   const actions = {
     nextStudyInWorklist: (): boolean => navigateToStudy(getQueue()?.getNextStudyUID()),
     prevStudyInWorklist: (): boolean => navigateToStudy(getQueue()?.getPrevStudyUID()),
+    // RTV-124: reveal an RT side panel by id from a toolbar button (FUSÃO/LAUDO/
+    // IMPRESSÃO). Same one-liner the RTV-126 auto-reveal uses; SidePanelWithServices
+    // listens for ACTIVATE_PANEL and switches the tab even when collapsed.
+    activateRtPanel: ({ panelId }: { panelId?: string }): boolean => {
+      const { panelService } = servicesManager.services;
+      if (!panelService || !panelId) {
+        return false;
+      }
+      panelService.activatePanel(panelId, true);
+      return true;
+    },
   };
 
   const definitions = {
     nextStudyInWorklist: { commandFn: actions.nextStudyInWorklist },
     prevStudyInWorklist: { commandFn: actions.prevStudyInWorklist },
+    activateRtPanel: { commandFn: actions.activateRtPanel },
   };
 
   return { actions, definitions, defaultContext: 'DEFAULT' };
