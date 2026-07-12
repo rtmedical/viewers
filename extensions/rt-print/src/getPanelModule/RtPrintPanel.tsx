@@ -84,7 +84,7 @@ export function RtPrintPanel(): React.ReactElement {
         {layout.zones.map(z => (
           <div
             key={z.index}
-            className="absolute flex items-center justify-center border border-sky-400/50 bg-sky-400/10 text-[10px] text-sky-200"
+            className="absolute flex items-center justify-center border border-[#6f6f6f]/60 bg-white/5 text-[10px] text-[#c6c6c6]"
             style={{
               left: z.xMm * scale,
               top: z.yMm * scale,

@@ -57,7 +57,7 @@ export function CommonHeader({
             aria-label="Voltar"
             data-cy="rt-common-header-return"
             onClick={onReturn}
-            className="rounded px-1 py-1 text-white/80 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--rt-color-primary,#348cfd)]"
+            className="rounded px-1 py-1 text-white/80 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--rt-color-primary,#4589ff)]"
           >
             ←
           </button>

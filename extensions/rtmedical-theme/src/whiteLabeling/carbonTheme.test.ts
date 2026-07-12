@@ -10,9 +10,9 @@ describe('carbonTheme (RTV-7)', () => {
     for (const token of ['--background', '--foreground', '--primary', '--muted', '--border', '--card']) {
       expect(CARBON_G100_TOKENS[token]).toBeDefined();
     }
-    // Carbon Gray100 background, Carbon Blue60 primary, square corners.
+    // Carbon Gray100 background, Carbon Blue50 primary (autoseg accent), square corners.
     expect(CARBON_G100_TOKENS['--background']).toBe('0 0% 8.6%');
-    expect(CARBON_G100_TOKENS['--primary']).toBe('219 99% 53%');
+    expect(CARBON_G100_TOKENS['--primary']).toBe('218 100% 64%');
     expect(CARBON_G100_TOKENS['--radius']).toBe('0rem');
   });
 
