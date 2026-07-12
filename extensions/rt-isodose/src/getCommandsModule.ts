@@ -7,7 +7,7 @@
  * (no viewport mutation). The RTDOSE viewport colorwash awaits a dose-aware
  * volume builder (the next Rust/WASM step) — see doseBands / doseBandsWasm.
  */
-import { volumeLoader, cache as csCache } from '@cornerstonejs/core';
+import { volumeLoader, cache as csCache, eventTarget, Enums } from '@cornerstonejs/core';
 import { doseToBandLabelmap as doseToBandLabelmapJs } from './doseBands';
 import { initDoseKernel } from './doseBandsWasm';
 import { dose_to_band_labelmap } from '../rust/pkg/rt_dose_kernel.js';
@@ -59,7 +59,11 @@ function getCommandsModule({
      * `Isodose` colormap (DoseGridScaling already applied by the loader). Renders
      * natively in every MPR plane. Display-only.
      */
-    showDoseWash: async ({ colormap = 'Isodose', opacity = 0.5 }: { colormap?: string; opacity?: number } = {}) => {
+    showDoseWash: async ({
+      colormap = 'Isodose',
+      opacity = 0.4,
+      threshold = 0.1,
+    }: { colormap?: string; opacity?: number; threshold?: number } = {}) => {
       const { uiNotificationService } = servicesManager.services;
       const notify = (message: string, type = 'info') =>
         uiNotificationService?.show?.({ title: 'Dose (RTDOSE)', message, type });
@@ -94,12 +98,42 @@ function getCommandsModule({
         }
         await vol?.load?.();
 
-        // Max dose for the colormap VOI (strided scan; DoseGridScaling applied).
-        const scalarData: Float32Array = vol?.voxelManager?.getCompleteScalarDataArray?.();
-        if (scalarData?.length) {
-          for (let i = 0; i < scalarData.length; i += 101) {
-            if (scalarData[i] > maxDose) maxDose = scalarData[i];
+        // Max dose drives the colormap VOI + the low-dose transparency threshold.
+        // (Values are the RTDOSE stored pixels; the threshold is a *fraction* of
+        // the max, so it's correct whether or not DoseGridScaling was applied.)
+        // A streaming volume's load() resolves before every frame has arrived, so
+        // a scan here can race to ~0; wait for the load-complete event (or a short
+        // timeout) when the first scan is empty, then rescan. Cached/complete
+        // volumes scan non-zero immediately and skip the wait.
+        const scanMaxDose = (): number => {
+          const sd: Float32Array | undefined = vol?.voxelManager?.getCompleteScalarDataArray?.();
+          let m = 0;
+          if (sd?.length) {
+            for (let i = 0; i < sd.length; i += 101) {
+              if (sd[i] > m) m = sd[i];
+            }
           }
+          return m;
+        };
+        maxDose = scanMaxDose();
+        if (maxDose <= 0) {
+          await new Promise<void>(resolve => {
+            let settled = false;
+            const evt = Enums.Events.IMAGE_VOLUME_LOADING_COMPLETED;
+            const done = () => {
+              if (settled) return;
+              settled = true;
+              eventTarget.removeEventListener(evt, handler);
+              resolve();
+            };
+            const handler = (e: any) => {
+              const id = e?.detail?.volumeId ?? e?.detail?.volume?.volumeId;
+              if (!id || id === volumeId) done();
+            };
+            eventTarget.addEventListener(evt, handler);
+            setTimeout(done, 4000);
+          });
+          maxDose = scanMaxDose();
         }
 
         // Patch the z-spacing from GridFrameOffsetVector (frame step, mm).
@@ -125,13 +159,43 @@ function getCommandsModule({
       }
 
       const voiRange = maxDose > 0 ? { lower: 0, upper: maxDose } : undefined;
+      // Eclipse-style wash: keep cold regions fully transparent below a low-dose
+      // threshold (default 10% of max) so the CT reads through, then a flat fill
+      // above it — instead of a uniform wash over the whole grid (which looked
+      // saturated). `opacity` is a piecewise transfer function over the dose
+      // (Gy) scalar range; fall back to a flat scalar opacity if this CS3D build
+      // rejects the array form.
+      const washColormap =
+        maxDose > 0 && threshold > 0
+          ? (() => {
+              const thr = threshold * maxDose;
+              const eps = maxDose * 1e-3;
+              return {
+                name: colormap,
+                opacity: [
+                  { value: 0, opacity: 0 },
+                  { value: Math.max(0, thr - eps), opacity: 0 },
+                  { value: thr, opacity },
+                  { value: maxDose, opacity },
+                ],
+              };
+            })()
+          : { name: colormap, opacity };
       let added = 0;
       for (const vp of vps) {
         try {
           if (!vp.getAllVolumeIds?.().includes(volumeId)) {
             await vp.addVolumes([{ volumeId }], false, true);
           }
-          vp.setProperties({ colormap: { name: colormap, opacity }, ...(voiRange ? { voiRange } : {}) }, volumeId);
+          try {
+            vp.setProperties({ colormap: washColormap, ...(voiRange ? { voiRange } : {}) }, volumeId);
+          } catch (tfErr) {
+            // piecewise opacity unsupported → flat opacity
+            vp.setProperties(
+              { colormap: { name: colormap, opacity }, ...(voiRange ? { voiRange } : {}) },
+              volumeId
+            );
+          }
           vp.render();
           added++;
         } catch (e) {
