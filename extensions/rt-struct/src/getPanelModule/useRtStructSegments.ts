@@ -55,6 +55,8 @@ export interface UseRtStructSegments {
   segments: RtSegment[];
   /** True once the RTSTRUCT is hydrated (a Contour segmentation exists). */
   hydrated: boolean;
+  /** The active (selected) segment index, autoseg-style row highlight. */
+  activeSegmentIndex?: number;
   setVisibility: (segmentIndex: number, visible: boolean) => void;
   setGroupVisibility: (segmentIndexes: number[], visible: boolean) => void;
   setActive: (segmentIndex: number) => void;
@@ -70,6 +72,9 @@ export function useRtStructSegments(servicesManager: any): UseRtStructSegments {
   );
   // Bumped on any segmentation event to force a re-read of per-segment state.
   const [tick, setTick] = useState(0);
+  // Active segment (autoseg-style row highlight). Set locally on click for an
+  // instant response, then resynced from cornerstone on segmentation events.
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (!segmentationService?.subscribe) {
@@ -118,6 +123,23 @@ export function useRtStructSegments(servicesManager: any): UseRtStructSegments {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segmentationService, segmentationId, tick]);
 
+  // Resync the active segment from the cornerstone segment-index state
+  // (segmentationService.setActiveSegment delegates to
+  // cstSegmentation.segmentIndex.setActiveSegmentIndex, so this is the source
+  // of truth) whenever a segmentation event bumps `tick`.
+  useEffect(() => {
+    if (!segmentationId) {
+      setActiveSegmentIndex(undefined);
+      return;
+    }
+    try {
+      const idx = cstSegmentation.segmentIndex.getActiveSegmentIndex(segmentationId);
+      setActiveSegmentIndex(Number.isFinite(idx) && (idx as number) > 0 ? (idx as number) : undefined);
+    } catch {
+      /* keep the locally-set value */
+    }
+  }, [segmentationId, tick]);
+
   const segments = useMemo<RtSegment[]>(() => {
     if (!segmentationId) {
       return [];
@@ -159,7 +181,9 @@ export function useRtStructSegments(servicesManager: any): UseRtStructSegments {
           /* default visible */
         }
       }
-      out.push({ segmentIndex: index, label: s.label || `ROI ${index}`, color, visible });
+      // Coerce: the RT hydration path sets label to `ROIName || ROINumber`, so
+      // an empty ROIName yields a NUMBER — keep RtSegment.label a real string.
+      out.push({ segmentIndex: index, label: String(s.label ?? '') || `ROI ${index}`, color, visible });
     });
     return out.sort((a, b) => a.segmentIndex - b.segmentIndex);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -205,6 +229,8 @@ export function useRtStructSegments(servicesManager: any): UseRtStructSegments {
       if (!segmentationId) {
         return;
       }
+      // Instant local highlight; the service call + tick resync confirm it.
+      setActiveSegmentIndex(segmentIndex);
       try {
         segmentationService.setActiveSegment(segmentationId, segmentIndex);
         setTick(t => t + 1);
@@ -221,6 +247,7 @@ export function useRtStructSegments(servicesManager: any): UseRtStructSegments {
     setSelectedId,
     segments,
     hydrated: segmentations.length > 0,
+    activeSegmentIndex,
     setVisibility,
     setGroupVisibility,
     setActive,
