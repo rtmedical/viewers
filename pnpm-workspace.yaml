@@ -27,6 +27,8 @@ auditConfig:
   ignoreGhsas: []
 
 allowBuilds:
+  '@carbon/icon-helpers': false
+  '@carbon/icons-react': false
   '@scarf/scarf': true
   '@swc/core': true
   core-js: true
