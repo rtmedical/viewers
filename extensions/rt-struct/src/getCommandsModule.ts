@@ -30,8 +30,8 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
       );
       if (!contourSegs.length) {
         uiNotificationService?.show?.({
-          title: 'Estruturas RT',
-          message: 'Nenhuma RTSTRUCT hidratada. Carregue as estruturas primeiro.',
+          title: 'RT Structures',
+          message: 'No hydrated RTSTRUCT. Load the structures first.',
           type: 'info',
         });
         return false;
@@ -61,10 +61,10 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
       });
 
       uiNotificationService?.show?.({
-        title: 'Estruturas RT',
+        title: 'RT Structures',
         message: added
-          ? 'Renderizando estruturas em MPR (labelmap)…'
-          : 'Nada a renderizar.',
+          ? 'Rendering structures in MPR (labelmap)…'
+          : 'Nothing to render.',
         type: added ? 'info' : 'warning',
       });
       return added > 0;
@@ -86,8 +86,8 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
       );
       if (!contourSegs.length) {
         uiNotificationService?.show?.({
-          title: 'Estruturas RT',
-          message: 'Nenhuma RTSTRUCT hidratada. Carregue as estruturas primeiro.',
+          title: 'RT Structures',
+          message: 'No hydrated RTSTRUCT. Load the structures first.',
           type: 'info',
         });
         return false;
@@ -102,8 +102,8 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
         .filter((vp: any) => vp?.type === 'volume3d');
       if (!volume3dViewports.length) {
         uiNotificationService?.show?.({
-          title: 'Estruturas RT',
-          message: 'Nenhum viewport 3D (Model View) no layout atual.',
+          title: 'RT Structures',
+          message: 'No 3D viewport (Model View) in the current layout.',
           type: 'warning',
         });
         return false;
@@ -124,10 +124,10 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
       });
 
       uiNotificationService?.show?.({
-        title: 'Estruturas RT',
+        title: 'RT Structures',
         message: added
-          ? 'Convertendo estruturas para superfície 3D…'
-          : 'Nada a renderizar.',
+          ? 'Converting structures to a 3D surface…'
+          : 'Nothing to render.',
         type: added ? 'info' : 'warning',
       });
       return added > 0;
