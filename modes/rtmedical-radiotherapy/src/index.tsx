@@ -295,6 +295,40 @@ function onModeEnter(props) {
     /* tool group not ready / tool unavailable — non-fatal */
   }
 
+  // Autoseg-style MPR: turn Crosshairs ON once the viewports are ready, so the
+  // reference lines are visible on load and dragging a line reslices the linked
+  // planes (OHIF ships Crosshairs `disabled` in the `mpr` group). Reuses the
+  // stock toolbar-toggle command (correct bindings/teardown) — zero fork.
+  const { commandsManager } = props;
+  let crosshairsOn = false;
+  const activateCrosshairs = () => {
+    if (crosshairsOn || !commandsManager) {
+      return;
+    }
+    try {
+      const mpr = toolGroupService?.getToolGroup?.('mpr');
+      if (!mpr?.hasTool?.('Crosshairs')) {
+        return;
+      }
+      const mode = mpr.getToolOptions?.('Crosshairs')?.mode;
+      if (mode == null || mode === 'Disabled') {
+        commandsManager.runCommand('toggleActiveDisabledToolbar', {
+          itemId: 'Crosshairs',
+          toolGroupIds: ['mpr'],
+        });
+      }
+      crosshairsOn = true;
+    } catch (e) {
+      /* tool group not ready yet — will retry on the next event */
+    }
+  };
+  if (cornerstoneViewportService?.subscribe && cornerstoneViewportService.EVENTS?.VIEWPORT_DATA_CHANGED) {
+    this._rtCrosshairsSub = cornerstoneViewportService.subscribe(
+      cornerstoneViewportService.EVENTS.VIEWPORT_DATA_CHANGED,
+      activateCrosshairs
+    );
+  }
+
   // Reveal RT data already present when the mode is entered...
   activateRtPanel(panelService, displaySetService.getActiveDisplaySets());
 
@@ -311,6 +345,8 @@ function onModeEnter(props) {
 function onModeExit(props) {
   (this._rtAutoloadSubscriptions || []).forEach(sub => sub?.unsubscribe?.());
   this._rtAutoloadSubscriptions = [];
+  this._rtCrosshairsSub?.unsubscribe?.();
+  this._rtCrosshairsSub = undefined;
   basicOnModeExit.call(this, props);
 }
 
