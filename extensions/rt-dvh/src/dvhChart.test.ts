@@ -47,4 +47,21 @@ describe('buildDvhChart', () => {
     expect(x).toBeLessThan(480 / 2);
     expect(y).toBeCloseTo(30, 0);
   });
+
+  it('uses each structure DICOM colour (hex) when the curve carries one', () => {
+    const colored = parseDvhFromInstance(
+      {
+        SOPClassUID: RT_DOSE_SOP_CLASS_UID,
+        DVHSequence: [
+          { DVHType: 'CUMULATIVE', DVHData: [1, 100, 1, 0], DVHReferencedROISequence: [{ ReferencedROINumber: 1 }] },
+          { DVHType: 'CUMULATIVE', DVHData: [1, 80, 1, 0], DVHReferencedROISequence: [{ ReferencedROINumber: 2 }] },
+        ],
+      },
+      new Map([[1, 'PTV'], [2, 'Bladder']]),
+      new Map<number, [number, number, number]>([[1, [255, 0, 0]]]) // only ROI 1 has a colour
+    );
+    const g = buildDvhChart(colored);
+    expect(g.series[0].color).toBe('#ff0000'); // ROI 1 -> its DICOM colour
+    expect(g.series[1].color).toBe(DVH_PALETTE[1]); // ROI 2 -> palette fallback
+  });
 });

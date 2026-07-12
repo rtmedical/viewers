@@ -10,7 +10,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@ohif/ui-next';
-import { parseDvhFromInstance, buildRoiNameMap, buildDvhCsv, DvhCurve } from '../dvhParser';
+import {
+  parseDvhFromInstance,
+  buildRoiNameMap,
+  buildRoiColorMap,
+  buildDvhCsv,
+  DvhCurve,
+} from '../dvhParser';
 import { buildDvhChart } from '../dvhChart';
 
 interface ServicesManagerLike {
@@ -24,16 +30,16 @@ const instanceOf = (ds: any) => ds?.instances?.[0] ?? ds?.instance ?? ds;
 
 function collectCurves(displaySetService: any): DvhCurve[] {
   const all = displaySetService?.getActiveDisplaySets?.() ?? displaySetService?.activeDisplaySets ?? [];
-  const roiMap = (() => {
-    const rtstruct = all.find((ds: any) => ds?.Modality === 'RTSTRUCT');
-    return rtstruct ? buildRoiNameMap(instanceOf(rtstruct)) : undefined;
-  })();
+  const rtstruct = all.find((ds: any) => ds?.Modality === 'RTSTRUCT');
+  const rtstructInst = rtstruct ? instanceOf(rtstruct) : undefined;
+  const roiMap = rtstructInst ? buildRoiNameMap(rtstructInst) : undefined;
+  const colorMap = rtstructInst ? buildRoiColorMap(rtstructInst) : undefined;
   const curves: DvhCurve[] = [];
   for (const ds of all) {
     if (ds?.Modality !== 'RTDOSE') continue;
     const inst = instanceOf(ds);
     if (inst?.DVHSequence) {
-      curves.push(...parseDvhFromInstance(inst, roiMap));
+      curves.push(...parseDvhFromInstance(inst, roiMap, colorMap));
     }
   }
   return curves;

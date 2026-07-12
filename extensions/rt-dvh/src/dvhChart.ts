@@ -32,6 +32,16 @@ export interface DvhChartGeometry {
   volTicks: { value: number; y: number }[];
 }
 
+/** [r,g,b] (0–255) -> "#rrggbb", clamped. */
+function rgbToHex(rgb: [number, number, number]): string {
+  return (
+    '#' +
+    rgb
+      .map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+
 function niceMax(v: number): number {
   if (!Number.isFinite(v) || v <= 0) return 1;
   const mag = Math.pow(10, Math.floor(Math.log10(v)));
@@ -81,7 +91,9 @@ export function buildDvhChart(
       .join(' ');
     return {
       roiName: c.roiName || (c.roiNumber != null ? `ROI ${c.roiNumber}` : `Curve ${i + 1}`),
-      color: DVH_PALETTE[i % DVH_PALETTE.length],
+      // Prefer the structure's DICOM display colour (matches Focus panel + MPR);
+      // fall back to the categorical palette when the RTSTRUCT colour is absent.
+      color: c.color ? rgbToHex(c.color) : DVH_PALETTE[i % DVH_PALETTE.length],
       polyline,
     };
   });

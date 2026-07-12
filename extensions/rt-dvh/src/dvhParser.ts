@@ -24,6 +24,8 @@ export interface DvhPoint {
 export interface DvhCurve {
   roiNumber?: number;
   roiName?: string;
+  /** ROIDisplayColor [r,g,b] (0–255) from the RTSTRUCT, when resolved. */
+  color?: [number, number, number];
   /** DVHType: CUMULATIVE | DIFFERENTIAL. */
   type?: string;
   /** DoseUnits: GY | RELATIVE. */
@@ -71,6 +73,26 @@ export function buildRoiNameMap(rtstruct: Record<string, any> | undefined): Map<
 }
 
 /**
+ * Map ROINumber -> [r,g,b] display colour from an RTSTRUCT's ROIContourSequence
+ * (`ROIDisplayColor`, keyed by `ReferencedROINumber`). Lets the DVH curves reuse
+ * each structure's DICOM colour so they match the Focus panel and MPR overlays
+ * (TPS convention), instead of an arbitrary categorical palette.
+ */
+export function buildRoiColorMap(
+  rtstruct: Record<string, any> | undefined
+): Map<number, [number, number, number]> {
+  const map = new Map<number, [number, number, number]>();
+  for (const roi of toArray(rtstruct?.ROIContourSequence)) {
+    const n = toNum((roi as any)?.ReferencedROINumber);
+    const rgb = toNumberArray((roi as any)?.ROIDisplayColor);
+    if (n != null && rgb.length >= 3) {
+      map.set(n, [rgb[0], rgb[1], rgb[2]]);
+    }
+  }
+  return map;
+}
+
+/**
  * Parse the DVHSequence of an RTDOSE instance into one curve per ROI.
  *
  * `DVHData` is a flat `[Δdose, volume, Δdose, volume, …]` list; the dose axis is
@@ -79,7 +101,8 @@ export function buildRoiNameMap(rtstruct: Record<string, any> | undefined): Map<
  */
 export function parseDvhFromInstance(
   rtdose: Record<string, any> | undefined,
-  roiNameMap?: Map<number, string>
+  roiNameMap?: Map<number, string>,
+  roiColorMap?: Map<number, [number, number, number]>
 ): DvhCurve[] {
   const curves: DvhCurve[] = [];
   for (const dvh of toArray(rtdose?.DVHSequence)) {
@@ -97,6 +120,7 @@ export function parseDvhFromInstance(
     curves.push({
       roiNumber,
       roiName: roiNumber != null ? roiNameMap?.get(roiNumber) : undefined,
+      color: roiNumber != null ? roiColorMap?.get(roiNumber) : undefined,
       type: item?.DVHType,
       doseUnits: item?.DoseUnits,
       volumeUnits: item?.DVHVolumeUnits,
