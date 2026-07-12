@@ -1,0 +1,16 @@
+{
+  "name": "rt-dose-kernel",
+  "type": "module",
+  "description": "Rust→WASM compute kernels for the RT dose viewer (iso-band rasterization). Compiled via Docker (see Dockerfile). RTV Wave 4.",
+  "version": "0.1.0",
+  "files": [
+    "rt_dose_kernel_bg.wasm",
+    "rt_dose_kernel.js",
+    "rt_dose_kernel.d.ts"
+  ],
+  "main": "rt_dose_kernel.js",
+  "types": "rt_dose_kernel.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

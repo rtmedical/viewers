@@ -11,14 +11,17 @@
  */
 export * from './isodose';
 export * from './doseBands';
+export { doseToBandLabelmapAccelerated, isDoseKernelReady } from './doseBandsWasm';
 
 import getPanelModule from './getPanelModule';
+import getCommandsModule from './getCommandsModule';
 
 const id = '@ohif/extension-rt-isodose';
 
 const rtIsodoseExtension = {
   id,
   getPanelModule,
+  getCommandsModule,
 };
 
 export default rtIsodoseExtension;
