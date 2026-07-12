@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PlanFieldsTable from './components/PlanFieldsTable';
 import PlanDoseTab from './components/PlanDoseTab';
 
@@ -6,22 +7,24 @@ import PlanDoseTab from './components/PlanDoseTab';
  * Eclipse-style "Info Window" — the bottom bar of the TPS layout (RTV Wave 4).
  *
  * Tabbed table region below the viewports, matching the Varian Eclipse External
- * Beam Planning Info Window (manual ref p28_i0.png). The leading tabs are native
- * Eclipse tables built here (Campos = per-beam field table, Dose = prescription /
- * fractionation); the remaining tabs compose the existing RT panels by module id
- * (DVH, Isodoses, Course, treatment Record). panelService only supports
- * Left/Right, so this bottom zone is rendered directly by the layout. Display-only.
+ * Beam Planning Info Window. Leading tabs are native Eclipse tables (Fields =
+ * per-beam field table, Dose = prescription/fractionation); the rest compose the
+ * existing RT panels by module id (DVH, Isodoses, Course, Record). Strings are
+ * i18n via the `RTMedical` namespace. Display-only.
  */
 
 /** Guards one tab so a single panel error can't take down the whole layout. */
-class PanelBoundary extends React.Component<{ children: React.ReactNode }, { error: boolean }> {
+class PanelBoundary extends React.Component<
+  { children: React.ReactNode; fallback: string },
+  { error: boolean }
+> {
   state = { error: false };
   static getDerivedStateFromError() {
     return { error: true };
   }
   render() {
     if (this.state.error) {
-      return <div className="text-muted-foreground p-2 text-sm">Painel indisponível.</div>;
+      return <div className="text-muted-foreground p-2 text-sm">{this.props.fallback}</div>;
     }
     return this.props.children;
   }
@@ -29,7 +32,8 @@ class PanelBoundary extends React.Component<{ children: React.ReactNode }, { err
 
 interface InfoTab {
   key: string;
-  label: string;
+  /** i18n key (RTMedical namespace) for the tab label. */
+  labelKey: string;
   /** Native component rendered here (Eclipse tables), OR ... */
   render?: (props: {
     servicesManager: any;
@@ -41,12 +45,12 @@ interface InfoTab {
 }
 
 const INFO_TABS: InfoTab[] = [
-  { key: 'fields', label: 'Campos', render: p => <PlanFieldsTable servicesManager={p.servicesManager} /> },
-  { key: 'dose', label: 'Dose', render: p => <PlanDoseTab servicesManager={p.servicesManager} /> },
-  { key: 'dvh', label: 'DVH', panelId: '@ohif/extension-rt-dvh.panelModule.dvh' },
-  { key: 'isodose', label: 'Isodoses', panelId: '@ohif/extension-rt-isodose.panelModule.isodose' },
-  { key: 'course', label: 'Curso', panelId: '@ohif/extension-rt-timeline.panelModule.courseTimeline' },
-  { key: 'record', label: 'Registro', panelId: '@ohif/extension-rt-record.panelModule.doseInformation' },
+  { key: 'fields', labelKey: 'tab_fields', render: p => <PlanFieldsTable servicesManager={p.servicesManager} /> },
+  { key: 'dose', labelKey: 'tab_dose', render: p => <PlanDoseTab servicesManager={p.servicesManager} /> },
+  { key: 'dvh', labelKey: 'tab_dvh', panelId: '@ohif/extension-rt-dvh.panelModule.dvh' },
+  { key: 'isodose', labelKey: 'tab_isodoses', panelId: '@ohif/extension-rt-isodose.panelModule.isodose' },
+  { key: 'course', labelKey: 'tab_course', panelId: '@ohif/extension-rt-timeline.panelModule.courseTimeline' },
+  { key: 'record', labelKey: 'tab_record', panelId: '@ohif/extension-rt-record.panelModule.doseInformation' },
 ];
 
 export default function InfoWindow({
@@ -58,9 +62,10 @@ export default function InfoWindow({
   extensionManager: any;
   commandsManager: any;
 }): React.ReactElement {
+  const { t } = useTranslation('RTMedical');
   const [active, setActive] = useState(INFO_TABS[0].key);
 
-  const tab = useMemo(() => INFO_TABS.find(t => t.key === active), [active]);
+  const tab = useMemo(() => INFO_TABS.find(item => item.key === active), [active]);
 
   const ComposedPanel = useMemo(() => {
     if (!tab?.panelId) {
@@ -77,24 +82,24 @@ export default function InfoWindow({
     >
       {/* Eclipse Info Window tab strip */}
       <div className="border-input bg-muted/40 flex shrink-0 items-center gap-0.5 border-b px-1">
-        {INFO_TABS.map(t => (
+        {INFO_TABS.map(item => (
           <button
-            key={t.key}
+            key={item.key}
             type="button"
-            data-cy={`rt-tps-tab-${t.key}`}
-            onClick={() => setActive(t.key)}
+            data-cy={`rt-tps-tab-${item.key}`}
+            onClick={() => setActive(item.key)}
             className={`px-3 py-1 text-sm ${
-              active === t.key
+              active === item.key
                 ? 'border-primary text-foreground border-b-2'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {t.label}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">
-        <PanelBoundary key={active}>
+        <PanelBoundary key={active} fallback={t('tab_unavailable')}>
           {tab?.render ? (
             tab.render({ servicesManager, extensionManager, commandsManager })
           ) : ComposedPanel ? (
@@ -106,7 +111,7 @@ export default function InfoWindow({
               />
             </div>
           ) : (
-            <div className="text-muted-foreground p-2 text-sm">Sem dados para esta aba.</div>
+            <div className="text-muted-foreground p-2 text-sm">{t('tab_no_data')}</div>
           )}
         </PanelBoundary>
       </div>

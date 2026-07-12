@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePlanData } from '../hooks/usePlanData';
 import { num, angle, pair, mmToCm } from '../format';
 
@@ -15,23 +16,28 @@ import { num, angle, pair, mmToCm } from '../format';
 
 interface Col {
   key: string;
+  /** English default label; also the literal shown when no `labelKey`. */
   label: string;
+  /** i18n key (RTMedical namespace) for translatable labels. */
+  labelKey?: string;
   className?: string;
 }
 
+// Universal RT terms (Group/MLC/Gantry/Coll/Couch/MU/…) stay literal English;
+// the prose columns carry an i18n key.
 const COLS: Col[] = [
   { key: 'group', label: 'Group' },
   { key: 'field', label: 'Field ID' },
-  { key: 'name', label: 'Nome' },
-  { key: 'technique', label: 'Técnica' },
-  { key: 'machine', label: 'Máquina/Energia' },
+  { key: 'name', label: 'Name', labelKey: 'col_name' },
+  { key: 'technique', label: 'Technique', labelKey: 'col_technique' },
+  { key: 'machine', label: 'Machine/Energy', labelKey: 'col_machine_energy' },
   { key: 'mlc', label: 'MLC' },
   { key: 'gantry', label: 'Gantry', className: 'text-right' },
   { key: 'coll', label: 'Coll', className: 'text-right' },
   { key: 'couch', label: 'Couch', className: 'text-right' },
   { key: 'wedge', label: 'Wedge' },
-  { key: 'fieldX', label: 'Campo X [cm]', className: 'text-right' },
-  { key: 'fieldY', label: 'Campo Y [cm]', className: 'text-right' },
+  { key: 'fieldX', label: 'Field X [cm]', labelKey: 'col_field_x', className: 'text-right' },
+  { key: 'fieldY', label: 'Field Y [cm]', labelKey: 'col_field_y', className: 'text-right' },
   { key: 'isoX', label: 'X [cm]', className: 'text-right' },
   { key: 'isoY', label: 'Y [cm]', className: 'text-right' },
   { key: 'isoZ', label: 'Z [cm]', className: 'text-right' },
@@ -45,12 +51,13 @@ export default function PlanFieldsTable({
 }: {
   servicesManager: any;
 }): React.ReactElement {
+  const { t } = useTranslation('RTMedical');
   const { displaySets, selected, selectedUID, setSelectedUID, plan } = usePlanData(servicesManager);
 
   if (!plan) {
     return (
       <div className="text-muted-foreground p-3 text-sm" data-cy="rt-tps-fields">
-        Nenhum RT Plan carregado.
+        {t('no_rt_plan')}
       </div>
     );
   }
@@ -61,7 +68,7 @@ export default function PlanFieldsTable({
     <div className="flex h-full flex-col" data-cy="rt-tps-fields">
       <div className="flex shrink-0 items-center justify-between gap-2 px-2 py-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Campos</span>
+          <span className="text-sm font-medium">{t('fields_title')}</span>
           {displaySets.length > 1 && (
             <select
               className="border-input bg-muted/40 rounded border px-1 py-0.5 text-xs"
@@ -78,7 +85,7 @@ export default function PlanFieldsTable({
           )}
         </div>
         <span className="text-muted-foreground text-xs">
-          {selected?.rtPlan?.label || selected?.label || ''} · {plan.beams.length} campos
+          {selected?.rtPlan?.label || selected?.label || ''} · {t('fields_count', { count: plan.beams.length })}
           {plan.approvalStatus ? ` · ${plan.approvalStatus}` : ''}
         </span>
       </div>
@@ -92,7 +99,7 @@ export default function PlanFieldsTable({
                   key={c.key}
                   className={`whitespace-nowrap px-2 py-1 font-medium ${c.className ?? ''}`}
                 >
-                  {c.label}
+                  {c.labelKey ? t(c.labelKey) : c.label}
                 </th>
               ))}
             </tr>
@@ -131,7 +138,7 @@ export default function PlanFieldsTable({
             <tfoot>
               <tr className="border-input text-muted-foreground border-t">
                 <td className="px-2 py-1" colSpan={COLS.length - 2}>
-                  Total
+                  {t('total')}
                 </td>
                 <td className="px-2 py-1 text-right font-medium">{num(totalMu)}</td>
                 <td className="px-2 py-1" />
