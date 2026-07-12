@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { segmentation as cstSegmentation, Enums as csToolsEnums } from '@cornerstonejs/tools';
 import { useRtStructSegments, RtSegment } from './useRtStructSegments';
 import {
@@ -6,7 +7,7 @@ import {
   roiBadgeColor,
   contrastText,
   roiTypeLabel,
-  categoryLabel,
+  categoryLabelKey,
   ROI_CATEGORY_ORDER,
   RoiCategory,
 } from '../roiCategory';
@@ -65,6 +66,7 @@ function SegmentRow({
   onToggle: (index: number, visible: boolean) => void;
   onSelect: (index: number) => void;
 }) {
+  const { t } = useTranslation('RTMedical');
   const cls = categorizeRoi(segment.label);
   const badgeBg = roiBadgeColor(cls, segment.color);
   const badgeFg = cls.category === 'target' ? '#ffffff' : contrastText(segment.color);
@@ -78,8 +80,8 @@ function SegmentRow({
       <button
         type="button"
         className="text-muted-foreground hover:text-foreground shrink-0 p-1"
-        title={segment.visible ? 'Ocultar' : 'Mostrar'}
-        aria-label={segment.visible ? 'Ocultar estrutura' : 'Mostrar estrutura'}
+        title={segment.visible ? t('struct_hide') : t('struct_show')}
+        aria-label={segment.visible ? t('struct_hide_structure') : t('struct_show_structure')}
         onClick={() => onToggle(segment.segmentIndex, !segment.visible)}
       >
         <Eye off={!segment.visible} />
@@ -114,6 +116,7 @@ export interface RtStructWorkspacePanelProps {
 export function RtStructWorkspacePanel({
   servicesManager,
 }: RtStructWorkspacePanelProps): React.ReactElement {
+  const { t } = useTranslation('RTMedical');
   const {
     segmentations,
     selectedId,
@@ -200,7 +203,7 @@ export function RtStructWorkspacePanel({
   if (!hydrated) {
     return (
       <div className="text-muted-foreground p-3 text-sm" data-cy="rt-struct-workspace">
-        Nenhuma estrutura carregada. Hidrate a RTSTRUCT para visualizar as estruturas.
+        {t('struct_none')}
       </div>
     );
   }
@@ -208,12 +211,12 @@ export function RtStructWorkspacePanel({
   return (
     <div className="flex h-full flex-col" data-cy="rt-struct-workspace">
       <div className="flex shrink-0 items-center justify-between px-2 py-2">
-        <span className="text-base font-medium">Estruturas ({segments.length})</span>
+        <span className="text-base font-medium">{t('struct_count', { count: segments.length })}</span>
         <button
           type="button"
           className={`p-1 ${showControls ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-          title="Controles de exibição"
-          aria-label="Controles de exibição"
+          title={t('struct_display_controls')}
+          aria-label={t('struct_display_controls')}
           onClick={() => setShowControls(s => !s)}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -246,7 +249,7 @@ export function RtStructWorkspacePanel({
       {showControls && (
         <div className="border-input mx-2 mb-2 flex flex-col gap-2 border-b pb-2">
           <label className="flex items-center gap-2 text-xs">
-            <span className="text-muted-foreground w-16">Opacidade</span>
+            <span className="text-muted-foreground w-16">{t('struct_opacity')}</span>
             <input
               type="range"
               min={0}
@@ -260,20 +263,20 @@ export function RtStructWorkspacePanel({
             <span className="w-8 text-right tabular-nums">{opacity}%</span>
           </label>
           <div className="flex items-center gap-1 text-xs">
-            <span className="text-muted-foreground w-16">Modo</span>
+            <span className="text-muted-foreground w-16">{t('struct_mode')}</span>
             <button
               type="button"
               className={`rounded px-2 py-0.5 ${!outlineOnly ? 'bg-primary text-primary-foreground' : 'bg-muted/40'}`}
               onClick={() => onOutline(false)}
             >
-              Preenchido
+              {t('struct_fill')}
             </button>
             <button
               type="button"
               className={`rounded px-2 py-0.5 ${outlineOnly ? 'bg-primary text-primary-foreground' : 'bg-muted/40'}`}
               onClick={() => onOutline(true)}
             >
-              Contorno
+              {t('struct_outline')}
             </button>
           </div>
         </div>
@@ -293,12 +296,12 @@ export function RtStructWorkspacePanel({
                   onClick={() => setCollapsed(c => ({ ...c, [cat]: !c[cat] }))}
                 >
                   <Chevron open={!isCollapsed} />
-                  <span className="truncate text-[13px]">{categoryLabel(cat)}</span>
+                  <span className="truncate text-[13px]">{t(categoryLabelKey(cat))}</span>
                 </button>
                 <button
                   type="button"
                   className="inline-flex h-5 shrink-0 items-center gap-1 rounded-full bg-[#525252] pl-2 pr-1 text-white hover:bg-[#4c4c4c]"
-                  title={anyVisible ? 'Ocultar grupo' : 'Mostrar grupo'}
+                  title={anyVisible ? t('struct_hide_group') : t('struct_show_group')}
                   onClick={() =>
                     setGroupVisibility(
                       members.map(m => m.segmentIndex),
