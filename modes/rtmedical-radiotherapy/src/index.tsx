@@ -242,6 +242,8 @@ export const radiotherapyToolbarSections = {
     'rtStructMpr',
     // Wave 4 (Phase 4): render RTSTRUCT as 3D Surface in the Model View.
     'rtStruct3D',
+    // Wave 4 (Phase 5): RTDOSE color wash overlay on the MPR viewports.
+    'rtDoseWash',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -322,6 +324,17 @@ const rtPanelButtons = [
       label: 'Estruturas 3D',
       tooltip: 'Renderizar estruturas RT como superfície 3D (Model View)',
       commands: 'showRtStructIn3D',
+    },
+  },
+  {
+    // Wave 4 (Phase 5): RTDOSE color wash overlay (stock addDisplaySetAsLayer).
+    id: 'rtDoseWash',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-fusion-color',
+      label: 'Dose Wash',
+      tooltip: 'Sobrepor a dose (RTDOSE) em color wash nas MPR',
+      commands: 'showDoseWash',
     },
   },
   {
