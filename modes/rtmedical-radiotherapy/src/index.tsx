@@ -154,10 +154,10 @@ function activateRtPanel(panelService, displaySets = []) {
  * intentionally NOT bound — it closes the browser tab.
  */
 const eclipseHotkeys = [
-  { commandName: 'nextImage', label: 'Próximo corte (Page Down)', keys: ['pagedown'], isEditable: true },
-  { commandName: 'previousImage', label: 'Corte anterior (Page Up)', keys: ['pageup'], isEditable: true },
-  { commandName: 'firstImage', label: 'Primeiro corte', keys: ['home'], isEditable: true },
-  { commandName: 'lastImage', label: 'Último corte', keys: ['end'], isEditable: true },
+  { commandName: 'nextImage', label: 'Next slice (Page Down)', keys: ['pagedown'], isEditable: true },
+  { commandName: 'previousImage', label: 'Previous slice (Page Up)', keys: ['pageup'], isEditable: true },
+  { commandName: 'firstImage', label: 'First slice', keys: ['home'], isEditable: true },
+  { commandName: 'lastImage', label: 'Last slice', keys: ['end'], isEditable: true },
   { commandName: 'showRtStructInMpr', label: 'Structures in MPR', keys: ['shift+m'], isEditable: true },
   { commandName: 'showRtStructIn3D', label: 'Structures in 3D', keys: ['shift+3'], isEditable: true },
 ];
