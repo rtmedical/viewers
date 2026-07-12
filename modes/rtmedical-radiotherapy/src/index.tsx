@@ -19,6 +19,7 @@
  *   - RTV-128 RT hotkeys, RTV-129 PYLINAC QA sidecar
  */
 import { ToolbarService, defaults } from '@ohif/core';
+import { addTool, ScaleOverlayTool } from '@cornerstonejs/tools';
 import { id } from './id';
 import {
   cornerstone,
@@ -161,6 +162,56 @@ const eclipseHotkeys = [
   { commandName: 'showRtStructIn3D', label: 'Structures in 3D', keys: ['shift+3'], isEditable: true },
 ];
 
+/** autoseg reference-line palette (constants.ts): axial blue, sagittal yellow, coronal green. */
+const AUTOSEG_REF_LINE_COLORS: Record<string, string> = {
+  axial: '#4589ff',
+  sagittal: '#f1c21b',
+  coronal: '#24a148',
+};
+
+/**
+ * Autoseg MPR styling on the `mpr` tool group (zero fork): recolour the Crosshairs
+ * reference lines to the autoseg palette + make them draggable/rotatable (oblique
+ * reslice), and add a physical scale bar (ScaleOverlay). Best-effort; re-run is safe.
+ */
+function applyAutosegMprStyling(mpr: any, cornerstoneViewportService: any): void {
+  try {
+    mpr.setToolConfiguration?.(
+      'Crosshairs',
+      {
+        getReferenceLineColor: (viewportId: string) => {
+          const orientation =
+            cornerstoneViewportService?.getViewportInfo?.(viewportId)?.viewportOptions?.orientation;
+          return AUTOSEG_REF_LINE_COLORS[orientation] || AUTOSEG_REF_LINE_COLORS.axial;
+        },
+        getReferenceLineControllable: () => true,
+        getReferenceLineDraggableRotatable: () => true,
+      },
+      false // merge, keep viewportIndicators/autoPan
+    );
+  } catch (e) {
+    /* config unavailable — non-fatal */
+  }
+  try {
+    if (!mpr.hasTool?.('ScaleOverlay')) {
+      try {
+        addTool(ScaleOverlayTool);
+      } catch (e) {
+        /* already registered globally */
+      }
+      mpr.addTool?.('ScaleOverlay');
+    }
+    mpr.setToolEnabled?.('ScaleOverlay');
+  } catch (e) {
+    /* scale overlay unavailable — non-fatal */
+  }
+  try {
+    cornerstoneViewportService?.getRenderingEngine?.()?.render?.();
+  } catch (e) {
+    /* ignore */
+  }
+}
+
 /** Map a viewport's camera view-plane normal to an anatomical plane label. */
 function planeLabel(cornerstoneViewportService: any, viewportId: string): string {
   try {
@@ -300,9 +351,12 @@ function onModeEnter(props) {
   // planes (OHIF ships Crosshairs `disabled` in the `mpr` group). Reuses the
   // stock toolbar-toggle command (correct bindings/teardown) — zero fork.
   const { commandsManager } = props;
-  let crosshairsOn = false;
-  const activateCrosshairs = () => {
-    if (crosshairsOn || !commandsManager) {
+  let mprStyled = false;
+  // The user wants Crosshairs ALWAYS active — re-enable it whenever it is found
+  // disabled (e.g. after a layout/protocol change), not just once on load. The
+  // autoseg styling (ref-line colors + draggable + scale bar) is applied once.
+  const ensureCrosshairs = () => {
+    if (!commandsManager) {
       return;
     }
     try {
@@ -317,7 +371,10 @@ function onModeEnter(props) {
           toolGroupIds: ['mpr'],
         });
       }
-      crosshairsOn = true;
+      if (!mprStyled) {
+        applyAutosegMprStyling(mpr, cornerstoneViewportService);
+        mprStyled = true;
+      }
     } catch (e) {
       /* tool group not ready yet — will retry on the next event */
     }
@@ -325,7 +382,7 @@ function onModeEnter(props) {
   if (cornerstoneViewportService?.subscribe && cornerstoneViewportService.EVENTS?.VIEWPORT_DATA_CHANGED) {
     this._rtCrosshairsSub = cornerstoneViewportService.subscribe(
       cornerstoneViewportService.EVENTS.VIEWPORT_DATA_CHANGED,
-      activateCrosshairs
+      ensureCrosshairs
     );
   }
 
