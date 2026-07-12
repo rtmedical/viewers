@@ -1,7 +1,9 @@
 name: Playwright Tests
+# Manual-only: the suite needs the self-hosted runner ("nashua"), which is no
+# longer registered — a pull_request trigger would queue forever and hold PRs
+# in an UNSTABLE merge state. Re-add the pull_request trigger when a runner
+# with that label is provisioned again.
 on:
-  pull_request:
-    branches: [master, release/*]
   workflow_dispatch:
     inputs:
       cs3d_ref:
