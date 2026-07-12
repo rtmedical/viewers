@@ -161,13 +161,111 @@ const eclipseHotkeys = [
   { commandName: 'showRtStructIn3D', label: 'Estruturas em 3D', keys: ['shift+3'], isEditable: true },
 ];
 
+/** Map a viewport's camera view-plane normal to an anatomical plane label. */
+function planeLabel(cornerstoneViewportService: any, viewportId: string): string {
+  try {
+    const vp = cornerstoneViewportService?.getCornerstoneViewport?.(viewportId);
+    const n = vp?.getCamera?.()?.viewPlaneNormal;
+    if (!n) {
+      return '';
+    }
+    const ax = Math.abs(n[0]);
+    const ay = Math.abs(n[1]);
+    const az = Math.abs(n[2]);
+    if (az >= ax && az >= ay) {
+      return 'AXIAL';
+    }
+    if (ax >= ay) {
+      return 'SAGITTAL';
+    }
+    return 'CORONAL';
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * Autoseg-style corner-overlay descriptors for the `viewportOverlay.*`
+ * customization ids. Content functions read the resolved reference instance /
+ * VOI / scale that OHIF passes at render time (see CustomizableViewportOverlay).
+ */
+function buildViewportOverlay(cornerstoneViewportService: any) {
+  const text = (fn: (p: any) => any) => fn;
+  return {
+    'viewportOverlay.topLeft': {
+      $set: [
+        {
+          id: 'PatientName',
+          inheritsFrom: 'ohif.overlayItem',
+          condition: ({ referenceInstance }: any) => !!referenceInstance?.PatientName,
+          contentF: text(({ referenceInstance, formatters }: any) =>
+            formatters?.formatPN ? formatters.formatPN(referenceInstance.PatientName) : String(referenceInstance.PatientName)
+          ),
+        },
+        {
+          id: 'PatientID',
+          inheritsFrom: 'ohif.overlayItem',
+          condition: ({ referenceInstance }: any) => !!referenceInstance?.PatientID,
+          contentF: text(({ referenceInstance }: any) => referenceInstance.PatientID),
+        },
+      ],
+    },
+    'viewportOverlay.topRight': {
+      $set: [
+        {
+          id: 'SeriesDescription',
+          inheritsFrom: 'ohif.overlayItem',
+          condition: ({ referenceInstance }: any) => !!referenceInstance?.SeriesDescription,
+          contentF: text(({ referenceInstance }: any) => referenceInstance.SeriesDescription),
+        },
+        {
+          id: 'ModalityImageIndex',
+          inheritsFrom: 'ohif.overlayItem',
+          contentF: text(({ referenceInstance, instanceNumber, instances }: any) => {
+            const modality = referenceInstance?.Modality ?? '';
+            const count = Array.isArray(instances) ? instances.length : undefined;
+            const idx = instanceNumber != null ? `Im: ${instanceNumber}${count ? `/${count}` : ''}` : '';
+            return [modality, idx].filter(Boolean).join('  ');
+          }),
+        },
+      ],
+    },
+    'viewportOverlay.bottomLeft': {
+      $set: [
+        { id: 'WindowLevel', inheritsFrom: 'ohif.overlayItem.windowLevel' },
+        // Drop OHIF's "zoom tool active" condition so zoom is always shown.
+        { id: 'ZoomLevel', inheritsFrom: 'ohif.overlayItem.zoomLevel' },
+      ],
+    },
+    'viewportOverlay.bottomRight': {
+      $set: [
+        {
+          id: 'PlaneOrientation',
+          inheritsFrom: 'ohif.overlayItem',
+          contentF: text(({ viewportId }: any) => planeLabel(cornerstoneViewportService, viewportId)),
+        },
+      ],
+    },
+  };
+}
+
 /** Extends @ohif/mode-basic's onModeEnter with RT auto-reveal (RTV-126). */
 function onModeEnter(props) {
   basicOnModeEnter.call(this, props);
 
   const { servicesManager } = props;
-  const { displaySetService, panelService, toolGroupService, customizationService } =
+  const { displaySetService, panelService, toolGroupService, customizationService, cornerstoneViewportService } =
     servicesManager.services;
+
+  // Autoseg-style viewport corner overlays (info in the viewport): patient +
+  // series + modality/image-index + window-level + zoom + plane orientation.
+  // Overridden through the stock `viewportOverlay.*` customization ids — zero
+  // fork. Strings are English (i18n follow-up).
+  try {
+    customizationService?.setCustomizations?.(buildViewportOverlay(cornerstoneViewportService));
+  } catch (e) {
+    /* overlay customization unavailable — non-fatal */
+  }
 
   // Phase 6: register the Eclipse hotkeys before Mode.tsx reads
   // 'ohif.hotkeyBindings' (it does so right after onModeEnter). Append to the
