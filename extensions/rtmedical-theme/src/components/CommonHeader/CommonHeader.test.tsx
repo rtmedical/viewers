@@ -8,7 +8,7 @@ describe('CommonHeader', () => {
   it('renders the default branding wordmark when no logo image is set', () => {
     render(<CommonHeader />);
     // defaultBranding.shortName, via useWhiteLabeling outside a provider.
-    expect(screen.getByText('Connect')).toBeTruthy();
+    expect(screen.getByText('RT Medical')).toBeTruthy();
   });
 
   it('renders patient and study info when provided', () => {

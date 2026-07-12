@@ -9,10 +9,11 @@ import type { BrandingConfig } from './types';
  * header reads as the same black/grey/white chrome as the rest of the viewer.
  */
 export const defaultBranding: BrandingConfig = {
-  productName: 'RT Medical Connect Viewer',
-  shortName: 'Connect',
+  productName: 'RT Medical Viewer',
+  shortName: 'RT Medical',
   logoHref: '/',
-  logoAlt: 'RT Medical Connect',
+  logoAlt: 'RT Medical',
+  faviconUrl: '/assets/rtmedical-favicon.svg',
   theme: {
     primary: '#4589ff', // Carbon Blue50 — interactive/focus accent (autoseg)
     secondary: '#393939', // Carbon Gray80 — neutral surface

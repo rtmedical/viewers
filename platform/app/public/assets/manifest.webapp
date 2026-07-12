@@ -1,14 +1,14 @@
 {
   "version": "2.2.1",
-  "name": "OHIF Viewer",
-  "description": "OHIF Viewer",
+  "name": "RT Medical Viewer",
+  "description": "RT Medical Viewer",
   "icons": {
-    "60": "/assets/firefox_app_60x60.png",
-    "128": "/assets/firefox_app_128x128.png",
-    "512": "/assets/firefox_app_512x512.png"
+    "60": "/assets/rtmedical-favicon.svg",
+    "128": "/assets/rtmedical-favicon.svg",
+    "512": "/assets/rtmedical-favicon.svg"
   },
   "developer": {
-    "name": "OHIF Contributors",
-    "url": "https://github.com/ohif/viewers"
+    "name": "RT Medical",
+    "url": "https://rtmedical.com.br"
   }
 }

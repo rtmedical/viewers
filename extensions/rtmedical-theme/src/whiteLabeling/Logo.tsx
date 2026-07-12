@@ -13,8 +13,8 @@ export interface LogoProps {
 
 /**
  * Renders the resolved branding logo. When no logo image is configured it falls
- * back to a clean wordmark (Carbon-inspired: tracked, semibold). Styling uses
- * Tailwind utility classes already present in OHIF — Carbon is NOT imported.
+ * back to the RT Medical wordmark. Styling uses Tailwind utility classes already
+ * present in OHIF — Carbon is NOT imported.
  */
 function renderLogo(
   branding: BrandingConfig,
@@ -24,6 +24,8 @@ function renderLogo(
   const alt = branding.logoAlt || branding.productName;
   const href = branding.logoHref || '/';
 
+  const label = branding.shortName || branding.productName || 'RT Medical';
+
   const inner = src ? (
     <img
       src={src}
@@ -31,8 +33,13 @@ function renderLogo(
       className="h-8 w-auto"
     />
   ) : (
-    <span className="text-primary-light text-lg font-semibold tracking-wide">
-      {branding.shortName || branding.productName}
+    <span className="inline-flex items-center gap-2 text-white">
+      <span className="flex h-7 w-7 items-center justify-center border border-[#4589ff] bg-[#0f62fe] text-sm font-bold leading-none text-white">
+        RT
+      </span>
+      <span className="text-lg font-semibold tracking-normal">
+        {label}
+      </span>
     </span>
   );
 
