@@ -73,6 +73,16 @@ export const CARBON_ICON_STYLE_ID = 'rt-carbon-icon-style';
 export const CARBON_ICON_CSS = `
 .inline-flex.items-center.justify-center > svg { shape-rendering: geometricPrecision; }
 .inline-flex.items-center.justify-center > svg [stroke]:not([stroke="none"]):not([stroke-width="6"]) { stroke-width: 1.5px; }
+
+/* Idle chrome reads GREY like autoseg's Carbon g100 — blue is reserved for
+ * active/selected/hover states. Stock ui-next paints idle icons, side-panel
+ * tab strips, header actions and ghost buttons with text-primary / a blue
+ * bg tint, which made the whole chrome read blue. Active indicators use
+ * bg-highlight / text-highlight / explicit active classes and keep the blue. */
+.text-primary { color: #c6c6c6 !important; }
+.hover\\:text-primary:hover { color: #4589ff !important; }
+.bg-primary\\/10 { background-color: rgba(141, 141, 141, 0.12) !important; }
+.hover\\:bg-primary\\/20:hover { background-color: rgba(141, 141, 141, 0.22) !important; }
 `;
 
 /** Injects the Carbon icon stylesheet once (no-op outside the browser). */
