@@ -131,7 +131,7 @@ export function RtStructWorkspacePanel({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [showControls, setShowControls] = useState(false);
   const [opacity, setOpacity] = useState(100);
-  const [outlineOnly, setOutlineOnly] = useState(false);
+  const [outlineOnly, setOutlineOnly] = useState(true);
 
   // Group segments by clinical category, preserving order and dropping empties.
   const groups = useMemo(() => {
@@ -158,10 +158,16 @@ export function RtStructWorkspacePanel({
           cstSegmentation.config.style.setStyle(
             { segmentationId: selectedId, type },
             {
+              // Apply to BOTH the active and inactive segments so all ~25 ROIs
+              // switch fill/outline together (not just the selected one).
               renderFill: !nextOutlineOnly,
+              renderFillInactive: !nextOutlineOnly,
               renderOutline: true,
+              renderOutlineInactive: true,
               outlineWidth: 2,
+              outlineWidthInactive: 2,
               fillAlpha: nextOutlineOnly ? 0 : fillAlpha,
+              fillAlphaInactive: nextOutlineOnly ? 0 : fillAlpha,
             } as any,
             true
           );

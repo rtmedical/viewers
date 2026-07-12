@@ -60,10 +60,36 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
         });
       });
 
+      // Render structures as crisp OUTLINES (not blocky filled voxels) by
+      // default — closer to Eclipse/autoseg. A type-global Labelmap style is
+      // read at render time, applies to every current + future labelmap rep, and
+      // costs zero extra memory (a GPU style toggle, no surface build). We keep a
+      // faint fill so overlapping targets stay legible. `Inactive` knobs make all
+      // structures (not just the active one) render outline-only.
+      try {
+        cstSegmentation.config.style.setStyle(
+          { type: Labelmap },
+          {
+            renderFill: false,
+            renderFillInactive: false,
+            renderOutline: true,
+            renderOutlineInactive: true,
+            outlineWidth: 2,
+            outlineWidthInactive: 2,
+            outlineOpacity: 1,
+            outlineOpacityInactive: 1,
+          } as any,
+          true // merge — preserve any per-segmentation overrides from the panel
+        );
+        renderingEngine.render?.();
+      } catch (e) {
+        /* style API unavailable — labelmap still renders (filled) */
+      }
+
       uiNotificationService?.show?.({
         title: 'RT Structures',
         message: added
-          ? 'Rendering structures in MPR (labelmap)…'
+          ? 'Rendering structures in MPR (outline)…'
           : 'Nothing to render.',
         type: added ? 'info' : 'warning',
       });
