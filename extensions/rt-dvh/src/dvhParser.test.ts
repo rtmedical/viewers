@@ -1,6 +1,7 @@
 import {
   parseDvhFromInstance,
   buildRoiNameMap,
+  buildRoiColorMap,
   buildDvhCsv,
   volumePercentAtDose,
   doseAtVolumePercent,
@@ -58,6 +59,18 @@ describe('parseDvhFromInstance', () => {
     expect(curve.roiName).toBe('PTV');
   });
 
+  it('resolves the structure display colour via the ROI colour map', () => {
+    const colorMap = new Map<number, [number, number, number]>([[5, [255, 0, 0]]]);
+    const [curve] = parseDvhFromInstance(sampleRtdose(5), undefined, colorMap);
+    expect(curve.color).toEqual([255, 0, 0]);
+  });
+
+  it('leaves color undefined when no colour map (or no match) is given', () => {
+    expect(parseDvhFromInstance(sampleRtdose(5))[0].color).toBeUndefined();
+    const colorMap = new Map<number, [number, number, number]>([[9, [1, 2, 3]]]);
+    expect(parseDvhFromInstance(sampleRtdose(5), undefined, colorMap)[0].color).toBeUndefined();
+  });
+
   it('handles DVHData encoded as a backslash-joined string', () => {
     const inst: any = sampleRtdose();
     inst.DVHSequence[0].DVHData = '1\\100\\1\\0';
@@ -105,6 +118,28 @@ describe('buildRoiNameMap', () => {
   it('is defensive about a scalar (single-item) sequence', () => {
     const map = buildRoiNameMap({ StructureSetROISequence: { ROINumber: 1, ROIName: 'Body' } });
     expect(map.get(1)).toBe('Body');
+  });
+});
+
+describe('buildRoiColorMap', () => {
+  it('maps ROINumber -> [r,g,b] from ROIContourSequence.ROIDisplayColor', () => {
+    const map = buildRoiColorMap({
+      ROIContourSequence: [
+        { ReferencedROINumber: 5, ROIDisplayColor: [255, 0, 0] },
+        { ReferencedROINumber: 6, ROIDisplayColor: '0\\128\\255' },
+      ],
+    });
+    expect(map.get(5)).toEqual([255, 0, 0]);
+    expect(map.get(6)).toEqual([0, 128, 255]);
+  });
+
+  it('skips items without a colour or ROI number, and tolerates a scalar sequence', () => {
+    const map = buildRoiColorMap({
+      ROIContourSequence: { ReferencedROINumber: 1, ROIDisplayColor: [10, 20, 30] },
+    });
+    expect(map.get(1)).toEqual([10, 20, 30]);
+    expect(buildRoiColorMap({ ROIContourSequence: [{ ReferencedROINumber: 2 }] }).size).toBe(0);
+    expect(buildRoiColorMap(undefined).size).toBe(0);
   });
 });
 
