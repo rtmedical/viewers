@@ -18,7 +18,7 @@
  *   - RTV-127 proper 4-up MPR hanging protocol (axial/sagittal/coronal/3D) — DONE
  *   - RTV-128 RT hotkeys, RTV-129 PYLINAC QA sidecar
  */
-import { ToolbarService } from '@ohif/core';
+import { ToolbarService, defaults } from '@ohif/core';
 import { id } from './id';
 import {
   cornerstone,
@@ -145,12 +145,44 @@ function activateRtPanel(panelService, displaySets = []) {
   }
 }
 
+/**
+ * Eclipse-style hotkeys (Wave 4 / Phase 6), appended to the OHIF defaults.
+ * PageUp/PageDown page slices (the Varian slice-nav standard), Home/End jump to
+ * the first/last slice, and Shift+M / Shift+3 toggle the RT structure renders
+ * (bound to the rt-struct commands from Waves 3a/4). Ctrl+W (Eclipse auto-W/L) is
+ * intentionally NOT bound — it closes the browser tab.
+ */
+const eclipseHotkeys = [
+  { commandName: 'nextImage', label: 'Próximo corte (Page Down)', keys: ['pagedown'], isEditable: true },
+  { commandName: 'previousImage', label: 'Corte anterior (Page Up)', keys: ['pageup'], isEditable: true },
+  { commandName: 'firstImage', label: 'Primeiro corte', keys: ['home'], isEditable: true },
+  { commandName: 'lastImage', label: 'Último corte', keys: ['end'], isEditable: true },
+  { commandName: 'showRtStructInMpr', label: 'Estruturas em MPR', keys: ['shift+m'], isEditable: true },
+  { commandName: 'showRtStructIn3D', label: 'Estruturas em 3D', keys: ['shift+3'], isEditable: true },
+];
+
 /** Extends @ohif/mode-basic's onModeEnter with RT auto-reveal (RTV-126). */
 function onModeEnter(props) {
   basicOnModeEnter.call(this, props);
 
   const { servicesManager } = props;
-  const { displaySetService, panelService, toolGroupService } = servicesManager.services;
+  const { displaySetService, panelService, toolGroupService, customizationService } =
+    servicesManager.services;
+
+  // Phase 6: register the Eclipse hotkeys before Mode.tsx reads
+  // 'ohif.hotkeyBindings' (it does so right after onModeEnter). Append to the
+  // OHIF defaults so the standard bindings are preserved. Guard against
+  // duplicate command bindings if entered more than once.
+  try {
+    const base = (defaults?.hotkeyBindings ?? []).filter(
+      (b: any) => !eclipseHotkeys.some(h => h.commandName === b.commandName && h.keys?.[0] === b.keys?.[0])
+    );
+    customizationService?.setCustomizations?.({
+      'ohif.hotkeyBindings': { $set: [...base, ...eclipseHotkeys] },
+    });
+  } catch (e) {
+    /* customization/hotkeys unavailable — non-fatal */
+  }
 
   // RTV-32: add the LineProfile tool (registered globally by the measurements
   // extension's preRegistration) to the default tool group so the toolbar
