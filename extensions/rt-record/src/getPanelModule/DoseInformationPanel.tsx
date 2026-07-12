@@ -6,6 +6,7 @@
  * dose-corrections input are follow-ups (RIS/backend).
  */
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { parseRtRecord, RtRecord } from '../rtRecordParser';
 import { buildSessionDoseRows, buildDoseCounters } from '../doseSummary';
 
@@ -27,6 +28,7 @@ function readRecords(displaySetService: any): RtRecord[] {
 }
 
 export function DoseInformationPanel({ servicesManager }: DoseInformationPanelProps): React.ReactElement {
+  const { t } = useTranslation('RTMedical');
   const displaySetService = servicesManager?.services?.displaySetService;
   const [records, setRecords] = useState<RtRecord[]>(() => readRecords(displaySetService));
 
@@ -49,42 +51,42 @@ export function DoseInformationPanel({ servicesManager }: DoseInformationPanelPr
   if (!records.length) {
     return (
       <div className="text-muted-foreground px-2 py-4 text-sm" data-cy="rt-dose-info-panel">
-        No RT Treatment Records loaded.
+        {t('rec_no_records')}
       </div>
     );
   }
 
   const counterRows: Array<[string, number]> = [
-    ['Delivered Dose from Fractions', counters.deliveredFromFractions],
-    ['Total Dose Corrections', counters.totalCorrections],
-    ['Delivered Dose to Date', counters.deliveredToDate],
-    ['Dose to be Recorded', counters.doseToBeRecorded],
+    [t('rec_counter_delivered_from_fractions'), counters.deliveredFromFractions],
+    [t('rec_counter_total_corrections'), counters.totalCorrections],
+    [t('rec_counter_delivered_to_date'), counters.deliveredToDate],
+    [t('rec_counter_dose_to_be_recorded'), counters.doseToBeRecorded],
   ];
 
   return (
     <div className="ohif-scrollbar flex h-full flex-col text-white" data-cy="rt-dose-info-panel">
       <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-base font-medium">Dose Information</span>
+        <span className="text-base font-medium">{t('rec_dose_information')}</span>
         {counters.hasMuRounding && (
           <span
             className="text-muted-foreground text-xs"
-            title="MU Rounding: delivered MU differs from specified within 1 MU (rounding)."
+            title={t('rec_mu_rounding_tooltip')}
           >
-            ⓘ MU Rounding
+            {t('rec_mu_rounding_label')}
           </span>
         )}
       </div>
 
       <div className="grid flex-1 grid-cols-2 gap-2 overflow-auto px-2 pb-2 text-sm">
         <div>
-          <div className="text-muted-foreground mb-1 text-xs uppercase">Session detail</div>
+          <div className="text-muted-foreground mb-1 text-xs uppercase">{t('rec_session_detail')}</div>
           <table className="w-full border-collapse">
             <thead>
               <tr className="text-muted-foreground text-left">
-                <th className="py-0.5">Field</th>
+                <th className="py-0.5">{t('rec_header_field')}</th>
                 <th className="text-right">Fx</th>
-                <th className="text-right">Spec MU</th>
-                <th className="text-right">Deliv MU</th>
+                <th className="text-right">{t('rec_header_spec_mu')}</th>
+                <th className="text-right">{t('rec_header_deliv_mu')}</th>
               </tr>
             </thead>
             <tbody>
@@ -92,7 +94,7 @@ export function DoseInformationPanel({ servicesManager }: DoseInformationPanelPr
                 <tr key={i}>
                   <td className="py-0.5">
                     {r.field}
-                    {r.muRounded && <span title="MU rounded"> *</span>}
+                    {r.muRounded && <span title={t('rec_mu_rounded_title')}> *</span>}
                   </td>
                   <td className="text-right">{r.fraction ?? '—'}</td>
                   <td className="text-right">{num(r.specifiedMU)}</td>
@@ -104,7 +106,7 @@ export function DoseInformationPanel({ servicesManager }: DoseInformationPanelPr
         </div>
 
         <div>
-          <div className="text-muted-foreground mb-1 text-xs uppercase">Dose summary (MU)</div>
+          <div className="text-muted-foreground mb-1 text-xs uppercase">{t('rec_dose_summary')}</div>
           <table className="w-full border-collapse">
             <tbody>
               {counterRows.map(([label, value]) => (
@@ -119,7 +121,7 @@ export function DoseInformationPanel({ servicesManager }: DoseInformationPanelPr
       </div>
 
       <div className="text-muted-foreground border-t border-white/10 px-2 py-1 text-xs">
-        ⚠ Dose corrections are recorded separately and excluded from the fractions total.
+        {t('rec_dose_corrections_footer')}
       </div>
     </div>
   );

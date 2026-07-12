@@ -8,6 +8,7 @@
  * `@ohif/ui-next` only. Rich timelines (RTV-164+) are separate tickets.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@ohif/ui-next';
 import { parseRtRecord, buildRtRecordCsv, RtRecord } from '../rtRecordParser';
 
@@ -55,6 +56,7 @@ function downloadCsv(record: RtRecord, name: string): void {
 }
 
 export function RtRecordPanel({ servicesManager }: RtRecordPanelProps): React.ReactElement {
+  const { t } = useTranslation('RTMedical');
   const displaySetService = servicesManager?.services?.displaySetService;
   const [items, setItems] = useState<RtRecordItem[]>(() => readRecords(displaySetService));
 
@@ -81,7 +83,7 @@ export function RtRecordPanel({ servicesManager }: RtRecordPanelProps): React.Re
   if (!items.length) {
     return (
       <div className="text-muted-foreground px-2 py-4 text-sm" data-cy="rt-record-panel">
-        No RT Treatment Records loaded.
+        {t('rec_no_records')}
       </div>
     );
   }
@@ -89,11 +91,11 @@ export function RtRecordPanel({ servicesManager }: RtRecordPanelProps): React.Re
   return (
     <div className="ohif-scrollbar flex h-full flex-col text-white" data-cy="rt-record-panel">
       <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-base font-medium">Treatment Records ({items.length})</span>
+        <span className="text-base font-medium">{t('rec_title', { count: items.length })}</span>
         <Button variant="ghost" size="sm" onClick={handleCsvAll}>CSV</Button>
       </div>
       <div className="text-muted-foreground px-2 pb-2 text-xs">
-        Total delivered: {num(totalDelivered)} MU
+        {t('rec_total_delivered', { mu: num(totalDelivered) })}
       </div>
 
       <div className="flex-1 overflow-auto px-2 pb-3 text-sm">
@@ -111,9 +113,9 @@ export function RtRecordPanel({ servicesManager }: RtRecordPanelProps): React.Re
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="text-muted-foreground text-left">
-                      <th className="py-0.5">Beam</th>
-                      <th className="text-right">Spec MU</th>
-                      <th className="text-right">Deliv MU</th>
+                      <th className="py-0.5">{t('rec_header_beam')}</th>
+                      <th className="text-right">{t('rec_header_spec_mu')}</th>
+                      <th className="text-right">{t('rec_header_deliv_mu')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -127,7 +129,7 @@ export function RtRecordPanel({ servicesManager }: RtRecordPanelProps): React.Re
                   </tbody>
                 </table>
               ) : (
-                <div className="text-muted-foreground text-xs">No beam sessions in this record.</div>
+                <div className="text-muted-foreground text-xs">{t('rec_no_sessions')}</div>
               )}
             </div>
           );

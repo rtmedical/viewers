@@ -8,6 +8,7 @@
  * CSV/SVG export. RTV-114: `@ohif/ui-next` only; no core internals.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@ohif/ui-next';
 import { parseDvhFromInstance, buildRoiNameMap, buildDvhCsv, DvhCurve } from '../dvhParser';
 import { buildDvhChart } from '../dvhChart';
@@ -53,6 +54,7 @@ function downloadBlob(content: string, type: string, filename: string): void {
 }
 
 export function DvhPanel({ servicesManager }: DvhPanelProps): React.ReactElement {
+  const { t } = useTranslation('RTMedical');
   const displaySetService = servicesManager?.services?.displaySetService;
   const [curves, setCurves] = useState<DvhCurve[]>(() => collectCurves(displaySetService));
   const svgRef = useRef<SVGSVGElement>(null);
@@ -82,7 +84,7 @@ export function DvhPanel({ servicesManager }: DvhPanelProps): React.ReactElement
   if (!curves.length) {
     return (
       <div className="text-muted-foreground px-2 py-4 text-sm" data-cy="rt-dvh-panel">
-        No DVH found (load an RTDOSE containing a DVH sequence).
+        {t('dvh_none_found')}
       </div>
     );
   }
@@ -90,7 +92,7 @@ export function DvhPanel({ servicesManager }: DvhPanelProps): React.ReactElement
   return (
     <div className="ohif-scrollbar flex h-full flex-col text-white" data-cy="rt-dvh-panel">
       <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-base font-medium">DVH ({curves.length})</span>
+        <span className="text-base font-medium">{t('dvh_title', { count: curves.length })}</span>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={handleCsv}>CSV</Button>
           <Button variant="ghost" size="sm" onClick={handleSvg}>SVG</Button>
@@ -105,17 +107,17 @@ export function DvhPanel({ servicesManager }: DvhPanelProps): React.ReactElement
           xmlns="http://www.w3.org/2000/svg"
         >
           <rect x={0} y={0} width={chart.width} height={chart.height} fill="#1a1a1a" />
-          {chart.volTicks.map((t, i) => (
+          {chart.volTicks.map((tick, i) => (
             <g key={`v${i}`}>
-              <line x1={chart.pad} y1={t.y} x2={chart.width - chart.pad} y2={t.y} stroke="#333" />
-              <text x={chart.pad - 4} y={t.y + 3} fontSize={9} fill="#999" textAnchor="end">{t.value}</text>
+              <line x1={chart.pad} y1={tick.y} x2={chart.width - chart.pad} y2={tick.y} stroke="#333" />
+              <text x={chart.pad - 4} y={tick.y + 3} fontSize={9} fill="#999" textAnchor="end">{tick.value}</text>
             </g>
           ))}
-          {chart.doseTicks.map((t, i) => (
-            <text key={`d${i}`} x={t.x} y={chart.height - chart.pad + 12} fontSize={9} fill="#999" textAnchor="middle">{t.value}</text>
+          {chart.doseTicks.map((tick, i) => (
+            <text key={`d${i}`} x={tick.x} y={chart.height - chart.pad + 12} fontSize={9} fill="#999" textAnchor="middle">{tick.value}</text>
           ))}
-          <text x={chart.width / 2} y={chart.height - 4} fontSize={10} fill="#bbb" textAnchor="middle">Dose (Gy)</text>
-          <text x={10} y={chart.height / 2} fontSize={10} fill="#bbb" textAnchor="middle" transform={`rotate(-90 10 ${chart.height / 2})`}>Volume (%)</text>
+          <text x={chart.width / 2} y={chart.height - 4} fontSize={10} fill="#bbb" textAnchor="middle">{t('dvh_axis_dose')}</text>
+          <text x={10} y={chart.height / 2} fontSize={10} fill="#bbb" textAnchor="middle" transform={`rotate(-90 10 ${chart.height / 2})`}>{t('dvh_axis_volume')}</text>
           {chart.series.map((s, i) => (
             <polyline key={i} points={s.polyline} fill="none" stroke={s.color} strokeWidth={1.5} />
           ))}
@@ -126,9 +128,9 @@ export function DvhPanel({ servicesManager }: DvhPanelProps): React.ReactElement
         <table className="w-full border-collapse">
           <thead>
             <tr className="text-muted-foreground text-left">
-              <th className="py-1">Structure</th>
-              <th className="text-right">Mean (Gy)</th>
-              <th className="text-right">Max (Gy)</th>
+              <th className="py-1">{t('dvh_col_structure')}</th>
+              <th className="text-right">{t('dvh_col_mean')}</th>
+              <th className="text-right">{t('dvh_col_max')}</th>
             </tr>
           </thead>
           <tbody>
@@ -136,7 +138,7 @@ export function DvhPanel({ servicesManager }: DvhPanelProps): React.ReactElement
               <tr key={i} className="border-t border-white/10">
                 <td className="py-1">
                   <span className="mr-1 inline-block h-2 w-2 rounded-full" style={{ backgroundColor: chart.series[i]?.color }} />
-                  {c.roiName || (c.roiNumber != null ? `ROI ${c.roiNumber}` : `Curve ${i + 1}`)}
+                  {c.roiName || (c.roiNumber != null ? t('dvh_roi_label', { n: c.roiNumber }) : t('dvh_curve_label', { n: i + 1 }))}
                 </td>
                 <td className="text-right">{fmt(c.meanDose)}</td>
                 <td className="text-right">{fmt(c.maxDose)}</td>
