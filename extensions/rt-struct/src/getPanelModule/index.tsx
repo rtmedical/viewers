@@ -28,8 +28,8 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
     {
       name: 'roiWorkspace',
       iconName: 'tab-segmentation',
-      iconLabel: 'Estruturas',
-      label: 'Estruturas',
+      iconLabel: 'Structures',
+      label: 'Structures',
       component: (props: Record<string, unknown>) => (
         <RtStructWorkspacePanel {...props} servicesManager={servicesManager} />
       ),

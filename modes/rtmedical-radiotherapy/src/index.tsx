@@ -157,8 +157,8 @@ const eclipseHotkeys = [
   { commandName: 'previousImage', label: 'Corte anterior (Page Up)', keys: ['pageup'], isEditable: true },
   { commandName: 'firstImage', label: 'Primeiro corte', keys: ['home'], isEditable: true },
   { commandName: 'lastImage', label: 'Último corte', keys: ['end'], isEditable: true },
-  { commandName: 'showRtStructInMpr', label: 'Estruturas em MPR', keys: ['shift+m'], isEditable: true },
-  { commandName: 'showRtStructIn3D', label: 'Estruturas em 3D', keys: ['shift+3'], isEditable: true },
+  { commandName: 'showRtStructInMpr', label: 'Structures in MPR', keys: ['shift+m'], isEditable: true },
+  { commandName: 'showRtStructIn3D', label: 'Structures in 3D', keys: ['shift+3'], isEditable: true },
 ];
 
 /** Map a viewport's camera view-plane normal to an anatomical plane label. */
@@ -432,8 +432,8 @@ const rtPanelButtons = [
     uiType: 'ohif.toolButton',
     props: {
       icon: 'tool-length',
-      label: 'Perfil',
-      tooltip: 'Perfil de densidade (linha)',
+      label: 'Profile',
+      tooltip: 'Density profile (line)',
       commands: setToolActiveToolbar,
       evaluate: 'evaluate.cornerstoneTool',
     },
@@ -444,8 +444,8 @@ const rtPanelButtons = [
     uiType: 'ohif.toolButton',
     props: {
       icon: 'tab-segmentation',
-      label: 'Estruturas MPR',
-      tooltip: 'Renderizar estruturas RT em MPR (labelmap)',
+      label: 'Structures MPR',
+      tooltip: 'Render RT structures in MPR (labelmap)',
       commands: 'showRtStructInMpr',
     },
   },
@@ -455,8 +455,8 @@ const rtPanelButtons = [
     uiType: 'ohif.toolButton',
     props: {
       icon: 'tool-3d-rotate',
-      label: 'Estruturas 3D',
-      tooltip: 'Renderizar estruturas RT como superfície 3D (Model View)',
+      label: 'Structures 3D',
+      tooltip: 'Render RT structures as a 3D surface (Model View)',
       commands: 'showRtStructIn3D',
     },
   },
@@ -467,7 +467,7 @@ const rtPanelButtons = [
     props: {
       icon: 'tool-fusion-color',
       label: 'Dose Wash',
-      tooltip: 'Sobrepor a dose (RTDOSE) em color wash nas MPR',
+      tooltip: 'Overlay dose (RTDOSE) as color wash on the MPR',
       commands: 'showDoseWash',
     },
   },
@@ -476,8 +476,8 @@ const rtPanelButtons = [
     uiType: 'ohif.toolButton',
     props: {
       icon: 'tool-fusion-color',
-      label: 'Fusão',
-      tooltip: 'Abrir painel de Fusão',
+      label: 'Fusion',
+      tooltip: 'Open Fusion panel',
       commands: [{ commandName: 'activateRtPanel', commandOptions: { panelId: rtmedical.fusionTimeline } }],
     },
   },
@@ -486,8 +486,8 @@ const rtPanelButtons = [
     uiType: 'ohif.toolButton',
     props: {
       icon: 'tab-studies',
-      label: 'Laudo',
-      tooltip: 'Abrir painel de Laudo',
+      label: 'Report',
+      tooltip: 'Open Report panel',
       commands: [{ commandName: 'activateRtPanel', commandOptions: { panelId: rtmedical.laudo } }],
     },
   },
@@ -496,8 +496,8 @@ const rtPanelButtons = [
     uiType: 'ohif.toolButton',
     props: {
       icon: 'tool-capture',
-      label: 'Impressão',
-      tooltip: 'Abrir painel de Impressão',
+      label: 'Print',
+      tooltip: 'Open Print panel',
       commands: [{ commandName: 'activateRtPanel', commandOptions: { panelId: rtmedical.rtPrint } }],
     },
   },

@@ -65,12 +65,12 @@ function getCommandsModule({
         uiNotificationService?.show?.({ title: 'Dose (RTDOSE)', message, type });
       const doseDs = findDose();
       if (!doseDs) {
-        notify('Nenhum RTDOSE carregado.', 'info');
+        notify('No RTDOSE loaded.', 'info');
         return false;
       }
       const vps = orthographicViewports();
       if (!vps.length) {
-        notify('Nenhum viewport MPR no layout atual.', 'warning');
+        notify('No MPR viewport in the current layout.', 'warning');
         return false;
       }
 
@@ -85,7 +85,7 @@ function getCommandsModule({
       try {
         const imageIds = doseImageIds(doseDs);
         if (imageIds.length < 2) {
-          notify('RTDOSE sem frames suficientes para o volume.', 'warning');
+          notify('RTDOSE has too few frames for a volume.', 'warning');
           return false;
         }
         let vol = csCache.getVolume?.(volumeId);
@@ -120,7 +120,7 @@ function getCommandsModule({
           }
         }
       } catch (e) {
-        notify('Falha ao carregar o volume de dose.', 'error');
+        notify('Failed to load the dose volume.', 'error');
         return false;
       }
 
@@ -138,7 +138,7 @@ function getCommandsModule({
           /* viewport can't take the overlay — skip */
         }
       }
-      notify(added ? 'Dose color wash aplicado (colormap Isodose).' : 'Nada a renderizar.', added ? 'info' : 'warning');
+      notify(added ? 'Dose color wash applied (Isodose colormap).' : 'Nothing to render.', added ? 'info' : 'warning');
       return added > 0;
     },
 
@@ -163,7 +163,7 @@ function getCommandsModule({
       }
       uiNotificationService?.show?.({
         title: 'Dose (RTDOSE)',
-        message: removed ? 'Dose removida.' : 'Nenhuma sobreposição ativa.',
+        message: removed ? 'Dose removed.' : 'No active overlay.',
         type: 'info',
       });
       return removed > 0;
@@ -212,9 +212,9 @@ function getCommandsModule({
         title: 'RT Dose Kernel (WASM)',
         message: wasmLoaded
           ? match
-            ? `WASM OK — bate com JS em ${n} amostras.`
-            : `WASM divergiu do JS em ${mismatches} amostras!`
-          : 'WASM indisponível — usando fallback JS.',
+            ? `WASM OK — matches JS across ${n} samples.`
+            : `WASM diverged from JS on ${mismatches} samples!`
+          : 'WASM unavailable — using JS fallback.',
         type: wasmLoaded && match ? 'success' : wasmLoaded ? 'error' : 'warning',
       });
       // expose for programmatic E2E assertion
