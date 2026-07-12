@@ -19,7 +19,7 @@
  *   - RTV-128 RT hotkeys, RTV-129 PYLINAC QA sidecar
  */
 import { ToolbarService, defaults } from '@ohif/core';
-import { addTool, ScaleOverlayTool } from '@cornerstonejs/tools';
+import { addTool, ScaleOverlayTool, OrientationMarkerTool } from '@cornerstonejs/tools';
 import { id } from './id';
 import {
   cornerstone,
@@ -212,6 +212,68 @@ function applyAutosegMprStyling(mpr: any, cornerstoneViewportService: any): void
   }
 }
 
+/**
+ * Autoseg-style 3D orientation cube ("boneco") in the `volume3d` viewport
+ * (zero fork). Adds the stock Cornerstone3D OrientationMarkerTool to the 3D-only
+ * `volume3d` tool group as a small bottom-right anatomical cube. The prior
+ * attempt rendered a cube that filled the pane because the tool defaults to
+ * minPixelSize 100 / maxPixelSize 300; the fix is small explicit pixel clamps
+ * (viewportSize 0.15, min 50, max 120). Cube faces follow the DICOM LPS
+ * convention with the autoseg palette (L/R blue, P/A green, H/F purple).
+ * Best-effort + idempotent (guarded by the caller); safe to re-run.
+ */
+function applyVolume3dOrientationMarker(vol3d: any): boolean {
+  if (!vol3d?.addTool) {
+    return false;
+  }
+  const name = OrientationMarkerTool.toolName;
+  try {
+    if (!vol3d.hasTool?.(name)) {
+      try {
+        addTool(OrientationMarkerTool);
+      } catch (e) {
+        /* already registered globally */
+      }
+      vol3d.addTool(name, {
+        orientationWidget: {
+          enabled: true,
+          viewportCorner: 'BOTTOM_RIGHT',
+          viewportSize: 0.15,
+          minPixelSize: 50,
+          maxPixelSize: 120, // the giant-cube fix (tool default is 300)
+        },
+        overlayMarkerType: OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE,
+        overlayConfiguration: {
+          [OrientationMarkerTool.OVERLAY_MARKER_TYPES.ANNOTATED_CUBE]: {
+            faceProperties: {
+              xPlus: { text: 'L', faceColor: '#4589ff', faceRotation: 90 },
+              xMinus: { text: 'R', faceColor: '#4589ff', faceRotation: 270 },
+              yPlus: { text: 'P', faceColor: '#24a148', faceRotation: 180 },
+              yMinus: { text: 'A', faceColor: '#24a148' },
+              zPlus: { text: 'H', faceColor: '#8a3ffc' },
+              zMinus: { text: 'F', faceColor: '#8a3ffc' },
+            },
+            defaultStyle: {
+              fontStyle: 'bold',
+              fontFamily: 'Arial',
+              fontColor: 'white',
+              fontSizeScale: (res: number) => res / 2,
+              edgeThickness: 0.1,
+              edgeColor: '#161616',
+              resolution: 200,
+            },
+          },
+        },
+      });
+    }
+    vol3d.setToolEnabled?.(name);
+    return true;
+  } catch (e) {
+    /* tool group / 3D viewport not ready — caller will retry */
+    return false;
+  }
+}
+
 /** Map a viewport's camera view-plane normal to an anatomical plane label. */
 function planeLabel(cornerstoneViewportService: any, viewportId: string): string {
   try {
@@ -352,6 +414,7 @@ function onModeEnter(props) {
   // stock toolbar-toggle command (correct bindings/teardown) — zero fork.
   const { commandsManager } = props;
   let mprStyled = false;
+  let marker3dApplied = false;
   // The user wants Crosshairs ALWAYS active — re-enable it whenever it is found
   // disabled (e.g. after a layout/protocol change), not just once on load. The
   // autoseg styling (ref-line colors + draggable + scale bar) is applied once.
@@ -377,6 +440,17 @@ function onModeEnter(props) {
       }
     } catch (e) {
       /* tool group not ready yet — will retry on the next event */
+    }
+    // Autoseg-style 3D orientation cube on the volume3d pane, once it's ready.
+    if (!marker3dApplied) {
+      try {
+        const vol3d = toolGroupService?.getToolGroup?.('volume3d');
+        if (vol3d) {
+          marker3dApplied = applyVolume3dOrientationMarker(vol3d);
+        }
+      } catch (e) {
+        /* volume3d group not ready yet — retry on the next event */
+      }
     }
   };
   if (cornerstoneViewportService?.subscribe && cornerstoneViewportService.EVENTS?.VIEWPORT_DATA_CHANGED) {
