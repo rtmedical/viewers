@@ -103,15 +103,28 @@ export function roiTypeLabel(cls: RoiClassification): string {
   return cls.type === 'Support' ? 'Support' : 'External';
 }
 
-/** Group heading for a category. */
+/** Group heading (English source) for a category. */
 export function categoryLabel(category: RoiCategory): string {
   switch (category) {
     case 'target':
-      return 'Alvos';
+      return 'Targets';
     case 'external':
-      return 'Externo / Suporte';
+      return 'External / Support';
     case 'oar':
     default:
-      return 'Órgãos de risco';
+      return 'Organs at risk';
+  }
+}
+
+/** i18n key (RTMedical namespace) for a category's group heading. */
+export function categoryLabelKey(category: RoiCategory): string {
+  switch (category) {
+    case 'target':
+      return 'group_targets';
+    case 'external':
+      return 'group_external';
+    case 'oar':
+    default:
+      return 'group_oar';
   }
 }
