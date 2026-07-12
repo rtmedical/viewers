@@ -86,7 +86,7 @@ export function HeaderDropdown({
         aria-expanded={open}
         data-cy={`${testId}-trigger`}
         onClick={() => setOpen(value => !value)}
-        className="flex items-center gap-1 rounded px-2 py-1 text-sm text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--rt-color-primary,#348cfd)]"
+        className="flex items-center gap-1 rounded px-2 py-1 text-sm text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[var(--rt-color-primary,#4589ff)]"
       >
         {trigger ?? label}
       </button>
@@ -110,7 +110,7 @@ export function HeaderDropdown({
                 disabled={item.disabled}
                 data-cy={`${testId}-item-${item.id}`}
                 onClick={() => handleSelect(item)}
-                className="block w-full px-3 py-2 text-left text-sm text-white/90 hover:bg-[var(--rt-color-primary,#348cfd)]/20 disabled:cursor-not-allowed disabled:text-white/40"
+                className="block w-full px-3 py-2 text-left text-sm text-white/90 hover:bg-[var(--rt-color-primary,#4589ff)]/20 disabled:cursor-not-allowed disabled:text-white/40"
               >
                 {item.label}
               </button>

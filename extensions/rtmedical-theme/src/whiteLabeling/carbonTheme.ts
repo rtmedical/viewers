@@ -12,7 +12,11 @@
  *
  * Values are the canonical Carbon Gray/Blue ramp converted to `H S% L%`:
  *   Gray100 #161616, Gray90 #262626, Gray80 #393939, Gray70 #525252,
- *   Gray30 #c6c6c6, Gray10 #f4f4f4, Blue60 #0f62fe.
+ *   Gray30 #c6c6c6, Gray10 #f4f4f4, Blue50 #4589ff.
+ *
+ * The single accent is Carbon Blue50 #4589ff — this is exactly the interactive
+ * blue the autoseg viewer paints for active/selected states in its g100 island;
+ * we match it so our chrome reads as the same near-monochrome black/grey/white.
  */
 export const CARBON_G100_TOKENS: Record<string, string> = {
   '--background': '0 0% 8.6%', // Gray100 #161616 — app background
@@ -21,7 +25,7 @@ export const CARBON_G100_TOKENS: Record<string, string> = {
   '--card-foreground': '0 0% 95.7%',
   '--popover': '0 0% 14.9%', // #262626
   '--popover-foreground': '0 0% 95.7%',
-  '--primary': '219 99% 53%', // Carbon Blue60 #0f62fe — interactive
+  '--primary': '218 100% 64%', // Carbon Blue50 #4589ff — interactive (autoseg accent)
   '--primary-foreground': '0 0% 100%',
   '--secondary': '0 0% 22.4%', // Gray80 #393939 — layer-02
   '--secondary-foreground': '0 0% 95.7%',
@@ -31,8 +35,8 @@ export const CARBON_G100_TOKENS: Record<string, string> = {
   '--accent-foreground': '0 0% 95.7%',
   '--border': '0 0% 22.4%', // #393939 — subtle borders
   '--input': '0 0% 22.4%', // #393939 — fields
-  '--ring': '219 99% 53%', // Carbon focus blue
-  '--highlight': '219 99% 60%',
+  '--ring': '218 100% 64%', // Carbon Blue50 #4589ff — focus ring
+  '--highlight': '218 100% 72%', // Carbon Blue40 #78a9ff
   '--neutral': '0 0% 52%',
   '--neutral-light': '0 0% 77.6%',
   '--neutral-dark': '0 0% 22.4%',

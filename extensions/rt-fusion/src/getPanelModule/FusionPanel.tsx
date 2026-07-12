@@ -107,13 +107,13 @@ export function FusionPanel({ servicesManager }: FusionPanelProps): React.ReactE
         <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg,#111,#555)' }} />
         <div
           className="absolute inset-0"
-          style={{ background: 'linear-gradient(135deg,#0bf,#f30)', opacity: style.opacity, mixBlendMode: style.mixBlendMode as any }}
+          style={{ background: 'linear-gradient(135deg,#393939,#6f6f6f)', opacity: style.opacity, mixBlendMode: style.mixBlendMode as any }}
         />
       </div>
 
       <div className="mt-2 text-xs">
         {isFusable(config)
-          ? <span className="text-emerald-300">Ready to fuse (apply on viewport — follow-up).</span>
+          ? <span className="text-[#c6c6c6]">Ready to fuse (apply on viewport — follow-up).</span>
           : <span className="text-muted-foreground">Pick two distinct layers to fuse.</span>}
       </div>
       <Button className="mt-2" variant="ghost" size="sm" disabled={!isFusable(config)} onClick={() => undefined}>

@@ -45,7 +45,7 @@ export default function LineProfileChart({
       <text x={pad.l} y={height - 4} fontSize={9} fill="currentColor" fillOpacity={0.7}>0</text>
       <text x={pad.l + w - 18} y={height - 4} fontSize={9} fill="currentColor" fillOpacity={0.7}>{xMax.toFixed(0)}mm</text>
       {/* profile */}
-      <path d={path} fill="none" stroke="#5acce6" strokeWidth={1.5} />
+      <path d={path} fill="none" stroke="#4589ff" strokeWidth={1.5} />
       {unit ? (
         <text x={pad.l} y={pad.t + 6} fontSize={9} fill="currentColor" fillOpacity={0.6}>{unit}</text>
       ) : null}

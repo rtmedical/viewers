@@ -27,7 +27,7 @@ export function MeasurementsPanel(): React.ReactElement {
                 <div>{t.name}</div>
                 <div className="text-muted-foreground text-xs">{t.detail}</div>
               </td>
-              <td className="text-right align-top text-xs text-sky-300">{t.ticket}</td>
+              <td className="text-right align-top text-xs text-[#c6c6c6]">{t.ticket}</td>
             </tr>
           ))}
         </tbody>
