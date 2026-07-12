@@ -8,6 +8,7 @@
  * `@ohif/ui-next` (public UI) and this extension's own primitives.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@ohif/ui-next';
 import { buildRtPlanCsv, RtPlan } from '../rtPlanParser';
 
@@ -50,6 +51,7 @@ function downloadCsv(plan: RtPlan, name: string): void {
 const num = (v?: number, digits = 1) => (v == null ? '—' : Number.isInteger(v) ? String(v) : v.toFixed(digits));
 
 export function RTPlanPanel({ servicesManager }: RTPlanPanelProps): React.ReactElement {
+  const { t } = useTranslation('RTMedical');
   const displaySetService = servicesManager?.services?.displaySetService;
   const [displaySets, setDisplaySets] = useState<RtPlanDisplaySet[]>(() =>
     readRtPlanDisplaySets(displaySetService)
@@ -97,7 +99,7 @@ export function RTPlanPanel({ servicesManager }: RTPlanPanelProps): React.ReactE
   if (!plan) {
     return (
       <div className="text-muted-foreground px-2 py-4 text-sm" data-cy="rt-plan-panel">
-        No RT Plan loaded.
+        {t('plan_empty')}
       </div>
     );
   }
@@ -105,13 +107,13 @@ export function RTPlanPanel({ servicesManager }: RTPlanPanelProps): React.ReactE
   return (
     <div className="ohif-scrollbar flex h-full flex-col text-white" data-cy="rt-plan-panel">
       <div className="flex items-center justify-between px-2 py-2">
-        <span className="text-base font-medium">RT Plan — Ficha</span>
+        <span className="text-base font-medium">{t('plan_title')}</span>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={handleCsv}>
             CSV
           </Button>
           <Button variant="ghost" size="sm" onClick={handlePrint}>
-            Print
+            {t('plan_print')}
           </Button>
         </div>
       </div>
@@ -132,27 +134,27 @@ export function RTPlanPanel({ servicesManager }: RTPlanPanelProps): React.ReactE
 
       <div className="flex-1 overflow-auto px-2 pb-3 text-sm">
         <dl className="mb-3 grid grid-cols-2 gap-x-3 gap-y-1">
-          <dt className="text-muted-foreground">Label</dt>
+          <dt className="text-muted-foreground">{t('plan_label')}</dt>
           <dd>{plan.label || '—'}</dd>
-          <dt className="text-muted-foreground">Machine</dt>
+          <dt className="text-muted-foreground">{t('plan_machine')}</dt>
           <dd>{plan.machine || '—'}</dd>
-          <dt className="text-muted-foreground">Approval</dt>
+          <dt className="text-muted-foreground">{t('plan_approval')}</dt>
           <dd>{plan.approvalStatus || '—'}</dd>
-          <dt className="text-muted-foreground">Total dose</dt>
+          <dt className="text-muted-foreground">{t('plan_total_dose')}</dt>
           <dd>{num(plan.totalPrescribedDoseGy)} Gy</dd>
-          <dt className="text-muted-foreground">Total MU</dt>
+          <dt className="text-muted-foreground">{t('plan_total_mu')}</dt>
           <dd>{num(plan.totalMeterset)}</dd>
         </dl>
 
         {plan.prescriptions.length > 0 && (
           <>
-            <div className="mb-1 font-medium">Prescriptions</div>
+            <div className="mb-1 font-medium">{t('plan_prescriptions')}</div>
             <table className="mb-3 w-full border-collapse">
               <thead>
                 <tr className="text-muted-foreground text-left">
-                  <th className="py-1">Type</th>
-                  <th>Description</th>
-                  <th className="text-right">Dose (Gy)</th>
+                  <th className="py-1">{t('plan_type')}</th>
+                  <th>{t('plan_description')}</th>
+                  <th className="text-right">{t('plan_dose_gy')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -168,14 +170,14 @@ export function RTPlanPanel({ servicesManager }: RTPlanPanelProps): React.ReactE
           </>
         )}
 
-        <div className="mb-1 font-medium">Beams</div>
+        <div className="mb-1 font-medium">{t('plan_beams')}</div>
         <table className="w-full border-collapse">
           <thead>
             <tr className="text-muted-foreground text-left">
               <th className="py-1">#</th>
-              <th>Name</th>
-              <th>Energy</th>
-              <th className="text-right">Gantry</th>
+              <th>{t('plan_name')}</th>
+              <th>{t('plan_energy')}</th>
+              <th className="text-right">{t('plan_gantry')}</th>
               <th className="text-right">MU</th>
             </tr>
           </thead>
