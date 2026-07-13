@@ -8,6 +8,7 @@ import {
   suvBwFactor,
   convertToSuvBw,
   suvStats,
+  maskVolume,
 } from './measurements';
 
 describe('huStats (RTV-28)', () => {
@@ -70,5 +71,46 @@ describe('SUVbw (RTV-29)', () => {
     expect(convertToSuvBw(5_000_000, factor)).toBe(5);
     const s = suvStats([2_000_000, 6_000_000, 4_000_000], factor);
     expect(s).toMatchObject({ count: 3, minSuv: 2, maxSuv: 6, meanSuv: 4 });
+  });
+});
+
+describe('maskVolume (RTV-31)', () => {
+  // 2×2×2 mm voxels → 8 mm³ each
+  const spacing: [number, number, number] = [2, 2, 2];
+
+  it('counts only the requested segment', () => {
+    const labelmap = Uint8Array.from([0, 1, 1, 2, 2, 2, 0, 1]);
+    const r = maskVolume(labelmap, spacing, 2);
+    expect(r.voxelCount).toBe(3);
+    expect(r.volumeMm3).toBeCloseTo(24, 9);
+    expect(r.volumeCc).toBeCloseTo(0.024, 9);
+  });
+
+  it('counts every non-background voxel when segmentIndex is omitted', () => {
+    const labelmap = Uint8Array.from([0, 1, 1, 2, 2, 2, 0, 1]);
+    const r = maskVolume(labelmap, spacing);
+    expect(r.voxelCount).toBe(6);
+    expect(r.volumeCc).toBeCloseTo(0.048, 9);
+  });
+
+  it('scales with anisotropic spacing', () => {
+    const labelmap = Uint8Array.from([1, 1, 1, 1]);
+    const r = maskVolume(labelmap, [0.5, 0.5, 3]);
+    expect(r.volumeMm3).toBeCloseTo(4 * 0.75, 9);
+  });
+
+  it('returns zeros for empty, missing-segment, or invalid-spacing input', () => {
+    expect(maskVolume(new Uint8Array(0), spacing).voxelCount).toBe(0);
+    expect(maskVolume(Uint8Array.from([1, 1]), spacing, 9).voxelCount).toBe(0);
+    expect(maskVolume(Uint8Array.from([1, 1]), [0, 2, 2]).volumeCc).toBe(0);
+    expect(maskVolume(Uint8Array.from([1, 1]), [NaN, 2, 2] as any).volumeCc).toBe(0);
+  });
+
+  it('handles a realistic organ-sized mask', () => {
+    // 100k voxels of 1×1×3 mm = 300,000 mm³ = 300 cc
+    const labelmap = new Uint8Array(200000).fill(0);
+    for (let i = 0; i < 100000; i++) labelmap[i] = 5;
+    const r = maskVolume(labelmap, [1, 1, 3], 5);
+    expect(r.volumeCc).toBeCloseTo(300, 6);
   });
 });

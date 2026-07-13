@@ -151,10 +151,12 @@ function SelectedRoiInspector({ segment, volumeCc }: { segment: RtSegment; volum
 
 export interface RtStructWorkspacePanelProps {
   servicesManager: any;
+  commandsManager?: { runCommand: (name: string, options?: Record<string, unknown>) => unknown };
 }
 
 export function RtStructWorkspacePanel({
   servicesManager,
+  commandsManager,
 }: RtStructWorkspacePanelProps): React.ReactElement {
   const { t } = useTranslation('RTMedical');
   const {
@@ -242,10 +244,31 @@ export function RtStructWorkspacePanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicesManager, hydrated, selectedId, hasActiveSegment]);
 
-  const activeVolumeCc = activeSegment
-    ? roiVolumes.byName.get(String(activeSegment.label).trim().toLowerCase()) ??
-      roiVolumes.byNumber.get(activeSegment.segmentIndex)
-    : undefined;
+  // Prefer the voxel-exact labelmap volume (RTV-31, measurements command) when
+  // a Labelmap representation exists; fall back to the contour-slab
+  // approximation parsed from the RTSTRUCT.
+  const voxelVolumeCc = useMemo(() => {
+    if (!activeSegment || !selectedId) {
+      return undefined;
+    }
+    try {
+      const r: any = commandsManager?.runCommand?.('computeSegmentVolumeCc', {
+        segmentationId: selectedId,
+        segmentIndex: activeSegment.segmentIndex,
+      });
+      return r && Number.isFinite(r.volumeCc) && r.voxelCount > 0 ? r.volumeCc : undefined;
+    } catch {
+      return undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commandsManager, selectedId, activeSegment?.segmentIndex]);
+
+  const activeVolumeCc =
+    voxelVolumeCc ??
+    (activeSegment
+      ? roiVolumes.byName.get(String(activeSegment.label).trim().toLowerCase()) ??
+        roiVolumes.byNumber.get(activeSegment.segmentIndex)
+      : undefined);
 
   // Apply a global labelmap style change (opacity / fill-outline) to the MPR
   // labelmap rendering; best-effort + re-render. No-op if no labelmap rep yet.

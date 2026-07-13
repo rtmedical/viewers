@@ -166,3 +166,43 @@ export function suvStats(activityValuesBq: number[], factor: number): SuvStats {
     meanSuv: suv.reduce((a, b) => a + b, 0) / suv.length,
   };
 }
+
+export interface MaskVolumeResult {
+  voxelCount: number;
+  volumeMm3: number;
+  volumeCc: number;
+}
+
+/**
+ * Segmentation-mask volume (RTV-31): count the labelmap voxels belonging to
+ * `segmentIndex` (or ANY non-zero voxel when omitted) and multiply by the voxel
+ * volume from the spacing. Voxel-exact — complements the contour-slab
+ * approximation used by the RTSTRUCT panels (rt-struct approximateVolumeCc).
+ *
+ * @param labelmap  Flat labelmap scalars (one value per voxel).
+ * @param spacingMm Voxel spacing [x, y, z] in mm.
+ * @param segmentIndex Segment to measure; omit to measure all non-background.
+ */
+export function maskVolume(
+  labelmap: ArrayLike<number>,
+  spacingMm: [number, number, number],
+  segmentIndex?: number
+): MaskVolumeResult {
+  const voxelMm3 = Math.abs((spacingMm?.[0] ?? 0) * (spacingMm?.[1] ?? 0) * (spacingMm?.[2] ?? 0));
+  if (!Number.isFinite(voxelMm3) || voxelMm3 <= 0 || !labelmap?.length) {
+    return { voxelCount: 0, volumeMm3: 0, volumeCc: 0 };
+  }
+  let count = 0;
+  const n = labelmap.length;
+  if (segmentIndex == null) {
+    for (let i = 0; i < n; i++) {
+      if (labelmap[i] !== 0) count++;
+    }
+  } else {
+    for (let i = 0; i < n; i++) {
+      if (labelmap[i] === segmentIndex) count++;
+    }
+  }
+  const volumeMm3 = count * voxelMm3;
+  return { voxelCount: count, volumeMm3, volumeCc: volumeMm3 / 1000 };
+}
