@@ -187,13 +187,22 @@ function getCommandsModule({
           if (!vp.getAllVolumeIds?.().includes(volumeId)) {
             await vp.addVolumes([{ volumeId }], false, true);
           }
+          // suppressEvents=true: the dose VOI must NOT emit VOI_MODIFIED — the
+          // hanging protocol's VOI sync group would replay it onto the DEFAULT
+          // (CT) volume of the sibling MPR viewports (window 2.4M → black CT
+          // panes). Each viewport gets its dose properties directly here.
           try {
-            vp.setProperties({ colormap: washColormap, ...(voiRange ? { voiRange } : {}) }, volumeId);
+            vp.setProperties(
+              { colormap: washColormap, ...(voiRange ? { voiRange } : {}) },
+              volumeId,
+              true
+            );
           } catch (tfErr) {
             // piecewise opacity unsupported → flat opacity
             vp.setProperties(
               { colormap: { name: colormap, opacity }, ...(voiRange ? { voiRange } : {}) },
-              volumeId
+              volumeId,
+              true
             );
           }
           vp.render();
