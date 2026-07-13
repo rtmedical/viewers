@@ -122,6 +122,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-tps"
+    },
+    {
+      "packageName": "@ohif/extension-rt-bev"
     }
   ],
   "modes": [
