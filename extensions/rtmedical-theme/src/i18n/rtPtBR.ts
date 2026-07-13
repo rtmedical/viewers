@@ -155,6 +155,16 @@ export const rtPtBR: Record<string, string> = {
   tl_hdr_energy: 'Energia',
   tl_hdr_date: 'Data',
   tl_hdr_beams: 'Feixes',
+  // --- BEV panel (rt-bev) ---
+  bev_panel_title: 'BEV (Beam’s Eye View)',
+  bev_beam: 'Feixe',
+  bev_gantry: 'Gantry',
+  bev_collimator: 'Colimador',
+  bev_control_point: 'Ponto de controle',
+  bev_show: 'Mostrar',
+  bev_hide: 'Ocultar',
+  bev_no_plan: 'Nenhum RTPLAN carregado.',
+  bev_no_rtimage: 'Abra uma RTIMAGE (DRR) em um viewport para ver o feixe.',
 };
 
 /** A minimal English mirror so missing-key fallbacks read sensibly in en-US. */
@@ -292,4 +302,14 @@ export const rtEn: Record<string, string> = {
   tl_hdr_energy: 'Energy',
   tl_hdr_date: 'Date',
   tl_hdr_beams: 'Beams',
+  // --- BEV panel (rt-bev) ---
+  bev_panel_title: 'BEV (Beam’s Eye View)',
+  bev_beam: 'Beam',
+  bev_gantry: 'Gantry',
+  bev_collimator: 'Collimator',
+  bev_control_point: 'Control point',
+  bev_show: 'Show',
+  bev_hide: 'Hide',
+  bev_no_plan: 'No RTPLAN loaded.',
+  bev_no_rtimage: 'Open an RTIMAGE (DRR) in a viewport to see the beam.',
 };

@@ -8,7 +8,7 @@ import filesToStudies from './filesToStudies';
 
 import { extensionManager } from '../../App';
 
-import { Button, Icons } from '@ohif/ui-next';
+import { Button } from '@ohif/ui-next';
 
 const getLoadButton = (onDrop, text, isDir) => {
   return (
@@ -134,7 +134,15 @@ function Local({ modePath }: LocalProps) {
           <div className="flex h-screen w-screen items-center justify-center">
             <div className="bg-muted border-primary/60 mx-auto space-y-2 rounded-xl border border-dashed py-12 px-12 drop-shadow-md">
               <div className="flex items-center justify-center">
-                <Icons.OHIFLogoColorDarkBackground className="h-18" />
+                <div
+                  aria-label="RT Medical"
+                  className="flex items-center gap-3 text-white"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center border border-[#4589ff] bg-[#0f62fe] text-xl font-bold leading-none text-white">
+                    RT
+                  </span>
+                  <span className="text-2xl font-semibold">RT Medical</span>
+                </div>
               </div>
               <div className="space-y-2 py-6 text-center">
                 {dropInitiated ? (

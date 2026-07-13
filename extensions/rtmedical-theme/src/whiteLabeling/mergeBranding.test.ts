@@ -3,8 +3,8 @@ import type { BrandingConfig } from './types';
 
 describe('mergeBranding', () => {
   const base: BrandingConfig = {
-    productName: 'RT Medical Connect Viewer',
-    shortName: 'Connect',
+    productName: 'RT Medical Viewer',
+    shortName: 'RT Medical',
     logoHref: '/',
     theme: { primary: '#348cfd', background: '#000000', foreground: '#e8eaed' },
     supportEmail: 'suporte@rtmedical.com.br',
@@ -19,7 +19,7 @@ describe('mergeBranding', () => {
   it('overrides top-level scalar fields', () => {
     const result = mergeBranding(base, { productName: 'Hospital A Viewer' });
     expect(result.productName).toBe('Hospital A Viewer');
-    expect(result.shortName).toBe('Connect');
+    expect(result.shortName).toBe('RT Medical');
   });
 
   it('deep-merges nested theme tokens instead of replacing the object', () => {
@@ -33,7 +33,7 @@ describe('mergeBranding', () => {
 
   it('ignores undefined override values so base values survive', () => {
     const result = mergeBranding(base, { productName: undefined, shortName: 'X' });
-    expect(result.productName).toBe('RT Medical Connect Viewer');
+    expect(result.productName).toBe('RT Medical Viewer');
     expect(result.shortName).toBe('X');
   });
 

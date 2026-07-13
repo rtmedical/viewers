@@ -30,12 +30,12 @@ export function defaultSettingsMenuItems({
   const items: SettingsMenuItem[] = [
     {
       id: 'about',
-      label: 'About OHIF Viewer',
+      label: 'About RT Medical Viewer',
       onClick: () => {
         const AboutModal = customizationService.getCustomization('ohif.aboutModal');
         show({
           content: AboutModal,
-          title: AboutModal?.title ?? t('AboutModal:About OHIF Viewer'),
+          title: AboutModal?.title ?? 'About RT Medical Viewer',
           containerClassName: AboutModal?.containerClassName ?? 'max-w-md',
         });
       },

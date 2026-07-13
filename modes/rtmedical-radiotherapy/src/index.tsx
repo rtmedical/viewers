@@ -48,6 +48,7 @@ export const rtmedical = {
   fusionTimeline: '@ohif/extension-rt-fusion-timeline.panelModule.fusionTimeline',
   rtPrint: '@ohif/extension-rt-print.panelModule.rtPrint',
   lineProfile: '@ohif/extension-measurements.panelModule.lineProfile',
+  bev: '@ohif/extension-rt-bev.panelModule.bev',
 };
 
 export const extensionDependencies = {
@@ -67,6 +68,8 @@ export const extensionDependencies = {
   '@ohif/extension-rt-struct': '^3.0.0',
   // RTV Wave 4: TPS-style Eclipse layout (custom ViewerLayout + Info Window).
   '@ohif/extension-rt-tps': '^3.0.0',
+  // BEV: MLC/jaw aperture overlay on the RTIMAGE (DRR) stack viewport.
+  '@ohif/extension-rt-bev': '^3.0.0',
 };
 
 /**
@@ -112,6 +115,7 @@ export const radiotherapyLayout = {
       rtmedical.keyImages,
       cornerstone.measurements,
       rtmedical.lineProfile,
+      rtmedical.bev,
       rtmedical.rtPrint,
       rtmedical.laudo,
     ],
@@ -509,6 +513,8 @@ export const radiotherapyToolbarSections = {
     'rtStruct3D',
     // Wave 4 (Phase 5): RTDOSE color wash overlay on the MPR viewports.
     'rtDoseWash',
+    // BEV: MLC/jaw aperture over the RTIMAGE (DRR) stack viewport (rt-bev).
+    'rtBev',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -600,6 +606,17 @@ const rtPanelButtons = [
       label: 'Dose Wash',
       tooltip: 'Overlay dose (RTDOSE) as color wash on the MPR',
       commands: 'showDoseWash',
+    },
+  },
+  {
+    // BEV (rt-bev): toggle the MLC/jaw aperture overlay on the RTIMAGE (DRR).
+    id: 'rtBev',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-rectangle',
+      label: 'BEV',
+      tooltip: "Beam's Eye View (MLC) on the RTIMAGE",
+      commands: 'toggleBev',
     },
   },
   {

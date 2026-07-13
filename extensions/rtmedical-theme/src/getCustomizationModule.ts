@@ -1,6 +1,7 @@
 import { WhiteLabelingProvider, useWhiteLabeling } from './whiteLabeling/WhiteLabelingContext';
 import { Logo, createLogoComponentFn } from './whiteLabeling/Logo';
 import { defaultBranding } from './whiteLabeling/defaultBranding';
+import { RtMedicalAboutModal } from './whiteLabeling/RtMedicalAboutModal';
 import { CommonHeader } from './components/CommonHeader';
 import {
   TASK_ACTIONS,
@@ -29,6 +30,10 @@ export default function getCustomizationModule() {
         createLogoComponentFn,
         defaultBranding,
       },
+    },
+    {
+      name: 'ohif.aboutModal',
+      value: RtMedicalAboutModal,
     },
     {
       name: 'rtmedical.commonHeader',
