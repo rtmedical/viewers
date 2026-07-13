@@ -14,7 +14,7 @@ interface PanelModuleParams {
   extensionManager?: unknown;
 }
 
-function getPanelModule({ servicesManager }: PanelModuleParams) {
+function getPanelModule({ servicesManager, commandsManager }: PanelModuleParams) {
   return [
     {
       name: 'rtStruct',
@@ -31,7 +31,11 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
       iconLabel: 'Structures',
       label: 'Structures',
       component: (props: Record<string, unknown>) => (
-        <RtStructWorkspacePanel {...props} servicesManager={servicesManager} />
+        <RtStructWorkspacePanel
+          {...props}
+          servicesManager={servicesManager}
+          commandsManager={commandsManager}
+        />
       ),
     },
   ];
