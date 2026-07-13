@@ -29,12 +29,15 @@ import {
 export const rtmedical = {
   keyImages: '@ohif/extension-rtmedical-key-images.panelModule.keyImages',
   laudo: 'rtmedical-theme.panelModule.laudo',
+  // RTV-48: AHA 17-segment bullseye (cardiology).
+  bullseye: '@ohif/extension-cardiology.panelModule.bullseye',
 };
 
 export const extensionDependencies = {
   ...basicDependencies,
   '@ohif/extension-rtmedical-theme': '^3.0.0',
   '@ohif/extension-rtmedical-key-images': '^3.0.0',
+  '@ohif/extension-cardiology': '^3.0.0',
 };
 
 /** Diagnostic layout: study browser on the left, Key Images + measurements on the right. */
@@ -42,7 +45,7 @@ export const radiologyLayout = {
   ...basicLayout,
   props: {
     ...basicLayout.props,
-    rightPanels: [rtmedical.keyImages, cornerstone.measurements, rtmedical.laudo],
+    rightPanels: [rtmedical.keyImages, cornerstone.measurements, rtmedical.bullseye, rtmedical.laudo],
     rightPanelClosed: false,
   },
 };

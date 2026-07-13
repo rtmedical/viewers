@@ -125,6 +125,9 @@
     },
     {
       "packageName": "@ohif/extension-rt-bev"
+    },
+    {
+      "packageName": "@ohif/extension-cardiology"
     }
   ],
   "modes": [
