@@ -57,6 +57,11 @@ export interface UseRtStructSegments {
   hydrated: boolean;
   /** The active (selected) segment index, autoseg-style row highlight. */
   activeSegmentIndex?: number;
+  /**
+   * A viewport that carries the segmentation representation — required for
+   * per-viewport writes such as setSegmentColor (RTV-213 Properties dialog).
+   */
+  primaryViewportId?: string;
   setVisibility: (segmentIndex: number, visible: boolean) => void;
   setGroupVisibility: (segmentIndexes: number[], visible: boolean) => void;
   setActive: (segmentIndex: number) => void;
@@ -248,6 +253,7 @@ export function useRtStructSegments(servicesManager: any): UseRtStructSegments {
     segments,
     hydrated: segmentations.length > 0,
     activeSegmentIndex,
+    primaryViewportId,
     setVisibility,
     setGroupVisibility,
     setActive,

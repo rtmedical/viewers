@@ -93,6 +93,16 @@ export const rtPtBR: Record<string, string> = {
   group_targets: 'Alvos',
   group_oar: 'Órgãos em risco',
   group_external: 'Externo / Suporte',
+  // --- TG-263 structure Properties dialog (rt-struct, RTV-213) ---
+  tg263_properties: 'Propriedades',
+  tg263_structure_code: 'Código da estrutura',
+  tg263_volume_type: 'Tipo de volume',
+  tg263_name: 'Nome',
+  tg263_color: 'Cor',
+  tg263_apply: 'Aplicar',
+  tg263_cancel: 'Cancelar',
+  tg263_new_structure: 'Nova estrutura',
+  tg263_no_results: 'Sem resultados',
   // --- RT Plan Ficha panel (rt-plan) ---
   plan_empty: 'Nenhum RT Plan carregado.',
   plan_title: 'RT Plan — Ficha',
@@ -266,6 +276,16 @@ export const rtEn: Record<string, string> = {
   group_targets: 'Targets',
   group_oar: 'Organs at risk',
   group_external: 'External / Support',
+  // --- TG-263 structure Properties dialog (rt-struct, RTV-213) ---
+  tg263_properties: 'Properties',
+  tg263_structure_code: 'Structure code',
+  tg263_volume_type: 'Volume type',
+  tg263_name: 'Name',
+  tg263_color: 'Color',
+  tg263_apply: 'Apply',
+  tg263_cancel: 'Cancel',
+  tg263_new_structure: 'New structure',
+  tg263_no_results: 'No results',
   // --- RT Plan Ficha panel (rt-plan) ---
   plan_empty: 'No RT Plan loaded.',
   plan_title: 'RT Plan',
