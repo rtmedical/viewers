@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { segmentation as cstSegmentation, Enums as csToolsEnums } from '@cornerstonejs/tools';
-import { View, ViewOff, ChevronRight, ChevronDown, SettingsAdjust } from '@carbon/icons-react';
+import { View, ViewOff, ChevronRight, ChevronDown, SettingsAdjust, Add } from '@carbon/icons-react';
 import { useRtStructSegments, RtSegment } from './useRtStructSegments';
+import { StructurePropertiesDialog, getStructureMeta } from './StructurePropertiesDialog';
 import { parseRtStruct } from '../rtStructParser';
 import {
   categorizeRoi,
@@ -24,8 +25,12 @@ import {
  * g100 highlight: bg #161616 + #4589ff left accent) and opens the bottom
  * inspector-lite (Type / Color / Volume). Collapsible groups with a count pill
  * that bulk-toggles group visibility, plus a global opacity slider +
- * Fill/Outline toggle (defaults: 50% fill, autoseg parity). Display-only (no
- * editing) — rename/recolor/delete/boolean/margin/collab intentionally dropped.
+ * Fill/Outline toggle (defaults: 50% fill, autoseg parity). Display-only —
+ * delete/boolean/margin/collab intentionally dropped — EXCEPT the RTV-213
+ * Eclipse-style Properties dialog: right-click a row (remediation of imported
+ * names to TG-263) or '+' in the header (new empty structure) opens
+ * StructurePropertiesDialog, which renames/recolours via SegmentationService
+ * and records the DICOM interpreted type in structureMetaStore.
  */
 
 // Carbon glyphs (autoseg parity): View/ViewOff for the eyes, ChevronRight/Down
@@ -41,11 +46,14 @@ function SegmentRow({
   isActive,
   onToggle,
   onSelect,
+  onProperties,
 }: {
   segment: RtSegment;
   isActive: boolean;
   onToggle: (index: number, visible: boolean) => void;
   onSelect: (index: number) => void;
+  /** Eclipse-style right-click → Properties (RTV-213). */
+  onProperties: (index: number) => void;
 }) {
   const { t } = useTranslation('RTMedical');
   const cls = categorizeRoi(segment.label);
@@ -61,6 +69,10 @@ function SegmentRow({
           ? 'border-l-[#4589ff] bg-[#161616] hover:bg-[#161616]'
           : 'border-l-transparent hover:bg-[#333333]'
       } ${segment.visible ? '' : 'opacity-55'}`}
+      onContextMenu={e => {
+        e.preventDefault();
+        onProperties(segment.segmentIndex);
+      }}
     >
       <button
         type="button"
@@ -104,9 +116,21 @@ function SegmentRow({
  * Inspector-lite (autoseg SelectedRoiInspector, display-only): Type / Color /
  * Volume of the active row, pinned to the panel bottom.
  */
-function SelectedRoiInspector({ segment, volumeCc }: { segment: RtSegment; volumeCc?: number }) {
+function SelectedRoiInspector({
+  segment,
+  volumeCc,
+  interpretedType,
+}: {
+  segment: RtSegment;
+  volumeCc?: number;
+  /** RTV-213: DICOM interpreted type recorded via the Properties dialog. */
+  interpretedType?: string;
+}) {
   const { t } = useTranslation('RTMedical');
-  const cls = categorizeRoi(segment.label);
+  // When the Properties dialog recorded an RT ROI Interpreted Type, show the
+  // DICOM term itself; classify it (PTV→target, ORGAN→oar, …) so the badge
+  // keeps the conventional colours. Otherwise fall back to the name heuristic.
+  const cls = categorizeRoi(interpretedType ?? segment.label);
   const badgeBg = roiBadgeColor(cls, segment.color);
   const badgeFg = cls.category === 'target' ? '#ffffff' : contrastText(segment.color);
   const [r, g, b] = segment.color;
@@ -122,8 +146,9 @@ function SelectedRoiInspector({ segment, volumeCc }: { segment: RtSegment; volum
           <span
             className="inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold leading-none"
             style={{ backgroundColor: badgeBg, color: badgeFg }}
+            data-cy="rt-struct-inspector-type"
           >
-            {roiTypeLabel(cls)}
+            {interpretedType ?? roiTypeLabel(cls)}
           </span>
         </div>
         <div className={row}>
@@ -166,6 +191,7 @@ export function RtStructWorkspacePanel({
     segments,
     hydrated,
     activeSegmentIndex,
+    primaryViewportId,
     setVisibility,
     setGroupVisibility,
     setActive,
@@ -176,6 +202,22 @@ export function RtStructWorkspacePanel({
   // autoseg defaults: 50% opacity, FILL rendering (ViewerContext.tsx:109-110).
   const [opacity, setOpacity] = useState(50);
   const [outlineOnly, setOutlineOnly] = useState(false);
+  // RTV-213 Eclipse-style Properties dialog: 'edit' via row right-click
+  // (remediation, the priority path), 'create' via the header '+' button.
+  const [propertiesDialog, setPropertiesDialog] = useState<
+    null | { mode: 'edit' | 'create'; segmentIndex?: number }
+  >(null);
+  // Bumped after every Apply so the inspector re-reads structureMetaStore even
+  // when the segmentation state itself did not change (e.g. type-only edits).
+  const [metaTick, setMetaTick] = useState(0);
+
+  const openProperties = useCallback(
+    (segmentIndex: number) => {
+      setActive(segmentIndex);
+      setPropertiesDialog({ mode: 'edit', segmentIndex });
+    },
+    [setActive]
+  );
 
   // Group segments by clinical category, preserving order and dropping empties.
   const groups = useMemo(() => {
@@ -189,6 +231,17 @@ export function RtStructWorkspacePanel({
   const activeSegment = useMemo(
     () => segments.find(s => s.segmentIndex === activeSegmentIndex),
     [segments, activeSegmentIndex]
+  );
+
+  // RTV-213: interpreted type recorded via the Properties dialog (if any).
+  const activeMeta = useMemo(
+    () =>
+      activeSegment && selectedId
+        ? getStructureMeta(selectedId, activeSegment.segmentIndex)
+        : undefined,
+    // metaTick: re-read after every dialog Apply.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedId, activeSegment?.segmentIndex, metaTick]
   );
 
   // Approximate ROI volumes (cm³) from the RTSTRUCT display set — same source
@@ -343,20 +396,34 @@ export function RtStructWorkspacePanel({
   }
 
   return (
-    <div className="flex h-full flex-col" data-cy="rt-struct-workspace">
+    <div className="relative flex h-full flex-col" data-cy="rt-struct-workspace">
       <div className="flex shrink-0 items-center justify-between px-2 py-2">
         <span className="text-muted-foreground text-[11px] font-semibold uppercase tracking-[0.04em]">
           {t('struct_workspace_title')}
         </span>
-        <button
-          type="button"
-          className={`p-1 ${showControls ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-          title={t('struct_display_controls')}
-          aria-label={t('struct_display_controls')}
-          onClick={() => setShowControls(s => !s)}
-        >
-          <SettingsAdjust size={16} aria-hidden />
-        </button>
+        <div className="flex items-center">
+          {selectedId && (
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground p-1"
+              title={t('tg263_new_structure')}
+              aria-label={t('tg263_new_structure')}
+              data-cy="tg263-add"
+              onClick={() => setPropertiesDialog({ mode: 'create' })}
+            >
+              <Add size={16} aria-hidden />
+            </button>
+          )}
+          <button
+            type="button"
+            className={`p-1 ${showControls ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            title={t('struct_display_controls')}
+            aria-label={t('struct_display_controls')}
+            onClick={() => setShowControls(s => !s)}
+          >
+            <SettingsAdjust size={16} aria-hidden />
+          </button>
+        </div>
       </div>
 
       {segmentations.length > 1 && (
@@ -451,6 +518,7 @@ export function RtStructWorkspacePanel({
                       isActive={m.segmentIndex === activeSegmentIndex}
                       onToggle={setVisibility}
                       onSelect={setActive}
+                      onProperties={openProperties}
                     />
                   ))}
                 </ul>
@@ -460,7 +528,35 @@ export function RtStructWorkspacePanel({
         })}
       </div>
 
-      {activeSegment && <SelectedRoiInspector segment={activeSegment} volumeCc={activeVolumeCc} />}
+      {activeSegment && (
+        <SelectedRoiInspector
+          segment={activeSegment}
+          volumeCc={activeVolumeCc}
+          interpretedType={activeMeta?.interpretedType}
+        />
+      )}
+
+      {propertiesDialog && selectedId && (
+        <StructurePropertiesDialog
+          servicesManager={servicesManager}
+          segmentationId={selectedId}
+          primaryViewportId={primaryViewportId}
+          mode={propertiesDialog.mode}
+          segmentIndex={propertiesDialog.segmentIndex}
+          initialLabel={
+            propertiesDialog.mode === 'edit'
+              ? segments.find(s => s.segmentIndex === propertiesDialog.segmentIndex)?.label
+              : ''
+          }
+          initialColor={
+            propertiesDialog.mode === 'edit'
+              ? segments.find(s => s.segmentIndex === propertiesDialog.segmentIndex)?.color
+              : undefined
+          }
+          onClose={() => setPropertiesDialog(null)}
+          onApplied={() => setMetaTick(v => v + 1)}
+        />
+      )}
     </div>
   );
 }
