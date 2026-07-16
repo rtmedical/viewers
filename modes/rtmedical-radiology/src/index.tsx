@@ -22,6 +22,8 @@ import {
   basicRoute,
   extensionDependencies as basicDependencies,
   modeInstance as basicModeInstance,
+  onModeEnter as basicOnModeEnter,
+  onModeExit as basicOnModeExit,
   modeFactory,
 } from '@ohif/mode-basic';
 
@@ -83,6 +85,36 @@ export const radiologyToolbarSections = {
   ],
 };
 
+/**
+ * RTV-210 — extends @ohif/mode-basic's onModeEnter with the touch/tablet
+ * gesture layer (iPad rounds): one-finger slice scroll, pinch zoom +
+ * two-finger pan, double-tap reset, long-press context menu, three-finger
+ * swipe = next/prev worklist study. The 'applyTouchGestures' command is
+ * registered by rtmedical-theme (zero fork) and returns its teardown, which
+ * onModeExit uses — onModeExit does not receive commandsManager.
+ */
+function onModeEnter(props) {
+  basicOnModeEnter.call(this, props);
+  try {
+    this._rtTouchGesturesTeardown = props.commandsManager?.runCommand?.('applyTouchGestures', {
+      toolGroupIds: ['default', 'mpr', 'SRToolGroup', 'volume3d'],
+    });
+  } catch (e) {
+    /* touch gestures unavailable — non-fatal */
+  }
+}
+
+/** Tears down the RTV-210 touch listeners, then runs the base onModeExit. */
+function onModeExit(props) {
+  try {
+    this._rtTouchGesturesTeardown?.();
+  } catch (e) {
+    /* ignore */
+  }
+  this._rtTouchGesturesTeardown = undefined;
+  basicOnModeExit.call(this, props);
+}
+
 export const modeInstance = {
   ...basicModeInstance,
   id,
@@ -91,6 +123,8 @@ export const modeInstance = {
   hide: false,
   routes: [radiologyRoute],
   toolbarSections: radiologyToolbarSections,
+  onModeEnter,
+  onModeExit,
   // RTV-119: radiology HPs registered by rtmedical-theme; engine matches by
   // modality and falls back to this universal 1x1 default.
   hangingProtocol: 'rt-radiology-default',

@@ -464,6 +464,20 @@ function onModeEnter(props) {
     );
   }
 
+  // RTV-210 — touch/tablet gestures (iPad rounds): one-finger slice scroll,
+  // pinch zoom + two-finger pan, double-tap reset, long-press context menu,
+  // three-finger swipe = next/prev worklist study. The command lives in
+  // rtmedical-theme (zero fork) and returns its teardown; keep it for
+  // onModeExit, which does not receive commandsManager. The tool groups all
+  // exist here — basicOnModeEnter ran initToolGroups above.
+  try {
+    this._rtTouchGesturesTeardown = commandsManager?.runCommand?.('applyTouchGestures', {
+      toolGroupIds: ['default', 'mpr', 'SRToolGroup', 'volume3d'],
+    });
+  } catch (e) {
+    /* touch gestures unavailable — non-fatal */
+  }
+
   // Reveal RT data already present when the mode is entered...
   activateRtPanel(panelService, displaySetService.getActiveDisplaySets());
 
@@ -476,12 +490,20 @@ function onModeEnter(props) {
   ];
 }
 
-/** Tears down the RTV-126 subscription, then runs the base onModeExit. */
+/** Tears down the RTV-126/RTV-210 subscriptions, then runs the base onModeExit. */
 function onModeExit(props) {
   (this._rtAutoloadSubscriptions || []).forEach(sub => sub?.unsubscribe?.());
   this._rtAutoloadSubscriptions = [];
   this._rtCrosshairsSub?.unsubscribe?.();
   this._rtCrosshairsSub = undefined;
+  // RTV-210: remove the touch gesture listeners (bindings die with the tool
+  // groups, which basicOnModeExit destroys).
+  try {
+    this._rtTouchGesturesTeardown?.();
+  } catch (e) {
+    /* ignore */
+  }
+  this._rtTouchGesturesTeardown = undefined;
   basicOnModeExit.call(this, props);
 }
 
