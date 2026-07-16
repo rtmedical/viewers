@@ -1,4 +1,6 @@
 import WorklistQueueService from './worklist/WorklistQueueService';
+import { applyTouchGestures, removeTouchGestures } from './touch/touchGestures';
+import type { TeardownTouchGestures } from './touch/touchGestures';
 
 /**
  * RT workflow commands (RTV-120). Worklist next/prev navigation built on the
@@ -8,7 +10,14 @@ import WorklistQueueService from './worklist/WorklistQueueService';
  */
 interface CommandsModuleParams {
   servicesManager: { services: Record<string, any> };
-  commandsManager: { runCommand: (name: string, options?: Record<string, unknown>) => unknown };
+  commandsManager: {
+    run: (input: unknown, options?: Record<string, unknown>) => unknown;
+    runCommand: (
+      name: string,
+      options?: Record<string, unknown>,
+      context?: string
+    ) => unknown;
+  };
 }
 
 export default function getCommandsModule({
@@ -42,12 +51,26 @@ export default function getCommandsModule({
       panelService.activatePanel(panelId, true);
       return true;
     },
+    // RTV-210: touch/tablet gestures (iPad rounds). Modes call this in
+    // onModeEnter (after the tool groups exist) and keep the returned teardown
+    // for onModeExit — onModeExit does not receive commandsManager
+    // (Mode.tsx:329-333), so the teardown travels as the command's return
+    // value. 'removeTouchGestures' is the command-shaped fallback.
+    applyTouchGestures: ({
+      toolGroupIds,
+    }: {
+      toolGroupIds?: string[];
+    } = {}): TeardownTouchGestures =>
+      applyTouchGestures({ servicesManager, commandsManager, toolGroupIds }),
+    removeTouchGestures: (): void => removeTouchGestures(),
   };
 
   const definitions = {
     nextStudyInWorklist: { commandFn: actions.nextStudyInWorklist },
     prevStudyInWorklist: { commandFn: actions.prevStudyInWorklist },
     activateRtPanel: { commandFn: actions.activateRtPanel },
+    applyTouchGestures: { commandFn: actions.applyTouchGestures },
+    removeTouchGestures: { commandFn: actions.removeTouchGestures },
   };
 
   return { actions, definitions, defaultContext: 'DEFAULT' };
