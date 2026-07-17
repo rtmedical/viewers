@@ -57,7 +57,9 @@ export function gridProtocol({ id, name, modalities, rows, cols, weight = 15 }: 
       {
         id: `${id}-stage`,
         name,
-        viewportStructure: { layoutType: 'grid', properties: { rows, cols } },
+        // `columns` is the key core consumes (HangingProtocolService._updateViewports /
+        // app ViewportGrid); `cols` is kept for existing consumers of this shape.
+        viewportStructure: { layoutType: 'grid', properties: { rows, cols, columns: cols } },
         viewports: Array.from({ length: total }, (_unused, k) => ({
           viewportOptions: { toolGroupId: 'default', allowUnmatchedView: true },
           displaySets: [{ id: 'ds', matchedDisplaySetsIndex: k }],

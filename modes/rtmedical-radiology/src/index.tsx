@@ -33,6 +33,8 @@ export const rtmedical = {
   laudo: 'rtmedical-theme.panelModule.laudo',
   // RTV-48: AHA 17-segment bullseye (cardiology).
   bullseye: '@ohif/extension-cardiology.panelModule.bullseye',
+  // RTV-23: graphical hanging-protocol editor.
+  hpEditor: 'rtmedical-theme.panelModule.hpEditor',
 };
 
 export const extensionDependencies = {
@@ -47,7 +49,13 @@ export const radiologyLayout = {
   ...basicLayout,
   props: {
     ...basicLayout.props,
-    rightPanels: [rtmedical.keyImages, cornerstone.measurements, rtmedical.bullseye, rtmedical.laudo],
+    rightPanels: [
+      rtmedical.keyImages,
+      cornerstone.measurements,
+      rtmedical.bullseye,
+      rtmedical.hpEditor,
+      rtmedical.laudo,
+    ],
     rightPanelClosed: false,
   },
 };
