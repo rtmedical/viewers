@@ -21,6 +21,10 @@ export class ObjectPath {
       while (i < last) {
         let field = components[i];
 
+        if (field === '__proto__' || field === 'constructor' || field === 'prototype') {
+          return false;
+        }
+
         if (Object.prototype.hasOwnProperty.call(currentObject, field)) {
           if (!ObjectPath.isValidObject(currentObject[field])) {
             break;
@@ -34,7 +38,12 @@ export class ObjectPath {
       }
 
       if (i === last) {
-        currentObject[components[last]] = value;
+        const field = components[last];
+        if (field === '__proto__' || field === 'constructor' || field === 'prototype') {
+          return false;
+        }
+
+        currentObject[field] = value;
         result = true;
       }
     }
