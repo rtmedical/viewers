@@ -77,3 +77,5 @@ auth.json
 # Session artifacts (Playwright MCP screenshots/logs)
 /.playwright-mcp/
 /*.png
+/*.jpeg
+/*.jpg

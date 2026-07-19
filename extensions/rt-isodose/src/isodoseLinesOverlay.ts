@@ -3,9 +3,10 @@
  *
  * Draws vector isodose contours (Eclipse-style lines, not wash) over each MPR
  * viewport: samples the loaded RTDOSE volume on the current camera plane into a
- * CSS-pixel grid, runs the pure marching-squares core ({@link ./marchingSquares})
- * per level, and renders colored SVG polylines in an overlay layer owned by this
- * module. Zero-fork: the SVG is appended into cornerstone's `div.viewport-element`
+ * CSS-pixel grid, runs one batched marching-squares pass for all levels via the
+ * WASM dispatcher ({@link ./isodoseLinesWasm} — Rust kernel when warm, bit-parity
+ * JS core otherwise), and renders colored SVG polylines in an overlay layer owned
+ * by this module. Zero-fork: the SVG is appended into cornerstone's `div.viewport-element`
  * AFTER the tools' `svg.svg-layer` (cornerstone's removeEnabledElement removes the
  * FIRST svg it finds — ours must not be it), styled exactly like that layer
  * (absolute, 100%, pointer-events:none). Redraws on CAMERA_MODIFIED (covers MPR
@@ -13,7 +14,9 @@
  * self-cleans on the global ELEMENT_DISABLED.
  */
 import { eventTarget, Enums, utilities as csUtils } from '@cornerstonejs/core';
-import { isodoseLinesForLevels, trilinearSample } from './marchingSquares';
+import { trilinearSample } from './marchingSquares';
+import { decodeIsoContours } from './isodoseLines';
+import { marchingSquaresMultiSync, warmIsodoseLinesKernel } from './isodoseLinesWasm';
 import type { IsodoseLineLevel } from './isodoseLineLevels';
 
 const LAYER_CLASS = 'rt-isodose-layer';
@@ -124,23 +127,39 @@ export function renderIsodoseLines(
   }
 
   let paths = 0;
-  // low → high so hotter (clinically more important) lines draw on top
-  const byRaw = [...levels].sort((a, b) => a.raw - b.raw);
-  for (const level of byRaw) {
-    const contours = isodoseLinesForLevels(field, gw, gh, [level.raw])[0];
-    if (!contours) {
-      continue;
-    }
-    for (const polyline of contours.polylines) {
-      if (polyline.length < 2) {
+  // low → high so hotter (clinically more important) lines draw on top; drop
+  // invalid levels BEFORE the kernel call so drawLevels[i] ↔ contoursByLevel[i]
+  const drawLevels = [...levels]
+    .filter(l => Number.isFinite(l.raw) && l.raw > 0)
+    .sort((a, b) => a.raw - b.raw);
+  if (!drawLevels.length) {
+    return 0;
+  }
+  // one batched marching-squares call for ALL levels (WASM when warm, else the
+  // bit-parity JS core — see isodoseLinesWasm)
+  const contoursByLevel = decodeIsoContours(
+    marchingSquaresMultiSync(
+      field,
+      gw,
+      gh,
+      drawLevels.map(l => l.raw)
+    )
+  );
+  for (let li = 0; li < drawLevels.length; li++) {
+    const level = drawLevels[li];
+    for (const { points, closed } of contoursByLevel[li] ?? []) {
+      const nPts = points.length / 2;
+      if (nPts < 2) {
         continue;
       }
-      const d =
-        `M ${(polyline[0][0] * step).toFixed(1)} ${(polyline[0][1] * step).toFixed(1)} ` +
-        polyline
-          .slice(1)
-          .map(p => `L ${(p[0] * step).toFixed(1)} ${(p[1] * step).toFixed(1)}`)
-          .join(' ');
+      let d = `M ${(points[0] * step).toFixed(1)} ${(points[1] * step).toFixed(1)}`;
+      for (let pi = 1; pi < nPts; pi++) {
+        d += ` L ${(points[pi * 2] * step).toFixed(1)} ${(points[pi * 2 + 1] * step).toFixed(1)}`;
+      }
+      if (closed) {
+        // kernel polylines do NOT repeat the first point — close explicitly
+        d += ` L ${(points[0] * step).toFixed(1)} ${(points[1] * step).toFixed(1)}`;
+      }
       const path = document.createElementNS(SVG_NS, 'path');
       path.setAttribute('d', d);
       path.setAttribute('fill', 'none');
@@ -174,6 +193,8 @@ export function attachIsodoseLines(
   if (existing) {
     detachEntry(existing);
   }
+  // idempotent; first attach draws via the JS core, redraws go WASM once warm
+  warmIsodoseLinesKernel().catch(() => {});
 
   const svg = document.createElementNS(SVG_NS, 'svg') as SVGSVGElement;
   svg.setAttribute('class', LAYER_CLASS);
