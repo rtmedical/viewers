@@ -1,12 +1,15 @@
 const URL_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
-function normalizePathname(value: string): string {
+function normalizePathname(value) {
   const pathname = `/${value.replace(/^\/+/, '')}`;
   return `${pathname.replace(/\/+$/, '')}/`;
 }
 
-function normalizePublicUrl(value: string | undefined): string {
-  const base = value?.trim() || '/';
+function normalizePublicUrl(value) {
+  const base = typeof value === 'string' ? value.trim() : '';
+  if (!base) {
+    return '/';
+  }
   if (base.includes('?') || base.includes('#') || base.includes('\\') || /\s/.test(base)) {
     throw new Error('PUBLIC_URL must not include a query string, hash, backslash, or whitespace');
   }
@@ -26,18 +29,11 @@ function normalizePublicUrl(value: string | undefined): string {
   return normalizePathname(base);
 }
 
-function getPublicUrlPath(value: string | undefined): string {
+function getPublicUrlPath(value) {
   const normalized = normalizePublicUrl(value);
-  return normalizePathname(new URL(normalized, window.location.origin).pathname);
+  return normalizePathname(new URL(normalized, 'http://localhost').pathname);
 }
 
-const publicUrl = normalizePublicUrl((window as any).PUBLIC_URL);
-const routerBasename = getPublicUrlPath((window as any).config?.routerBasename || publicUrl);
-
-function publicAssetUrl(path: string, base: string = publicUrl): string {
-  return `${normalizePublicUrl(base)}${path.replace(/^(?:\.?\/)+/, '')}`;
-}
-
-export { getPublicUrlPath, normalizePublicUrl, publicAssetUrl, publicUrl, routerBasename };
-
-export default publicUrl;
+module.exports = normalizePublicUrl;
+module.exports.normalizePublicUrl = normalizePublicUrl;
+module.exports.getPublicUrlPath = getPublicUrlPath;

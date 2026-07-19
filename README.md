@@ -2,7 +2,7 @@
 <div align="center">
   <h1>OHIF Medical Imaging Viewer</h1>
   <p><strong>The OHIF Viewer</strong> is a zero-footprint medical image viewer
-provided by the <a href="https://ohif.org/">Open Health Imaging Foundation (OHIF)</a>. It is a configurable and extensible progressive web application with out-of-the-box support for image archives which support <a href="https://www.dicomstandard.org/using/dicomweb/">DICOMweb</a>.</p>
+provided by the <a href="https://ohif.org/">Open Health Imaging Foundation (OHIF)</a>. It is a configurable and extensible web application with out-of-the-box support for image archives which support <a href="https://www.dicomstandard.org/using/dicomweb/">DICOMweb</a>.</p>
 </div>
 
 
@@ -239,7 +239,7 @@ also supports a number of commands that can be found in their respective
 | `dev:fast`             | Our experimental fast dev mode that uses rsbuild instead of webpack                     |
 | `test:unit`                  | Jest multi-project test runner; overall coverage              |
 | **Deploy**                   |                                                               |
-| `build`\*                    | Builds production output for our PWA Viewer                   |  |
+| `build`\*                    | Builds production output for the Viewer                       |  |
 
 \* - For more information on different builds, check out our [Deploy
 Docs][deployment-docs]

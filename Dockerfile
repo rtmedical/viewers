@@ -58,6 +58,7 @@ ENV PUBLIC_URL=${PUBLIC_URL}
 
 RUN pnpm run show:config
 RUN pnpm run build
+RUN printf '%s' "$PUBLIC_URL" > /tmp/viewer-public-url
 
 # Precompress files
 RUN chmod u+x .docker/compressDist.sh
@@ -75,7 +76,8 @@ RUN rm /etc/nginx/conf.d/default.conf
 USER nginx
 COPY --chown=nginx:nginx .docker/Viewer-v3.x /usr/src
 RUN chmod 777 /usr/src/entrypoint.sh
-COPY --from=builder /usr/src/app/platform/app/dist /usr/share/nginx/html${PUBLIC_URL}
+COPY --from=builder /usr/src/app/platform/app/dist /usr/share/nginx/viewer-dist
+COPY --from=builder /tmp/viewer-public-url /usr/share/nginx/viewer-public-url
 # Copy paths that are renamed/redirected generally
 # Microscopy libraries depend on root level include, so must be copied
 COPY --from=builder /usr/src/app/platform/app/dist/dicom-microscopy-viewer /usr/share/nginx/html/dicom-microscopy-viewer
@@ -83,7 +85,9 @@ COPY --from=builder /usr/src/app/platform/app/dist/dicom-microscopy-viewer /usr/
 # In entrypoint.sh, app-config.js might be overwritten, so chmod it to be writeable.
 # The nginx user cannot chmod it, so change to root.
 USER root
-RUN chown -R nginx:nginx /usr/share/nginx/html && chmod -R 777 /usr/share/nginx/html
+RUN mkdir -p /usr/share/nginx/html \
+  && chown -R nginx:nginx /usr/share/nginx/html /usr/share/nginx/viewer-dist \
+  && chmod -R 777 /usr/share/nginx/html /usr/share/nginx/viewer-dist
 USER nginx
 ENTRYPOINT ["/usr/src/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

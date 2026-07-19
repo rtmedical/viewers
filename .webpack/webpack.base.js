@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 //
 const path = require('path');
 const fs = require('fs');
+const normalizePublicUrl = require('../platform/app/.webpack/normalizePublicUrl');
 
 const webpack = require('@rspack/core');
 
@@ -25,7 +26,9 @@ let ReactRefreshWebpackPlugin;
 try {
   const mod = require('@rspack/plugin-react-refresh');
   ReactRefreshWebpackPlugin = mod.ReactRefreshRspackPlugin || mod.default || mod;
-} catch { ReactRefreshWebpackPlugin = null; }
+} catch {
+  ReactRefreshWebpackPlugin = null;
+}
 
 // ~~ ENV VARS
 const NODE_ENV = process.env.NODE_ENV;
@@ -46,7 +49,7 @@ const defineValues = {
   'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
   'process.env.NODE_DEBUG': JSON.stringify(process.env.NODE_DEBUG),
   'process.env.DEBUG': JSON.stringify(process.env.DEBUG),
-  'process.env.PUBLIC_URL': JSON.stringify(process.env.PUBLIC_URL || '/'),
+  'process.env.PUBLIC_URL': JSON.stringify(normalizePublicUrl(process.env.PUBLIC_URL)),
   'process.env.BUILD_NUM': JSON.stringify(BUILD_NUM),
   'process.env.VERSION_NUMBER': JSON.stringify(VERSION_NUMBER),
   'process.env.COMMIT_HASH': JSON.stringify(COMMIT_HASH),
