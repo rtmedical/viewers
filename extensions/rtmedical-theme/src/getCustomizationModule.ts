@@ -4,6 +4,7 @@ import { defaultBranding } from './whiteLabeling/defaultBranding';
 import { createRtMedicalAboutModal } from './whiteLabeling/RtMedicalAboutModal';
 import { WhiteLabelingService } from './whiteLabeling/WhiteLabelingRootProvider';
 import { CommonHeader } from './components/CommonHeader';
+import RtLoadingIndicator from './components/RtLoadingIndicator/RtLoadingIndicator';
 import { TASK_ACTIONS, buildTaskMenuItems, canRunAction, createAuditLogger } from './taskActions';
 
 /**
@@ -62,6 +63,10 @@ export default function getCustomizationModule({
         'rtmedical.whiteLabeling': whiteLabelingCustomization,
         'rtmedical.commonHeader': commonHeaderCustomization,
         'rtmedical.taskActions': taskActionsCustomization,
+        // RTV-212 — centered spinner + shell skeleton. Registered under our
+        // namespace; the RT modes promote it to 'ui.loadingIndicatorProgress'
+        // (mode scope) so the OHIF default stays untouched elsewhere.
+        'rtmedical.loadingIndicatorProgress': RtLoadingIndicator,
       },
     },
     {

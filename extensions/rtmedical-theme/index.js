@@ -12,6 +12,7 @@ import { defaultBranding } from './src/whiteLabeling/defaultBranding';
 import { setRouterBasename } from './src/whiteLabeling/publicUrl';
 import { buildThemeCssVars } from './src/whiteLabeling/applyThemeOverride';
 import { applyCarbonTheme, applyCarbonIconStyle } from './src/whiteLabeling/carbonTheme';
+import { applyUiPolishStyle } from './src/whiteLabeling/uiPolish';
 import { applyCarbonIcons } from './src/whiteLabeling/carbonIcons';
 import {
   WhiteLabelingRootProvider,
@@ -51,6 +52,8 @@ export default {
         // autoseg Carbon look. Icons use currentColor, so they follow along.
         applyCarbonTheme();
         applyCarbonIconStyle();
+        // RTV-212: tooltip clamps, shrinkable study cards, grey elevation, loading skeleton.
+        applyUiPolishStyle();
         applyCarbonIcons();
         // Tenant white-labeling accent vars (RTV-156) layered on top.
 

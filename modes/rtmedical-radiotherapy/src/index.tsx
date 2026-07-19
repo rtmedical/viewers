@@ -384,6 +384,19 @@ function onModeEnter(props) {
     /* overlay customization unavailable — non-fatal */
   }
 
+  // RTV-212: centered spinner + shell skeleton while the study loads
+  // (rendered by TpsViewerLayout via 'ui.loadingIndicatorProgress').
+  try {
+    const rtLoading = customizationService?.getCustomization?.('rtmedical.loadingIndicatorProgress');
+    if (rtLoading) {
+      customizationService.setCustomizations({
+        'ui.loadingIndicatorProgress': { $set: rtLoading },
+      });
+    }
+  } catch (e) {
+    /* loading customization unavailable — non-fatal */
+  }
+
   // Phase 6: register the Eclipse hotkeys before Mode.tsx reads
   // 'ohif.hotkeyBindings' (it does so right after onModeEnter). Append to the
   // OHIF defaults so the standard bindings are preserved. Guard against

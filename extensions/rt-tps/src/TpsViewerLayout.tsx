@@ -38,7 +38,7 @@ function TpsViewerLayout({
   rightPanelMinimumExpandedWidth,
 }: withAppTypes): React.FunctionComponent {
   const [appConfig] = useAppConfig();
-  const { panelService } = servicesManager.services;
+  const { panelService, hangingProtocolService, customizationService } = servicesManager.services;
 
   const hasPanels = useCallback(
     (side): boolean => !!panelService.getPanels(side).length,
@@ -49,6 +49,22 @@ function TpsViewerLayout({
   const [hasLeftPanels, setHasLeftPanels] = useState(hasPanels('left'));
   const [leftPanelClosedState, setLeftPanelClosed] = useState(leftPanelClosed);
   const [rightPanelClosedState, setRightPanelClosed] = useState(rightPanelClosed);
+  // RTV-212: the stock ViewerLayout shows a loading indicator until the
+  // hanging protocol is applied; this layout didn't — the screen sat blank
+  // while the study loaded. Mirror the stock behaviour (component comes from
+  // the 'ui.loadingIndicatorProgress' customization, our RtLoadingIndicator).
+  const [showLoadingIndicator, setShowLoadingIndicator] = useState(!!appConfig?.showLoadingIndicator);
+  const LoadingIndicatorProgress = customizationService.getCustomization(
+    'ui.loadingIndicatorProgress'
+  );
+
+  useEffect(() => {
+    const { unsubscribe } = hangingProtocolService.subscribe(
+      hangingProtocolService.EVENTS.PROTOCOL_CHANGED,
+      () => setShowLoadingIndicator(false)
+    );
+    return () => unsubscribe();
+  }, [hangingProtocolService]);
 
   const [
     leftPanelProps,
@@ -128,6 +144,9 @@ function TpsViewerLayout({
         style={{ height: 'calc(100vh - 52px)' }}
       >
         <div className="relative flex min-h-0 w-full flex-1 flex-row flex-nowrap items-stretch overflow-hidden bg-background">
+          {showLoadingIndicator && LoadingIndicatorProgress && (
+            <LoadingIndicatorProgress className="h-full w-full bg-background" />
+          )}
           <ResizablePanelGroup {...resizablePanelGroupProps}>
             {hasLeftPanels ? (
               <>
