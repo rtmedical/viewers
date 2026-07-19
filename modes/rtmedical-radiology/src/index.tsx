@@ -24,6 +24,7 @@ import {
   modeInstance as basicModeInstance,
   onModeEnter as basicOnModeEnter,
   onModeExit as basicOnModeExit,
+  sopClassHandlers as basicSopClassHandlers,
   modeFactory,
 } from '@ohif/mode-basic';
 
@@ -35,6 +36,8 @@ export const rtmedical = {
   bullseye: '@ohif/extension-cardiology.panelModule.bullseye',
   // RTV-23: graphical hanging-protocol editor.
   hpEditor: 'rtmedical-theme.panelModule.hpEditor',
+  // RTV-79/78: CAD SR findings panel + finding-marker overlay.
+  cad: '@ohif/extension-cad.panelModule.cad',
 };
 
 export const extensionDependencies = {
@@ -42,7 +45,21 @@ export const extensionDependencies = {
   '@ohif/extension-rtmedical-theme': '^3.0.0',
   '@ohif/extension-rtmedical-key-images': '^3.0.0',
   '@ohif/extension-cardiology': '^3.0.0',
+  // RTV-79/78: Mammography/Chest CAD SR support.
+  '@ohif/extension-cad': '^3.0.0',
 };
+
+/**
+ * SOP Class handlers used to CREATE display sets in this mode. Mode.tsx calls
+ * displaySetService.init(extensionManager, mode.sopClassHandlers), so a handler
+ * that isn't listed here never runs — the Mammography/Chest CAD SR objects
+ * would fall to the "unsupported" handler and their parsed findings
+ * (ds.cadSr) would never be attached, leaving the CAD panel/overlay empty.
+ */
+export const sopClassHandlers = [
+  ...basicSopClassHandlers,
+  '@ohif/extension-cad.sopClassHandlerModule.cadSr',
+];
 
 /** Diagnostic layout: study browser on the left, Key Images + measurements on the right. */
 export const radiologyLayout = {
@@ -52,6 +69,7 @@ export const radiologyLayout = {
     rightPanels: [
       rtmedical.keyImages,
       cornerstone.measurements,
+      rtmedical.cad,
       rtmedical.bullseye,
       rtmedical.hpEditor,
       rtmedical.laudo,
@@ -131,6 +149,9 @@ export const modeInstance = {
   hide: false,
   routes: [radiologyRoute],
   toolbarSections: radiologyToolbarSections,
+  // Overrides basic's implicit list so the CAD SR handler runs (see the
+  // sopClassHandlers export above).
+  sopClassHandlers,
   onModeEnter,
   onModeExit,
   // RTV-119: radiology HPs registered by rtmedical-theme; engine matches by
