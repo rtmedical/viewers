@@ -73,7 +73,7 @@ window.config = {
       namespace: '@ohif/extension-default.dataSourcesModule.dicomweb',
       sourceName: 'aws',
       configuration: {
-        friendlyName: 'AWS S3 RT Medical',
+        friendlyName: 'AWS S3 OHIF',
         name: 'aws',
         qidoRoot: 'https://dd32w2rfebxel.cloudfront.net/dicomweb',
         wadoRoot: 'https://dd32w2rfebxel.cloudfront.net/dicomweb',

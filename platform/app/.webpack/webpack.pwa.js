@@ -2,9 +2,11 @@
 // ~~ WebPack
 const path = require('path');
 const fs = require('fs');
+const { createHash } = require('crypto');
 const { merge } = require('webpack-merge');
 const rspack = require('@rspack/core');
 const webpackBase = require('./../../../.webpack/webpack.base.js');
+const { getPublicUrlPath, normalizePublicUrl } = require('./normalizePublicUrl');
 // ~~ Directories
 const SRC_DIR = path.join(__dirname, '../src');
 const DIST_DIR = path.join(__dirname, '../dist');
@@ -14,7 +16,8 @@ const PUBLIC_DIR = path.join(__dirname, '../public');
 const WATCH_IGNORED = /node_modules[\\/](?!@cornerstonejs(?:[\\/]|$))/;
 // ~~ Env Vars
 const HTML_TEMPLATE = process.env.HTML_TEMPLATE || 'index.html';
-const PUBLIC_URL = process.env.PUBLIC_URL || '/';
+const PUBLIC_URL = normalizePublicUrl(process.env.PUBLIC_URL);
+const PUBLIC_URL_PATH = getPublicUrlPath(PUBLIC_URL);
 const APP_CONFIG = process.env.APP_CONFIG || 'config/default.js';
 
 // proxy settings
@@ -33,6 +36,14 @@ const writePluginImportFile = require('./writePluginImportsFile.js');
 const open = process.env.OHIF_OPEN !== 'false';
 
 const copyPluginFromExtensions = writePluginImportFile(SRC_DIR, DIST_DIR);
+
+function getAssetRevision(asset) {
+  const value =
+    typeof asset.source.buffer === 'function' ? asset.source.buffer() : asset.source.source();
+  const content = typeof value === 'string' || Buffer.isBuffer(value) ? value : Buffer.from(value);
+
+  return createHash('sha256').update(content).digest('hex');
+}
 
 class InjectServiceWorkerManifestPlugin {
   constructor({ swSrc, swDest, publicPath, exclude, maximumFileSizeToCacheInBytes }) {
@@ -67,7 +78,7 @@ class InjectServiceWorkerManifestPlugin {
             })
             .map(asset => ({
               url: `${publicPath}${asset.name}`,
-              revision: asset.info.contenthash ? null : compilation.hash,
+              revision: getAssetRevision(asset),
             }));
 
           const source = fs
@@ -179,7 +190,7 @@ module.exports = (env, argv) => {
               swDest: 'sw.js',
               swSrc: path.join(SRC_DIR, 'service-worker.js'),
               publicPath: PUBLIC_URL,
-              exclude: [/theme/],
+              exclude: [/theme/, /app-config\.js$/],
               maximumFileSizeToCacheInBytes: 1024 * 1024 * 50,
             }),
           ]),
@@ -222,7 +233,7 @@ module.exports = (env, argv) => {
       //writeToDisk: true,
       historyApiFallback: {
         disableDotRule: !IS_COVERAGE,
-        index: PUBLIC_URL + 'index.html',
+        index: PUBLIC_URL_PATH + 'index.html',
         htmlAcceptHeaders: ['text/html'],
       },
       devMiddleware: {

@@ -4,7 +4,7 @@ import { useAppConfig } from '@state';
 import { preserveQueryParameters } from '../../utils/preserveQueryParameters';
 import { useStudyListStateSync, useWorkListToolbarActions } from '../../hooks';
 
-import { StudyList, InvestigationalUseDialog, type StudyRow } from '@ohif/ui-next';
+import { StudyList, Icons, InvestigationalUseDialog, type StudyRow } from '@ohif/ui-next';
 import { StudyListSettingsPopover } from './StudyListSettingsPopover';
 import { SidePanelPreview } from './SidePanelPreview';
 
@@ -55,15 +55,10 @@ export default function WorkList({
   }, [customizationService]);
 
   const logoComponent = appConfig?.whiteLabeling?.createLogoComponentFn?.(React) ?? (
-    <div
-      aria-label="RT Medical"
-      className="flex items-center gap-2 text-white"
-    >
-      <span className="flex h-7 w-7 items-center justify-center border border-[#4589ff] bg-[#0f62fe] text-sm font-bold leading-none text-white">
-        RT
-      </span>
-      <span className="text-lg font-semibold">RT Medical</span>
-    </div>
+    <Icons.OHIFLogoHorizontal
+      aria-label="OHIF logo"
+      className="h-[22px] w-[232px]"
+    />
   );
 
   const toolbarActions = useWorkListToolbarActions(servicesManager, dataSource, onRefresh);

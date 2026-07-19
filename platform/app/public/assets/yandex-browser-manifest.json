@@ -1,9 +1,0 @@
-{
-  "version": "2.2.1",
-  "api_version": 1,
-  "layout": {
-    "logo": "/assets/rtmedical-favicon.svg",
-    "color": "#161616",
-    "show_title": true
-  }
-}

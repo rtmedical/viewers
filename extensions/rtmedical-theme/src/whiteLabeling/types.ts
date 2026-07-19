@@ -41,8 +41,10 @@ export interface BrandingConfig {
   theme?: BrandingThemeTokens;
   /** Support contact shown in footer / about. */
   supportEmail?: string;
-  /** Free-form extra metadata (institution id, region, etc.). */
-  [key: string]: unknown;
+  /** Optional product or institution website shown in the about dialog. */
+  websiteUrl?: string;
+  /** Optional human-readable website label. */
+  websiteLabel?: string;
 }
 
 /** Rule to match a request context to a tenant id. */

@@ -2,6 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { useWhiteLabeling } from './WhiteLabelingContext';
+import { getPublicUrlPath } from './publicUrl';
+import { sanitizeImageUrl, sanitizeNavigationUrl } from './sanitizeBranding';
 import type { BrandingConfig } from './types';
 
 export interface LogoProps {
@@ -9,38 +11,45 @@ export interface LogoProps {
   dark?: boolean;
   /** Extra className appended to the anchor. */
   className?: string;
+  /** Extra className for an image logo. */
+  imageClassName?: string;
 }
 
 /**
- * Renders the resolved branding logo. When no logo image is configured it falls
- * back to the RT Medical wordmark. Styling uses Tailwind utility classes already
- * present in OHIF — Carbon is NOT imported.
+ * Renders the resolved branding logo. When no logo image is configured it uses
+ * the tenant's text label, avoiding cross-tenant identity leakage.
  */
 function renderLogo(
   branding: BrandingConfig,
-  { dark = true, className = '' }: LogoProps
+  { dark = true, className = '', imageClassName = '' }: LogoProps
 ): JSX.Element {
-  const src = (dark && branding.logoDarkUrl) || branding.logoUrl;
-  const alt = branding.logoAlt || branding.productName;
-  const href = branding.logoHref || '/';
+  const darkSrc = sanitizeImageUrl(branding.logoDarkUrl);
+  const lightSrc = sanitizeImageUrl(branding.logoUrl);
+  const src = (dark && darkSrc) || lightSrc;
+  const compactSrc = sanitizeImageUrl(branding.faviconUrl);
+  const productName = typeof branding.productName === 'string' ? branding.productName : '';
+  const alt = (typeof branding.logoAlt === 'string' && branding.logoAlt) || productName || 'Viewer';
+  const href = sanitizeNavigationUrl(branding.logoHref) || getPublicUrlPath();
 
-  const label = branding.shortName || branding.productName || 'RT Medical';
+  const label =
+    (typeof branding.shortName === 'string' && branding.shortName) || productName || 'Viewer';
 
   const inner = src ? (
-    <img
-      src={src}
-      alt={alt}
-      className="h-8 w-auto"
-    />
+    <picture className="flex items-center">
+      {compactSrc && (
+        <source
+          media="(max-width: 639px)"
+          srcSet={compactSrc}
+        />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`max-w-7 h-7 max-h-7 w-auto object-contain sm:h-10 sm:max-h-10 sm:max-w-[170px] ${imageClassName}`.trim()}
+      />
+    </picture>
   ) : (
-    <span className="inline-flex items-center gap-2 text-white">
-      <span className="flex h-7 w-7 items-center justify-center border border-[#4589ff] bg-[#0f62fe] text-sm font-bold leading-none text-white">
-        RT
-      </span>
-      <span className="text-lg font-semibold tracking-normal">
-        {label}
-      </span>
-    </span>
+    <span className="max-w-[170px] truncate text-base font-semibold text-white">{label}</span>
   );
 
   return (
@@ -57,14 +66,15 @@ function renderLogo(
 }
 
 /** Branded logo bound to the active white-labeling context. */
-export function Logo({ dark = true, className = '' }: LogoProps) {
+export function Logo({ dark = true, className = '', imageClassName = '' }: LogoProps) {
   const { branding } = useWhiteLabeling();
-  return renderLogo(branding, { dark, className });
+  return renderLogo(branding, { dark, className, imageClassName });
 }
 
 Logo.propTypes = {
   dark: PropTypes.bool,
   className: PropTypes.string,
+  imageClassName: PropTypes.string,
 };
 
 /**

@@ -3,6 +3,7 @@ import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginNodePolyfill } from '@rsbuild/plugin-node-polyfill';
 import path from 'path';
 import writePluginImportsFile from './platform/app/.webpack/writePluginImportsFile';
+import normalizePublicUrl, { getPublicUrlPath } from './platform/app/.webpack/normalizePublicUrl';
 // Module-resolution rules shared with the webpack/rspack build (webpack.base.js)
 // so the two pipelines resolve identically.
 import resolveConfig from './.webpack/resolveConfig';
@@ -14,7 +15,8 @@ const PUBLIC_DIR = path.resolve(__dirname, './platform/app/public');
 
 // Environment variables (similar to webpack.pwa.js)
 const APP_CONFIG = process.env.APP_CONFIG || 'config/default.js';
-const PUBLIC_URL = process.env.PUBLIC_URL || '/';
+const PUBLIC_URL = normalizePublicUrl(process.env.PUBLIC_URL);
+const PUBLIC_URL_PATH = getPublicUrlPath(PUBLIC_URL);
 
 // Add these constants
 const NODE_ENV = process.env.NODE_ENV;
@@ -36,6 +38,7 @@ const WATCH_AGGREGATE_TIMEOUT = Number(process.env.WATCH_AGGREGATE_TIMEOUT || 15
 
 export default defineConfig({
   dev: {
+    assetPrefix: PUBLIC_URL,
     lazyCompilation: false,
   },
   source: {
@@ -46,7 +49,7 @@ export default defineConfig({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'process.env.NODE_DEBUG': JSON.stringify(process.env.NODE_DEBUG),
       'process.env.DEBUG': JSON.stringify(process.env.DEBUG),
-      'process.env.PUBLIC_URL': JSON.stringify(process.env.PUBLIC_URL || '/'),
+      'process.env.PUBLIC_URL': JSON.stringify(PUBLIC_URL),
       'process.env.BUILD_NUM': JSON.stringify(BUILD_NUM),
       'process.env.VERSION_NUMBER': JSON.stringify(VERSION_NUMBER),
       'process.env.COMMIT_HASH': JSON.stringify(COMMIT_HASH),
@@ -127,6 +130,7 @@ export default defineConfig({
     },
   },
   output: {
+    assetPrefix: PUBLIC_URL,
     copy: [
       // Copy plugin files (handled by writePluginImportsFile)
       ...(writePluginImportsFile(SRC_DIR, DIST_DIR) || []),
@@ -162,6 +166,7 @@ export default defineConfig({
     },
   },
   server: {
+    base: PUBLIC_URL_PATH,
     port: OHIF_PORT,
     open: OHIF_OPEN,
     // Configure proxy
@@ -185,7 +190,7 @@ export default defineConfig({
     // Configure history API fallback
     historyApiFallback: {
       disableDotRule: true,
-      index: `${PUBLIC_URL}index.html`,
+      index: `${PUBLIC_URL_PATH}index.html`,
     },
   },
 });

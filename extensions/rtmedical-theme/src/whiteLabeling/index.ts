@@ -23,9 +23,17 @@ export {
   WhiteLabelingContext,
   useWhiteLabeling,
 } from './WhiteLabelingContext';
-export type {
-  WhiteLabelingContextValue,
-  WhiteLabelingProviderProps,
-} from './WhiteLabelingContext';
+export type { WhiteLabelingContextValue, WhiteLabelingProviderProps } from './WhiteLabelingContext';
 export { Logo, createLogoComponentFn } from './Logo';
 export type { LogoProps } from './Logo';
+export {
+  WhiteLabelingRootProvider,
+  WhiteLabelingService,
+  createContextLogoComponentFn,
+} from './WhiteLabelingRootProvider';
+export { getPublicUrl, getPublicUrlPath, normalizePublicUrl, publicAssetUrl } from './publicUrl';
+export {
+  sanitizeBrandingPayload,
+  sanitizeImageUrl,
+  sanitizeNavigationUrl,
+} from './sanitizeBranding';

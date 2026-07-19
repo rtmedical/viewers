@@ -52,10 +52,13 @@ If everything worked as expected, you should have a new `dist/` directory in the
 ├── app.bundle.js
 ├── app.css
 ├── index.html
-├── manifest.json
-├── service-worker.js
+├── sw.js
 └── ...
 ```
+
+Install metadata is intentionally omitted because tenant branding is resolved
+at runtime. A static web app manifest would persist one tenant's identity when
+the same build serves multiple institutions.
 
 By default, the build output will connect to OHIF's publicly accessible PACS. If
 this is your first time setting up the OHIF Viewer, it is recommended that you

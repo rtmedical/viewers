@@ -12,10 +12,13 @@ APIs: the `CustomizationService` and the native `whiteLabeling` config hook.
 Branding is resolved per client/institution and layered in three stages:
 
 1. **Static** — pick the tenant (explicit id → exact hostname → hostname suffix
-   → regex → default) and deep-merge that tenant's static override onto the RT
-   Medical defaults. Synchronous, no flash of unbranded content.
-2. **Cache** — if a previously-fetched branding is cached in `localStorage`
-   (TTL-bounded), it is layered on immediately for an offline-friendly start.
+   → regex → default), inherit visual theme tokens and apply only that tenant's
+   identity fields. Synchronous, with no RT identity leaking into partial tenant
+   configurations.
+2. **Cache** — if branding fetched from the same Connect API endpoint is cached
+   in `localStorage` (TTL-bounded), it is layered on immediately for an
+   offline-friendly start. Endpoint changes and API removal never reuse stale
+   branding from another source.
 3. **Network** — fresh branding is fetched from the Connect API, layered on, and
    the local cache is refreshed.
 
@@ -45,7 +48,6 @@ window.config = {
   // ...
   rtmedicalWhiteLabeling: {
     enabled: true,
-    defaultTenant: 'rtmedical',
     apiEndpoint: 'https://connect.rtmedical.ai/api/branding/{tenantId}',
     cacheTtlMs: 86400000, // 24h
     matchers: [
@@ -71,20 +73,34 @@ window.config = {
    { "packageName": "@ohif/extension-rtmedical-theme", "version": "3.12.5" }
    ```
 
-2. Consume the customization from a mode / the app shell:
+2. Configure tenants in the app config. The extension registers its root
+   provider through OHIF's `ServiceProvidersManager`, so WorkList, auxiliary
+   routes and viewer modes all receive the same live branding:
 
    ```tsx
-   const { Provider, createLogoComponentFn, defaultBranding } =
-     customizationService.getCustomization('rtmedical.whiteLabeling');
-
-   // Wrap the tree:
-   <Provider config={appConfig.rtmedicalWhiteLabeling}>{children}</Provider>
-
-   // …and/or feed OHIF's native logo hook (zero-fork):
-   appConfig.whiteLabeling = {
-     createLogoComponentFn: createLogoComponentFn(defaultBranding),
+   window.config = {
+     rtmedicalWhiteLabeling: {
+       defaultTenant: 'hospital-a',
+       tenants: {
+         'hospital-a': { productName: 'Hospital A' },
+       },
+     },
    };
    ```
+
+   An explicitly configured native `whiteLabeling.createLogoComponentFn` is
+   preserved. Otherwise, the extension installs a context-backed callback that
+   follows cache and Connect API updates.
+
+   Omit `defaultTenant` to use the built-in RT Medical identity. Every non-null
+   tenant id, including `defaultTenant`, starts from neutral identity fields and
+   must explicitly provide any logo, favicon, support contact or website it uses.
+   The registered About modal subscribes to the root provider's live service
+   snapshot even though OHIF's modal host sits outside that provider. It does
+   not start a second fetch or reapply document effects.
+
+   Default RT logo/favicon assets ship in this extension's `public/assets`
+   directory and are copied by the plugin build pipeline.
 
 ## CommonHeader (RTV-153)
 

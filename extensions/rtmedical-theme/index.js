@@ -9,14 +9,36 @@ import WorklistQueueService from './src/worklist/WorklistQueueService';
 import i18n from 'i18next';
 import { RT_NAMESPACE, rtPtBR, rtEn } from './src/i18n/rtPtBR';
 import { defaultBranding } from './src/whiteLabeling/defaultBranding';
+import { setRouterBasename } from './src/whiteLabeling/publicUrl';
 import { buildThemeCssVars } from './src/whiteLabeling/applyThemeOverride';
 import { applyCarbonTheme, applyCarbonIconStyle } from './src/whiteLabeling/carbonTheme';
 import { applyCarbonIcons } from './src/whiteLabeling/carbonIcons';
+import {
+  WhiteLabelingRootProvider,
+  WhiteLabelingService,
+  createContextLogoComponentFn,
+} from './src/whiteLabeling/WhiteLabelingRootProvider';
 
 export default {
   id: 'rtmedical-theme',
-  preRegistration({ servicesManager }) {
+  preRegistration({ servicesManager, serviceProvidersManager, appConfig }) {
+    setRouterBasename(appConfig?.routerBasename);
     servicesManager.registerService(WorklistQueueService.REGISTRATION);
+    servicesManager.registerService(
+      WhiteLabelingService.REGISTRATION,
+      appConfig?.rtmedicalWhiteLabeling
+    );
+    serviceProvidersManager.registerProvider(
+      WhiteLabelingService.REGISTRATION.name,
+      WhiteLabelingRootProvider
+    );
+    if (appConfig) {
+      const whiteLabeling = appConfig.whiteLabeling ?? {};
+      appConfig.whiteLabeling = {
+        ...whiteLabeling,
+        createLogoComponentFn: whiteLabeling.createLogoComponentFn ?? createContextLogoComponentFn,
+      };
+    }
     // RTV-9: RT-specific PT-BR strings (OHIF already ships the base pt-BR locale).
     i18n.addResourceBundle('pt-BR', RT_NAMESPACE, rtPtBR, true, true);
     i18n.addResourceBundle('en-US', RT_NAMESPACE, rtEn, true, true);

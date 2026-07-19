@@ -1,14 +1,10 @@
 import { WhiteLabelingProvider, useWhiteLabeling } from './whiteLabeling/WhiteLabelingContext';
 import { Logo, createLogoComponentFn } from './whiteLabeling/Logo';
 import { defaultBranding } from './whiteLabeling/defaultBranding';
-import { RtMedicalAboutModal } from './whiteLabeling/RtMedicalAboutModal';
+import { createRtMedicalAboutModal } from './whiteLabeling/RtMedicalAboutModal';
+import { WhiteLabelingService } from './whiteLabeling/WhiteLabelingRootProvider';
 import { CommonHeader } from './components/CommonHeader';
-import {
-  TASK_ACTIONS,
-  buildTaskMenuItems,
-  canRunAction,
-  createAuditLogger,
-} from './taskActions';
+import { TASK_ACTIONS, buildTaskMenuItems, canRunAction, createAuditLogger } from './taskActions';
 
 /**
  * Registers RT Medical theme customizations with OHIF's CustomizationService.
@@ -19,43 +15,70 @@ import {
  * the native `whiteLabeling.createLogoComponentFn` config hook. No @ohif/core,
  * @ohif/app or @ohif/ui sources are modified (RTV-114).
  */
-export default function getCustomizationModule() {
+interface GetCustomizationModuleOptions {
+  servicesManager?: {
+    services?: Record<string, unknown>;
+  };
+}
+
+export default function getCustomizationModule({
+  servicesManager,
+}: GetCustomizationModuleOptions = {}) {
+  const whiteLabelingService = servicesManager?.services?.[
+    WhiteLabelingService.REGISTRATION.name
+  ] as WhiteLabelingService | undefined;
+  const AboutModal = createRtMedicalAboutModal(whiteLabelingService);
+  whiteLabelingService?.setAboutModal(AboutModal);
+  const whiteLabelingCustomization = {
+    Provider: WhiteLabelingProvider,
+    useWhiteLabeling,
+    Logo,
+    createLogoComponentFn,
+    defaultBranding,
+  };
+  const commonHeaderCustomization = {
+    // RTV-153 - mode-shareable header. Bind live patient/study/user data
+    // and task/menu handlers at the mode level (see README).
+    CommonHeader,
+  };
+  const taskActionsCustomization = {
+    // RTV-154 - header "Tarefas" dropdown. Modes provide handlers + the
+    // current user's permissions; `buildTaskMenuItems` applies RBAC,
+    // confirmation for destructive/sensitive actions and audit logging,
+    // returning items ready for `CommonHeader.tasks`. No @ohif/core,
+    // @ohif/app or @ohif/ui sources are modified (RTV-114).
+    TASK_ACTIONS,
+    buildTaskMenuItems,
+    canRunAction,
+    createAuditLogger,
+  };
   return [
     {
-      name: 'rtmedical.whiteLabeling',
+      // These extension-owned ids do not collide with OHIF defaults. About is
+      // installed separately in mode scope so app and mode overrides retain
+      // their documented priority without redefining OHIF's default.
+      name: 'default',
       value: {
-        Provider: WhiteLabelingProvider,
-        useWhiteLabeling,
-        Logo,
-        createLogoComponentFn,
-        defaultBranding,
+        'rtmedical.whiteLabeling': whiteLabelingCustomization,
+        'rtmedical.commonHeader': commonHeaderCustomization,
+        'rtmedical.taskActions': taskActionsCustomization,
       },
+    },
+    {
+      name: 'rtmedical.whiteLabeling',
+      value: whiteLabelingCustomization,
     },
     {
       name: 'ohif.aboutModal',
-      value: RtMedicalAboutModal,
+      value: AboutModal,
     },
     {
       name: 'rtmedical.commonHeader',
-      value: {
-        // RTV-153 — mode-shareable header. Bind live patient/study/user data
-        // and task/menu handlers at the mode level (see README).
-        CommonHeader,
-      },
+      value: commonHeaderCustomization,
     },
     {
       name: 'rtmedical.taskActions',
-      value: {
-        // RTV-154 — header "Tarefas" dropdown. Modes provide handlers + the
-        // current user's permissions; `buildTaskMenuItems` applies RBAC,
-        // confirmation for destructive/sensitive actions and audit logging,
-        // returning items ready for `CommonHeader.tasks`. No @ohif/core,
-        // @ohif/app or @ohif/ui sources are modified (RTV-114).
-        TASK_ACTIONS,
-        buildTaskMenuItems,
-        canRunAction,
-        createAuditLogger,
-      },
+      value: taskActionsCustomization,
     },
   ];
 }

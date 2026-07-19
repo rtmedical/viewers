@@ -14,6 +14,7 @@
   },
   "files": [
     "src",
+    "public",
     "index.js",
     "README.md"
   ],

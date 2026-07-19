@@ -1,11 +1,11 @@
-navigator.serviceWorker.getRegistrations().then(function (registrations) {
-  for (let registration of registrations) {
-    registration.unregister();
-  }
-});
-
 // https://developers.google.com/web/tools/workbox/guides/troubleshoot-and-debug
 importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.0.0-beta.1/workbox-sw.js');
+
+const scopeCacheSuffix = encodeURIComponent(new URL(self.registration.scope).pathname) || 'root';
+workbox.core.setCacheNameDetails({
+  prefix: 'medical-viewer',
+  suffix: scopeCacheSuffix,
+});
 
 // Install newest
 // https://developers.google.com/web/tools/workbox/modules/workbox-core
@@ -14,9 +14,12 @@ workbox.core.clientsClaim();
 
 // Cache static assets that aren't precached
 workbox.routing.registerRoute(
-  /\.(?:js|css|json5)$/,
+  ({ url }) =>
+    url.origin === self.location.origin &&
+    !url.pathname.endsWith('/app-config.js') &&
+    /\.(?:js|css|json5)$/.test(url.pathname),
   new workbox.strategies.StaleWhileRevalidate({
-    cacheName: 'static-resources',
+    cacheName: `medical-viewer-static-resources-${scopeCacheSuffix}`,
   })
 );
 
@@ -24,7 +27,7 @@ workbox.routing.registerRoute(
 workbox.routing.registerRoute(
   /^https:\/\/fonts\.googleapis\.com/,
   new workbox.strategies.StaleWhileRevalidate({
-    cacheName: 'google-fonts-stylesheets',
+    cacheName: `medical-viewer-google-fonts-stylesheets-${scopeCacheSuffix}`,
   })
 );
 
@@ -32,7 +35,7 @@ workbox.routing.registerRoute(
 workbox.routing.registerRoute(
   /^https:\/\/fonts\.gstatic\.com/,
   new workbox.strategies.CacheFirst({
-    cacheName: 'google-fonts-webfonts',
+    cacheName: `medical-viewer-google-fonts-webfonts-${scopeCacheSuffix}`,
     plugins: [
       new workbox.cacheableResponse.CacheableResponsePlugin({
         statuses: [0, 200],
