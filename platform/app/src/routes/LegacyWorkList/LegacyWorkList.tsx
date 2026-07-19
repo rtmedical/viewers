@@ -488,7 +488,7 @@ function LegacyWorkList({
       onClick: () =>
         show({
           content: AboutModal,
-          title: AboutModal?.title ?? 'About RT Medical Viewer',
+          title: AboutModal?.title ?? t('AboutModal:About OHIF Viewer'),
           containerClassName: AboutModal?.containerClassName ?? 'max-w-md',
         }),
     },

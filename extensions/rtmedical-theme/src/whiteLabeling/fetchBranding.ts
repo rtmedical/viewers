@@ -1,4 +1,5 @@
 import type { BrandingConfig } from './types';
+import { sanitizeBrandingPayload } from './sanitizeBranding';
 
 export interface FetchBrandingOptions {
   /** Endpoint template; `{tenantId}` is replaced with the (encoded) tenant id. */
@@ -39,10 +40,7 @@ export async function fetchBranding(
       return null;
     }
     const data = await response.json();
-    if (!data || typeof data !== 'object' || Array.isArray(data)) {
-      return null;
-    }
-    return data as Partial<BrandingConfig>;
+    return sanitizeBrandingPayload(data);
   } catch (error) {
     // Network failure, abort, or JSON parse error — fall back gracefully.
     // (Named binding kept: an optional catch binding breaks the repo's

@@ -19,6 +19,11 @@ export interface WhiteLabelingContextValue {
   loading: boolean;
 }
 
+interface RemoteBrandingState {
+  sourceKey: string;
+  branding: Partial<BrandingConfig>;
+}
+
 const WhiteLabelingContext = createContext<WhiteLabelingContextValue | undefined>(undefined);
 WhiteLabelingContext.displayName = 'WhiteLabelingContext';
 
@@ -69,35 +74,47 @@ export function WhiteLabelingProvider({
     [config, resolvedContext, base]
   );
   const { tenantId } = initial;
+  const apiEndpoint =
+    config?.enabled !== false && config?.apiEndpoint?.trim()
+      ? config.apiEndpoint.trim()
+      : undefined;
+  const sourceKey = apiEndpoint && tenantId ? `${apiEndpoint}\0${tenantId}` : null;
 
-  // Seed with cached remote branding if present (instant, offline-friendly).
-  const [remoteBranding, setRemoteBranding] = useState<Partial<BrandingConfig> | null>(() =>
-    tenantId ? readBrandingCache(tenantId) : null
+  const cachedRemoteBranding = useMemo(
+    () =>
+      sourceKey && tenantId && apiEndpoint
+        ? readBrandingCache(tenantId, Date.now(), apiEndpoint)
+        : null,
+    [apiEndpoint, sourceKey, tenantId]
   );
-  const [loading, setLoading] = useState<boolean>(false);
+  const [remoteState, setRemoteState] = useState<RemoteBrandingState | null>(null);
+  const [loadingSourceKey, setLoadingSourceKey] = useState<string | null>(null);
+  const remoteBranding =
+    remoteState?.sourceKey === sourceKey ? remoteState.branding : cachedRemoteBranding;
+  const loading = Boolean(sourceKey && loadingSourceKey === sourceKey);
 
   // Fetch remote branding from the Connect API when configured.
   useEffect(() => {
-    if (!config?.apiEndpoint || !tenantId || config.enabled === false) {
+    if (!apiEndpoint || !tenantId || !sourceKey) {
+      setLoadingSourceKey(null);
       return undefined;
     }
 
-    const controller =
-      typeof AbortController !== 'undefined' ? new AbortController() : undefined;
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined;
     let active = true;
-    setLoading(true);
+    setLoadingSourceKey(sourceKey);
 
-    fetchBranding({ endpoint: config.apiEndpoint, tenantId, signal: controller?.signal })
+    fetchBranding({ endpoint: apiEndpoint, tenantId, signal: controller?.signal })
       .then(remote => {
         if (!active || !remote) {
           return;
         }
-        setRemoteBranding(remote);
-        writeBrandingCache(tenantId, remote, config.cacheTtlMs);
+        setRemoteState({ sourceKey, branding: remote });
+        writeBrandingCache(tenantId, remote, config?.cacheTtlMs, Date.now(), apiEndpoint);
       })
       .finally(() => {
         if (active) {
-          setLoading(false);
+          setLoadingSourceKey(current => (current === sourceKey ? null : current));
         }
       });
 
@@ -105,7 +122,7 @@ export function WhiteLabelingProvider({
       active = false;
       controller?.abort();
     };
-  }, [config?.apiEndpoint, config?.cacheTtlMs, config?.enabled, tenantId]);
+  }, [apiEndpoint, config?.cacheTtlMs, sourceKey, tenantId]);
 
   const branding = useMemo(
     () => mergeBranding(initial.branding, remoteBranding ?? undefined),
@@ -127,9 +144,7 @@ export function WhiteLabelingProvider({
     [branding, tenantId, loading]
   );
 
-  return (
-    <WhiteLabelingContext.Provider value={value}>{children}</WhiteLabelingContext.Provider>
-  );
+  return <WhiteLabelingContext.Provider value={value}>{children}</WhiteLabelingContext.Provider>;
 }
 
 WhiteLabelingProvider.propTypes = {

@@ -30,12 +30,12 @@ export function defaultSettingsMenuItems({
   const items: SettingsMenuItem[] = [
     {
       id: 'about',
-      label: 'About RT Medical Viewer',
+      label: 'About OHIF Viewer',
       onClick: () => {
         const AboutModal = customizationService.getCustomization('ohif.aboutModal');
         show({
           content: AboutModal,
-          title: AboutModal?.title ?? 'About RT Medical Viewer',
+          title: AboutModal?.title ?? t('AboutModal:About OHIF Viewer'),
           containerClassName: AboutModal?.containerClassName ?? 'max-w-md',
         });
       },
@@ -90,9 +90,9 @@ export function StudyListSettingsPopover() {
   const items: SettingsMenuItem[] =
     typeof buildItems === 'function'
       ? (() => {
-          const result = (
-            buildItems as (defaults: SettingsMenuItem[]) => SettingsMenuItem[]
-          )(defaults);
+          const result = (buildItems as (defaults: SettingsMenuItem[]) => SettingsMenuItem[])(
+            defaults
+          );
           return Array.isArray(result) ? result : defaults;
         })()
       : defaults;

@@ -10,173 +10,13 @@
       name="theme-color"
       content="#000000"
     />
-    <meta
-      name="mobile-web-app-capable"
-      content="yes"
-    />
-    <meta
-      name="application-name"
-      content="RT Medical Viewer"
-    />
-    <meta
-      name="apple-mobile-web-app-capable"
-      content="yes"
-    />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <meta
-      name="apple-mobile-web-app-title"
-      content="RT Medical Viewer"
-    />
-    <meta
-      name="msapplication-TileColor"
-      content="#fff"
-    />
-    <meta
-      name="msapplication-TileImage"
-      content="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <meta
-      name="msapplication-config"
-      content="<%= PUBLIC_URL %>assets/browserconfig.xml"
-    />
-    <link
-      rel="manifest"
-      href="<%= PUBLIC_URL %>manifest.json"
-    />
-
-    <link
-      rel="shortcut icon"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
+    <!--
+      Install metadata is intentionally omitted: branding is tenant-resolved at
+      runtime, so a static manifest or platform icon would leak one tenant's identity.
+    -->
     <link
       rel="icon"
-      type="image/svg+xml"
-      sizes="any"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      sizes="any"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="57x57"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="60x60"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="72x72"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="76x76"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="114x114"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="120x120"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="144x144"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="152x152"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="167x167"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="1024x1024"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 1)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 414px) and (device-height: 736px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 3)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 414px) and (device-height: 736px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 3)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 768px) and (device-height: 1024px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 1)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 768px) and (device-height: 1024px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 1)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 768px) and (device-height: 1024px) and (orientation: landscape) and (-webkit-device-pixel-ratio: 2)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="apple-touch-startup-image"
-      media="(device-width: 768px) and (device-height: 1024px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 2)"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      sizes="any"
-      href="<%= PUBLIC_URL %>assets/rtmedical-favicon.svg"
-    />
-    <link
-      rel="yandex-tableau-widget"
-      href="<%= PUBLIC_URL %>assets/yandex-browser-manifest.json"
+      href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
     />
 
     <script type="text/javascript">
@@ -191,7 +31,7 @@
       src="<%= PUBLIC_URL %>init-service-worker.js"
     ></script>
 
-    <title>RT Medical Viewer</title>
+    <title>Medical Imaging Viewer</title>
 
     <!-- WEB FONTS -->
 
@@ -232,18 +72,18 @@
         function o(n) {
           if (e[n]) return e[n].exports;
           var t = (e[n] = { i: n, l: !1, exports: {} });
-          return r[n].call(t.exports, t, t.exports, o), (t.l = !0), t.exports;
+          return (r[n].call(t.exports, t, t.exports, o), (t.l = !0), t.exports);
         }
-        (o.m = r),
+        ((o.m = r),
           (o.c = e),
           (o.d = function (r, e, n) {
             o.o(r, e) || Object.defineProperty(r, e, { enumerable: !0, get: n });
           }),
           (o.r = function (r) {
-            'undefined' != typeof Symbol &&
+            ('undefined' != typeof Symbol &&
               Symbol.toStringTag &&
               Object.defineProperty(r, Symbol.toStringTag, { value: 'Module' }),
-              Object.defineProperty(r, '__esModule', { value: !0 });
+              Object.defineProperty(r, '__esModule', { value: !0 }));
           }),
           (o.t = function (r, e) {
             if ((1 & e && (r = o(r)), 8 & e)) return r;
@@ -273,26 +113,26 @@
                 : function () {
                     return r;
                   };
-            return o.d(e, 'a', e), e;
+            return (o.d(e, 'a', e), e);
           }),
           (o.o = function (r, e) {
             return Object.prototype.hasOwnProperty.call(r, e);
           }),
           (o.p = ''),
-          o((o.s = 0));
+          o((o.s = 0)));
       })([
         function (r, e, o) {
           var n = o(1),
             t = o(4);
-          (_rollbarConfig = _rollbarConfig || {}),
+          ((_rollbarConfig = _rollbarConfig || {}),
             (_rollbarConfig.rollbarJsUrl =
               _rollbarConfig.rollbarJsUrl ||
               'https://cdnjs.cloudflare.com/ajax/libs/rollbar.js/2.7.1/rollbar.min.js'),
-            (_rollbarConfig.async = void 0 === _rollbarConfig.async || _rollbarConfig.async);
+            (_rollbarConfig.async = void 0 === _rollbarConfig.async || _rollbarConfig.async));
           var a = n.setupShim(window, _rollbarConfig),
             l = t(_rollbarConfig);
-          (window.rollbar = n.Rollbar),
-            a.loadFull(window, document, !_rollbarConfig.async, _rollbarConfig, l);
+          ((window.rollbar = n.Rollbar),
+            a.loadFull(window, document, !_rollbarConfig.async, _rollbarConfig, l));
         },
         function (r, e, o) {
           var n = o(2);
@@ -309,14 +149,14 @@
           }
           var a = 0;
           function l(r, e) {
-            (this.options = r), (this._rollbarOldOnError = null);
+            ((this.options = r), (this._rollbarOldOnError = null));
             var o = a++;
-            (this.shimId = function () {
+            ((this.shimId = function () {
               return o;
             }),
               'undefined' != typeof window &&
                 window._rollbarShims &&
-                (window._rollbarShims[o] = { handler: e, messages: [] });
+                (window._rollbarShims[o] = { handler: e, messages: [] }));
           }
           var i = o(3),
             d = function (r, e) {
@@ -332,12 +172,12 @@
               window._rollbarShims[this.shimId()].messages.push(o);
             });
           }
-          (l.prototype.loadFull = function (r, e, o, n, a) {
+          ((l.prototype.loadFull = function (r, e, o, n, a) {
             var l = !1,
               i = e.createElement('script'),
               d = e.getElementsByTagName('script')[0],
               c = d.parentNode;
-            (i.crossOrigin = ''),
+            ((i.crossOrigin = ''),
               (i.src = n.rollbarJsUrl),
               o || (i.async = !0),
               (i.onload = i.onreadystatechange =
@@ -354,7 +194,7 @@
                     try {
                       c.removeChild(i);
                     } catch (r) {}
-                    (l = !0),
+                    ((l = !0),
                       (function () {
                         var e;
                         if (void 0 === r._rollbarDidLoad) {
@@ -368,10 +208,10 @@
                                 }
                         }
                         'function' == typeof a && a(e);
-                      })();
+                      })());
                   }
                 })),
-              c.insertBefore(i, d);
+              c.insertBefore(i, d));
           }),
             (l.prototype.wrap = function (r, e, o) {
               try {
@@ -396,12 +236,12 @@
                     } catch (o) {
                       var e = o;
                       throw (
-                        (e &&
+                        e &&
                           ('string' == typeof e && (e = new String(e)),
                           (e._rollbarContext = n() || {}),
                           (e._rollbarContext._wrappedSource = r.toString()),
                           (window._rollbarWrappedError = e)),
-                        e)
+                        e
                       );
                     }
                   }),
@@ -413,7 +253,7 @@
               } catch (e) {
                 return r;
               }
-            });
+            }));
           for (
             var p =
                 'log,debug,info,warn,warning,error,critical,global,configure,handleUncaughtException,handleUnhandledRejection,captureEvent,captureDomContentLoaded,captureLoad'.split(
@@ -429,14 +269,14 @@
               if (r) {
                 var o = e.globalAlias || 'Rollbar';
                 if ('object' == typeof r[o]) return r[o];
-                (r._rollbarShims = {}), (r._rollbarWrappedError = null);
+                ((r._rollbarShims = {}), (r._rollbarWrappedError = null));
                 var a = new c(e);
                 return t(function () {
-                  e.captureUncaught &&
+                  (e.captureUncaught &&
                     ((a._rollbarOldOnError = r.onerror),
                     n.captureUncaughtExceptions(r, a, !0),
                     n.wrapGlobals(r, a, !0)),
-                    e.captureUnhandledRejections && n.captureUnhandledRejections(r, a, !0);
+                    e.captureUnhandledRejections && n.captureUnhandledRejections(r, a, !0));
                   var t = e.autoInstrument;
                   return (
                     !1 !== e.enabled &&
@@ -461,13 +301,13 @@
               var t = function (e, o, t) {
                 n.call(this, e, r.wrap(o), t);
               };
-              (t._rollbarOldAdd = n), (t.belongsToShim = o), (e.addEventListener = t);
+              ((t._rollbarOldAdd = n), (t.belongsToShim = o), (e.addEventListener = t));
               for (var a = e.removeEventListener; a._rollbarOldRemove && a.belongsToShim; )
                 a = a._rollbarOldRemove;
               var l = function (r, e, o) {
                 a.call(this, r, (e && e._rollbar_wrapped) || e, o);
               };
-              (l._rollbarOldRemove = a), (l.belongsToShim = o), (e.removeEventListener = l);
+              ((l._rollbarOldRemove = a), (l.belongsToShim = o), (e.removeEventListener = l));
             }
           }
           r.exports = {
@@ -482,15 +322,15 @@
                 var t = function () {
                   var o = Array.prototype.slice.call(arguments, 0);
                   !(function (r, e, o, n) {
-                    r._rollbarWrappedError &&
+                    (r._rollbarWrappedError &&
                       (n[4] || (n[4] = r._rollbarWrappedError),
                       n[5] || (n[5] = r._rollbarWrappedError._rollbarContext),
                       (r._rollbarWrappedError = null)),
                       e.handleUncaughtException.apply(e, n),
-                      o && o.apply(r, n);
+                      o && o.apply(r, n));
                   })(r, e, n, o);
                 };
-                o && (t._rollbarOldOnError = n), (r.onerror = t);
+                (o && (t._rollbarOldOnError = n), (r.onerror = t));
               }
             },
             captureUnhandledRejections: function (r, e, o) {
@@ -511,14 +351,14 @@
                     n = '[unhandledrejection] error getting `promise` from event';
                   }
                   try {
-                    (t = r.detail), !o && t && ((o = t.reason), (n = t.promise));
+                    ((t = r.detail), !o && t && ((o = t.reason), (n = t.promise)));
                   } catch (r) {}
-                  o || (o = '[unhandledrejection] error getting `reason` from event'),
-                    e && e.handleUnhandledRejection && e.handleUnhandledRejection(o, n);
+                  (o || (o = '[unhandledrejection] error getting `reason` from event'),
+                    e && e.handleUnhandledRejection && e.handleUnhandledRejection(o, n));
                 };
-                (n.belongsToShim = o),
+                ((n.belongsToShim = o),
                   (r._rollbarURH = n),
-                  r.addEventListener('unhandledrejection', n);
+                  r.addEventListener('unhandledrejection', n));
               }
             },
             wrapGlobals: function (r, e, n) {
@@ -537,7 +377,7 @@
         },
         function (r, e) {
           function o(r, e) {
-            (this.impl = r(e, this)),
+            ((this.impl = r(e, this)),
               (this.options = e),
               (function (r) {
                 for (
@@ -556,21 +396,21 @@
                   n++
                 )
                   r[o[n]] = e(o[n]);
-              })(o.prototype);
+              })(o.prototype));
           }
-          (o.prototype._swapAndProcessMessages = function (r, e) {
+          ((o.prototype._swapAndProcessMessages = function (r, e) {
             var o, n, t;
             for (this.impl = r(this.options); (o = e.shift()); )
-              (n = o.method),
+              ((n = o.method),
                 (t = o.args),
                 this[n] &&
                   'function' == typeof this[n] &&
                   ('captureDomContentLoaded' === n || 'captureLoad' === n
                     ? this[n].apply(this, [t[0], o.ts])
-                    : this[n].apply(this, t));
+                    : this[n].apply(this, t)));
             return this;
           }),
-            (r.exports = o);
+            (r.exports = o));
         },
         function (r, e) {
           r.exports = function (r) {
@@ -588,8 +428,8 @@
                   (o = window._rollbarShims[i++]);
 
                 )
-                  n || (n = o.handler), o.handler._swapAndProcessMessages(l, o.messages);
-                (window[t] = n), (window._rollbarInitialized = !0);
+                  (n || (n = o.handler), o.handler._swapAndProcessMessages(l, o.messages));
+                ((window[t] = n), (window._rollbarInitialized = !0));
               }
             };
           };

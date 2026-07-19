@@ -1,4 +1,5 @@
 import type { BrandingConfig } from './types';
+import { publicAssetUrl } from './publicUrl';
 
 /**
  * RT Medical default branding.
@@ -10,10 +11,11 @@ import type { BrandingConfig } from './types';
  */
 export const defaultBranding: BrandingConfig = {
   productName: 'RT Medical Viewer',
-  shortName: 'RT Medical',
-  logoHref: '/',
-  logoAlt: 'RT Medical',
-  faviconUrl: '/assets/rtmedical-favicon.svg',
+  shortName: 'RT Medical Systems',
+  logoAlt: 'RT Medical Systems',
+  logoUrl: publicAssetUrl('assets/rtmedical-logo-black.png'),
+  logoDarkUrl: publicAssetUrl('assets/rtmedical-logo-white.png'),
+  faviconUrl: publicAssetUrl('assets/rtmedical-favicon.png'),
   theme: {
     primary: '#4589ff', // Carbon Blue50 — interactive/focus accent (autoseg)
     secondary: '#393939', // Carbon Gray80 — neutral surface
@@ -22,4 +24,6 @@ export const defaultBranding: BrandingConfig = {
     highlight: '#4589ff', // Carbon Blue50 (was cyan #5acce6 — off-palette)
   },
   supportEmail: 'suporte@rtmedical.com.br',
+  websiteUrl: 'https://rtmedical.com.br',
+  websiteLabel: 'rtmedical.com.br',
 };

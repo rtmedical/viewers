@@ -31,6 +31,25 @@ describe('fetchBranding', () => {
     expect(result).toEqual({ productName: 'Hospital A' });
   });
 
+  it('drops unsafe URLs and fields with invalid runtime types', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue(
+      jsonResponse({
+        productName: 42,
+        shortName: 'Hospital A',
+        logoHref: 'javascript:alert(1)',
+        logoUrl: '/assets/hospital-a.png',
+        websiteUrl: 'data:text/html,boom',
+        theme: { primary: '#123456', background: false },
+      })
+    );
+
+    expect(await fetchBranding({ endpoint, tenantId: 'a', fetchImpl })).toEqual({
+      shortName: 'Hospital A',
+      logoUrl: '/assets/hospital-a.png',
+      theme: { primary: '#123456' },
+    });
+  });
+
   it('returns null on a non-2xx response', async () => {
     const fetchImpl = jest.fn().mockResolvedValue(jsonResponse({}, false));
     expect(await fetchBranding({ endpoint, tenantId: 'a', fetchImpl })).toBeNull();
