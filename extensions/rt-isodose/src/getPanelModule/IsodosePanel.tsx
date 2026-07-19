@@ -4,8 +4,8 @@
  *
  * Color/level data is the pure {@link ../isodose}. The prescription is read from
  * a loaded RTPLAN display set (`rtPlan` from `@ohif/extension-rt-plan`) when
- * present, else entered manually. Actually drawing the isodose lines / dose-wash
- * on the cornerstone viewport from the RTDOSE grid is an integration follow-up.
+ * present, else entered manually. Viewport rendering lives in the commands:
+ * `showDoseWash` (color wash) and `showIsodoseLines` (vector lines).
  * RTV-114: `@ohif/ui-next` only.
  */
 import React, { useEffect, useMemo, useState } from 'react';
@@ -16,26 +16,13 @@ import {
   ColormapName,
   COLORMAP_NAMES,
 } from '../isodose';
+import { derivePrescription } from '../rxDose';
 
 interface ServicesManagerLike {
   services: Record<string, any>;
 }
 export interface IsodosePanelProps {
   servicesManager: ServicesManagerLike;
-}
-
-function derivePrescription(displaySetService: any): number | undefined {
-  const all = displaySetService?.getActiveDisplaySets?.() ?? displaySetService?.activeDisplaySets ?? [];
-  for (const ds of all as any[]) {
-    const plan = ds?.rtPlan;
-    if (!plan) continue;
-    const fromRx = (plan.prescriptions ?? [])
-      .map((p: any) => p?.targetPrescriptionDoseGy)
-      .find((d: any) => d != null);
-    if (fromRx != null) return fromRx;
-    if (plan.totalPrescribedDoseGy != null) return plan.totalPrescribedDoseGy;
-  }
-  return undefined;
 }
 
 export function IsodosePanel({ servicesManager }: IsodosePanelProps): React.ReactElement {

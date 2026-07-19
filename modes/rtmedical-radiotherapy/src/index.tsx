@@ -537,6 +537,8 @@ export const radiotherapyToolbarSections = {
     'rtDoseWash',
     // BEV: MLC/jaw aperture over the RTIMAGE (DRR) stack viewport (rt-bev).
     'rtBev',
+    // Eclipse-style vector isodose lines over the MPR viewports.
+    'rtIsodoseLines',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -639,6 +641,17 @@ const rtPanelButtons = [
       label: 'BEV',
       tooltip: "Beam's Eye View (MLC) on the RTIMAGE",
       commands: 'toggleBev',
+    },
+  },
+  {
+    // Eclipse-style vector isodose lines (marching squares over the RTDOSE grid).
+    id: 'rtIsodoseLines',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-freehand-line',
+      label: 'Isodose Lines',
+      tooltip: 'Toggle isodose lines (RTDOSE) on the MPR',
+      commands: 'toggleIsodoseLines',
     },
   },
   {

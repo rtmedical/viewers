@@ -18,7 +18,9 @@ export function initDoseKernel(): Promise<boolean> {
     ready = (async () => {
       try {
         await init(new URL('../rust/pkg/rt_dose_kernel_bg.wasm', import.meta.url));
-        return kernel_version() === 1;
+        // v1 = dose_to_band_labelmap; v2 adds marching_squares_multi (isodose
+        // lines — its dispatcher additionally guards on the export existing).
+        return kernel_version() >= 1;
       } catch (e) {
         return false;
       }
