@@ -3,7 +3,13 @@ let configuredRouterBasename: string | undefined;
 
 function normalizePathname(value: string): string {
   const pathname = `/${value.replace(/^\/+/, '')}`;
-  return `${pathname.replace(/\/+$/, '')}/`;
+  let pathnameEnd = pathname.length;
+
+  while (pathnameEnd > 0 && pathname.charCodeAt(pathnameEnd - 1) === 47) {
+    pathnameEnd -= 1;
+  }
+
+  return `${pathname.slice(0, pathnameEnd)}/`;
 }
 
 /** Ensures the deployment base has exactly one trailing slash. */

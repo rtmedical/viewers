@@ -28,6 +28,10 @@ describe('public URL helpers', () => {
     expect(normalizePublicUrl(input)).toBe(expected);
   });
 
+  it('normalizes a long run of trailing slashes in linear time', () => {
+    expect(normalizePublicUrl(`/viewer${'/'.repeat(10_000)}`)).toBe('/viewer/');
+  });
+
   it('resolves assets under a subpath deployment', () => {
     expect(publicAssetUrl('/assets/logo.png', '/viewer')).toBe('/viewer/assets/logo.png');
     expect(publicAssetUrl('/assets/logo.png', 'https://cdn.example/viewer')).toBe(
