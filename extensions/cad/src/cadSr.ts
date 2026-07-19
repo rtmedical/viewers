@@ -28,6 +28,22 @@ export interface CadFinding {
   points?: number[];
   /** Referenced image the finding sits on. */
   referencedSopInstanceUID?: string;
+  /**
+   * Referenced frame within a multiframe image (1-based DICOM
+   * ReferencedFrameNumber). DICOM allows a multi-valued list; only the first
+   * value is kept (same simplification as cornerstone-dicom-sr).
+   */
+  referencedFrameNumber?: number;
+  /**
+   * Series of the referenced image, resolved from the report's
+   * CurrentRequestedProcedureEvidenceSequence when present (CAD SR IMAGE
+   * content items carry only the SOP reference).
+   */
+  referencedSeriesInstanceUID?: string;
+  /** SOPInstanceUID of the CAD SR that contributed this finding. */
+  reportSopInstanceUID?: string;
+  /** Stable zero-based position within the parsed report. */
+  findingIndex?: number;
 }
 
 export interface CadSr {
@@ -40,14 +56,19 @@ function toArray<T>(v: T | T[] | undefined | null): T[] {
   return Array.isArray(v) ? v : [v];
 }
 function toNum(v: unknown): number | undefined {
-  const x = Array.isArray(v) ? v[0] : v;
+  const value = Array.isArray(v) ? v[0] : v;
+  const x = typeof value === 'string' ? value.split('\\')[0] : value;
   if (x == null || x === '') return undefined;
   const n = Number(x);
   return Number.isFinite(n) ? n : undefined;
 }
 function toNumberArray(v: unknown): number[] {
   if (Array.isArray(v)) return v.map(Number).filter(n => Number.isFinite(n));
-  if (typeof v === 'string') return v.split('\\').map(Number).filter(n => Number.isFinite(n));
+  if (typeof v === 'string')
+    return v
+      .split('\\')
+      .map(Number)
+      .filter(n => Number.isFinite(n));
   return [];
 }
 function conceptMeaning(node: any): string | undefined {
@@ -77,7 +98,10 @@ function findingFromContainer(node: any, scoord: any): CadFinding {
   const imageChild =
     toArray(scoord?.ContentSequence).find((c: any) => c?.ValueType === 'IMAGE') ??
     children.find((c: any) => c?.ValueType === 'IMAGE');
-  const referencedSopInstanceUID = toArray(imageChild?.ReferencedSOPSequence)[0]?.ReferencedSOPInstanceUID;
+  const referencedSop = toArray(imageChild?.ReferencedSOPSequence)[0];
+  const referencedSopInstanceUID = referencedSop?.ReferencedSOPInstanceUID;
+  // 1-based; array-or-scalar per DICOM VM 1-n — first value only.
+  const referencedFrameNumber = toNum(referencedSop?.ReferencedFrameNumber);
 
   return {
     type,
@@ -86,13 +110,36 @@ function findingFromContainer(node: any, scoord: any): CadFinding {
     graphicType: scoord?.GraphicType,
     points: toNumberArray(scoord?.GraphicData),
     referencedSopInstanceUID,
+    referencedFrameNumber,
   };
+}
+
+/**
+ * SOPInstanceUID → SeriesInstanceUID map from the report's
+ * CurrentRequestedProcedureEvidenceSequence (the standard place a CAD SR lists
+ * the series of every image it references).
+ */
+function sopToSeriesMap(instance: any): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const study of toArray(instance?.CurrentRequestedProcedureEvidenceSequence)) {
+    for (const series of toArray((study as any)?.ReferencedSeriesSequence)) {
+      const seriesInstanceUID = (series as any)?.SeriesInstanceUID;
+      if (!seriesInstanceUID) continue;
+      for (const sop of toArray((series as any)?.ReferencedSOPSequence)) {
+        const sopInstanceUID = (sop as any)?.ReferencedSOPInstanceUID;
+        if (sopInstanceUID) map.set(sopInstanceUID, seriesInstanceUID);
+      }
+    }
+  }
+  return map;
 }
 
 /** Recursively collect CAD findings from a content node. */
 function collectFindings(node: any, out: CadFinding[]): void {
   const children = toArray(node?.ContentSequence);
-  const scoord = children.find((c: any) => c?.ValueType === 'SCOORD' || c?.ValueType === 'SCOORD3D');
+  const scoord = children.find(
+    (c: any) => c?.ValueType === 'SCOORD' || c?.ValueType === 'SCOORD3D'
+  );
   if (scoord) {
     out.push(findingFromContainer(node, scoord));
   }
@@ -109,6 +156,23 @@ export function parseCadSr(instance: Record<string, any>): CadSr {
   const result: CadSr = { title: conceptMeaning(instance), findings: [] };
   if (!instance) return result;
   collectFindings(instance, result.findings);
+  if (instance.SOPInstanceUID) {
+    result.findings.forEach((finding, findingIndex) => {
+      finding.reportSopInstanceUID = instance.SOPInstanceUID;
+      finding.findingIndex = findingIndex;
+    });
+  }
+  // Resolve each referenced image's series from the evidence sequence (best
+  // effort — findings keep working without it, series just speeds up the
+  // displaySetService lookup on jump-to-finding).
+  const seriesBySop = sopToSeriesMap(instance);
+  if (seriesBySop.size) {
+    for (const finding of result.findings) {
+      if (finding.referencedSopInstanceUID && !finding.referencedSeriesInstanceUID) {
+        finding.referencedSeriesInstanceUID = seriesBySop.get(finding.referencedSopInstanceUID);
+      }
+    }
+  }
   return result;
 }
 

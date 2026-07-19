@@ -26,6 +26,12 @@
     "test:unit": "jest --watchAll",
     "test:unit:ci": "jest --ci --runInBand --collectCoverage --passWithNoTests"
   },
+  "dependencies": {
+    "@carbon/icons-react": "^11.83.0",
+    "@cornerstonejs/core": "5.0.2",
+    "i18next": "17.3.1",
+    "react-i18next": "12.3.1"
+  },
   "peerDependencies": {
     "prop-types": "15.8.1",
     "react": "18.3.1",

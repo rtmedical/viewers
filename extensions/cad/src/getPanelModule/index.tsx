@@ -11,7 +11,7 @@ interface PanelModuleParams {
   extensionManager?: unknown;
 }
 
-function getPanelModule({ servicesManager }: PanelModuleParams) {
+function getPanelModule({ servicesManager, commandsManager }: PanelModuleParams) {
   return [
     {
       name: 'cad',
@@ -19,7 +19,11 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
       iconLabel: 'CAD',
       label: 'CAD Findings',
       component: (props: Record<string, unknown>) => (
-        <CadPanel {...props} servicesManager={servicesManager} />
+        <CadPanel
+          {...props}
+          servicesManager={servicesManager}
+          commandsManager={commandsManager}
+        />
       ),
     },
   ];
