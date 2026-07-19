@@ -2,15 +2,26 @@
  * BEV right-panel (Phase B).
  *
  * Shows the beam the visible RTIMAGE references (number/name/gantry/
- * collimator), a control-point slider driving `setBevControlPoint`, and
- * Show/Hide buttons for the overlay. Thin layer over getCommandsModule's
- * tested resolution helpers; RTV-114: depends only on `@ohif/ui-next`.
+ * collimator), a control-point slider driving `setBevControlPoint`, an MLC
+ * cine player (RTV-139: Play/Pause + FPS stepping the control points on a
+ * setInterval — the slider doubles as the frame indicator), and Show/Hide
+ * buttons for the overlay. Thin layer over getCommandsModule's tested
+ * resolution helpers and the pure ../mlcCine core; RTV-114: depends only on
+ * `@ohif/ui-next`.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { eventTarget, Enums } from '@cornerstonejs/core';
 import { Button } from '@ohif/ui-next';
 import { BevPanelInfo, getBevPanelInfo } from '../getCommandsModule';
+import {
+  DEFAULT_CINE_FPS,
+  MAX_CINE_FPS,
+  MIN_CINE_FPS,
+  clampFps,
+  frameIntervalMs,
+  nextCineFrame,
+} from '../mlcCine';
 
 interface ServicesManagerLike {
   services: Record<string, any>;
@@ -30,6 +41,16 @@ const deg = (v?: number) => (v == null ? '—' : `${Math.round(v * 10) / 10}°`)
 export function BevPanel({ servicesManager, commandsManager }: BevPanelProps): React.ReactElement {
   const { t } = useTranslation('RTMedical');
   const [info, setInfo] = useState<BevPanelInfo>(() => getBevPanelInfo(servicesManager));
+  // RTV-139 cine state: fps is local UI state (sanitized through clampFps);
+  // playingBeamRef remembers which beam playback started on so a beam swap
+  // (scroll to a frame referencing another beam, grid change, …) stops it.
+  const [playing, setPlaying] = useState(false);
+  const [fps, setFps] = useState(DEFAULT_CINE_FPS);
+  // Raw text mirror of the FPS field: clamping on every keystroke would make
+  // the field impossible to edit by deletion ('' → 0 → clamped to 1), so the
+  // clamp is applied on commit (blur/Enter) and the interval always uses `fps`.
+  const [fpsText, setFpsText] = useState(String(DEFAULT_CINE_FPS));
+  const playingBeamRef = useRef<number | undefined>(undefined);
 
   const refresh = useCallback(() => {
     try {
@@ -74,6 +95,72 @@ export function BevPanel({ servicesManager, commandsManager }: BevPanelProps): R
       eventTarget.removeEventListener(Enums.Events.ELEMENT_DISABLED, onCornerstoneEvent);
     };
   }, [servicesManager, refresh]);
+
+  // RTV-139 playback loop: one interval per (playing, fps) — changing the FPS
+  // recreates it, pausing/unmounting clears it via the effect cleanup. Each
+  // tick reads a FRESH snapshot (the closure's `info` would be stale for the
+  // interval's lifetime), advances one control point (wrapping at the end)
+  // and refreshes so the slider tracks the cine.
+  useEffect(() => {
+    if (!playing) {
+      return;
+    }
+    const intervalId = setInterval(() => {
+      try {
+        const fresh = getBevPanelInfo(servicesManager);
+        const index = nextCineFrame(fresh.controlPoint, fresh.cpCount);
+        commandsManager?.runCommand?.('setBevControlPoint', { index });
+      } catch (e) {
+        /* services not ready — skip this tick */
+      }
+      refresh();
+    }, frameIntervalMs(fps));
+    return () => clearInterval(intervalId);
+  }, [playing, fps, servicesManager, commandsManager, refresh]);
+
+  // Stop playback when the linked beam changes under the cine (including the
+  // RTIMAGE viewport going away → beamNumber undefined): stepping the NEW
+  // beam's control points silently would be misleading.
+  useEffect(() => {
+    if (playing && info.beamNumber !== playingBeamRef.current) {
+      setPlaying(false);
+    }
+  }, [playing, info.beamNumber]);
+
+  const handlePlayPause = useCallback(() => {
+    if (playing) {
+      setPlaying(false);
+      return;
+    }
+    // The cine drives the OVERLAY — make sure it is attached before playing.
+    if (!info.shown) {
+      commandsManager?.runCommand?.('showBev', { controlPoint: info.controlPoint });
+    }
+    playingBeamRef.current = info.beamNumber;
+    setPlaying(true);
+    refresh();
+  }, [playing, info.shown, info.controlPoint, info.beamNumber, commandsManager, refresh]);
+
+  const handleFpsChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setFpsText(event.target.value);
+  }, []);
+
+  const commitFps = useCallback(() => {
+    setFpsText(text => {
+      const clamped = clampFps(Number(text));
+      setFps(clamped);
+      return String(clamped);
+    });
+  }, []);
+
+  const handleFpsKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter') {
+        commitFps();
+      }
+    },
+    [commitFps]
+  );
 
   const handleShow = useCallback(() => {
     commandsManager?.runCommand?.('showBev', { controlPoint: info.controlPoint });
@@ -144,6 +231,38 @@ export function BevPanel({ servicesManager, commandsManager }: BevPanelProps): R
             value={Math.min(info.controlPoint, maxCp)}
             onChange={handleControlPoint}
           />
+        </div>
+      )}
+
+      {hasBeam && info.cpCount > 1 && (
+        <div className="flex flex-col gap-1" data-cy="rt-bev-cine">
+          <span className="text-muted-foreground">{t('bev_cine')}</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={playing ? 'ghost' : 'default'}
+              size="sm"
+              onClick={handlePlayPause}
+              data-cy="rt-bev-cine-play"
+            >
+              {playing ? t('bev_pause') : t('bev_play')}
+            </Button>
+            <label className="text-muted-foreground" htmlFor="rt-bev-cine-fps">
+              {t('bev_fps')}
+            </label>
+            <input
+              id="rt-bev-cine-fps"
+              data-cy="rt-bev-cine-fps"
+              type="number"
+              min={MIN_CINE_FPS}
+              max={MAX_CINE_FPS}
+              step={1}
+              value={fpsText}
+              onChange={handleFpsChange}
+              onBlur={commitFps}
+              onKeyDown={handleFpsKeyDown}
+              className="border-input w-16 rounded border bg-transparent px-2 py-0.5"
+            />
+          </div>
         </div>
       )}
 
