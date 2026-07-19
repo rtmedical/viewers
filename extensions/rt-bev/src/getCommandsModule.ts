@@ -5,6 +5,8 @@
  * (MLC leaves + jaws + crosshair, see ./bevOverlay) on every STACK viewport
  * currently showing an RTIMAGE (DRR/portal). `setBevControlPoint` — select the
  * control point the attached overlays render (clamped to the beam's CP count).
+ * `showMlcCine` (RTV-139) — show the overlay AND reveal the BEV side panel,
+ * whose cine player steps the control points.
  *
  * Resolution chain (display-only, no core changes):
  *   RTIMAGE instance ← metaData.get('instance', viewport.getCurrentImageId())
@@ -313,6 +315,27 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
       syncWindowState();
       return applied;
     },
+
+    /**
+     * MLC cine entry point (RTV-139, hotkey/toolbar): attach the BEV overlay
+     * and reveal the BEV side panel hosting the cine player. Panel activation
+     * follows rtmedical-theme's `activateRtPanel` one-liner
+     * (`panelService.activatePanel(panelId, true)`) but is best-effort — a
+     * missing panelService (tests, headless) must not fail the overlay
+     * attach. Returns whether the overlay ended up shown.
+     */
+    showMlcCine: (): boolean => {
+      const shown = actions.showBev({});
+      try {
+        servicesManager.services.panelService?.activatePanel?.(
+          '@ohif/extension-rt-bev.panelModule.bev',
+          true
+        );
+      } catch (e) {
+        /* panelService unavailable — the overlay state still stands */
+      }
+      return shown;
+    },
   };
 
   return {
@@ -322,6 +345,7 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
       hideBev: { commandFn: actions.hideBev },
       toggleBev: { commandFn: actions.toggleBev },
       setBevControlPoint: { commandFn: actions.setBevControlPoint },
+      showMlcCine: { commandFn: actions.showMlcCine },
     },
     defaultContext: 'DEFAULT',
   };

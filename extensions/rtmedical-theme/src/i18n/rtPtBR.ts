@@ -175,6 +175,10 @@ export const rtPtBR: Record<string, string> = {
   bev_hide: 'Ocultar',
   bev_no_plan: 'Nenhum RTPLAN carregado.',
   bev_no_rtimage: 'Abra uma RTIMAGE (DRR) em um viewport para ver o feixe.',
+  bev_cine: 'Cine MLC',
+  bev_play: 'Reproduzir',
+  bev_pause: 'Pausar',
+  bev_fps: 'FPS',
   // --- Hanging-protocol editor panel (RTV-23) ---
   hp_editor_title: 'Editor de protocolos',
   hp_rows: 'Linhas',
@@ -389,6 +393,10 @@ export const rtEn: Record<string, string> = {
   bev_hide: 'Hide',
   bev_no_plan: 'No RTPLAN loaded.',
   bev_no_rtimage: 'Open an RTIMAGE (DRR) in a viewport to see the beam.',
+  bev_cine: 'MLC Cine',
+  bev_play: 'Play',
+  bev_pause: 'Pause',
+  bev_fps: 'FPS',
   // --- Hanging-protocol editor panel (RTV-23) ---
   hp_editor_title: 'Protocol editor',
   hp_rows: 'Rows',

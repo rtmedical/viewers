@@ -554,6 +554,8 @@ export const radiotherapyToolbarSections = {
     'rtDoseWash',
     // BEV: MLC/jaw aperture over the RTIMAGE (DRR) stack viewport (rt-bev).
     'rtBev',
+    // RTV-139: MLC cine — reveal the BEV panel with the cine controls.
+    'rtMlcCine',
     // Eclipse-style vector isodose lines over the MPR viewports.
     'rtIsodoseLines',
     // RTV-203: screenshot → DICOM Secondary Capture → PACS (STOW-RS).
@@ -661,6 +663,18 @@ const rtPanelButtons = [
       label: 'BEV',
       tooltip: "Beam's Eye View (MLC) on the RTIMAGE",
       commands: 'toggleBev',
+    },
+  },
+  {
+    // RTV-139: MLC cine — shows the BEV overlay and reveals the panel whose
+    // Play/FPS controls drive the control-point sequence.
+    id: 'rtMlcCine',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-cine',
+      label: 'MLC Cine',
+      tooltip: "MLC cine — play the beam's control-point sequence on the BEV",
+      commands: 'showMlcCine',
     },
   },
   {
