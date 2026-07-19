@@ -14,7 +14,7 @@
  * The RT-specific toolbar (RTV-117), the full radiology panel set (RTV-118),
  * hanging protocols (RTV-119) and inline laudo (RTV-121) extend this base.
  */
-import { ToolbarService } from '@ohif/core';
+import { ToolbarService, defaults } from '@ohif/core';
 import { id } from './id';
 import {
   cornerstone,
@@ -25,6 +25,7 @@ import {
   onModeEnter as basicOnModeEnter,
   onModeExit as basicOnModeExit,
   sopClassHandlers as basicSopClassHandlers,
+  toolbarButtons as basicToolbarButtons,
   modeFactory,
 } from '@ohif/mode-basic';
 
@@ -47,6 +48,8 @@ export const extensionDependencies = {
   '@ohif/extension-cardiology': '^3.0.0',
   // RTV-79/78: Mammography/Chest CAD SR support.
   '@ohif/extension-cad': '^3.0.0',
+  // RTV-203: viewport/layout screenshot → DICOM Secondary Capture → STOW-RS.
+  '@ohif/extension-rt-capture': '^3.0.0',
 };
 
 /**
@@ -108,8 +111,35 @@ export const radiologyToolbarSections = {
     'CalibrationLine',
     'ImageSliceSync',
     'ReferenceLines',
+    // RTV-203: screenshot → DICOM Secondary Capture → PACS (STOW-RS).
+    'rtCaptureSc',
+    'rtCaptureLayoutSc',
   ],
 };
+
+/** RTV-203: Secondary Capture buttons (also bound to Alt+C in onModeEnter). */
+const scToolbarButtons = [
+  {
+    id: 'rtCaptureSc',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-capture',
+      label: 'Capture to PACS',
+      tooltip: 'Save the active viewport to the PACS as DICOM Secondary Capture (Alt+C)',
+      commands: 'captureViewportSc',
+    },
+  },
+  {
+    id: 'rtCaptureLayoutSc',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-stack-image-sync',
+      label: 'Capture Layout',
+      tooltip: 'Save the current layout (all viewports) to the PACS as one Secondary Capture',
+      commands: 'captureLayoutSc',
+    },
+  },
+];
 
 /**
  * RTV-210 — extends @ohif/mode-basic's onModeEnter with the touch/tablet
@@ -142,6 +172,25 @@ function onModeEnter(props) {
   } catch (e) {
     /* touch gestures unavailable — non-fatal */
   }
+  // RTV-203: Alt+C captures the active viewport to the PACS as DICOM SC.
+  try {
+    const { customizationService } = props.servicesManager.services;
+    const scHotkey = {
+      commandName: 'captureViewportSc',
+      label: 'Capture to PACS (SC)',
+      keys: ['alt+c'],
+      isEditable: true,
+    };
+    const base = (defaults?.hotkeyBindings ?? []).filter(
+      (b: { commandName?: string; keys?: string[] }) =>
+        !(b.commandName === scHotkey.commandName && b.keys?.[0] === scHotkey.keys[0])
+    );
+    customizationService?.setCustomizations?.({
+      'ohif.hotkeyBindings': { $set: [...base, scHotkey] },
+    });
+  } catch (e) {
+    /* hotkey customization unavailable — non-fatal */
+  }
 }
 
 /** Tears down the RTV-210 touch listeners, then runs the base onModeExit. */
@@ -163,6 +212,9 @@ export const modeInstance = {
   hide: false,
   routes: [radiologyRoute],
   toolbarSections: radiologyToolbarSections,
+  // RTV-203: basic buttons + the Secondary Capture pair (registered by the
+  // inherited basicOnModeEnter via toolbarService.register).
+  toolbarButtons: [...basicToolbarButtons, ...scToolbarButtons],
   // Overrides basic's implicit list so the CAD SR handler runs (see the
   // sopClassHandlers export above).
   sopClassHandlers,

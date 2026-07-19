@@ -70,6 +70,8 @@ export const extensionDependencies = {
   '@ohif/extension-rt-tps': '^3.0.0',
   // BEV: MLC/jaw aperture overlay on the RTIMAGE (DRR) stack viewport.
   '@ohif/extension-rt-bev': '^3.0.0',
+  // RTV-203: viewport/layout screenshot → DICOM Secondary Capture → STOW-RS.
+  '@ohif/extension-rt-capture': '^3.0.0',
 };
 
 /**
@@ -164,6 +166,8 @@ const eclipseHotkeys = [
   { commandName: 'lastImage', label: 'Last slice', keys: ['end'], isEditable: true },
   { commandName: 'showRtStructInMpr', label: 'Structures in MPR', keys: ['shift+m'], isEditable: true },
   { commandName: 'showRtStructIn3D', label: 'Structures in 3D', keys: ['shift+3'], isEditable: true },
+  // RTV-203: capture the active viewport straight to the PACS as DICOM SC.
+  { commandName: 'captureViewportSc', label: 'Capture to PACS (SC)', keys: ['alt+c'], isEditable: true },
 ];
 
 /** autoseg reference-line palette (constants.ts): axial blue, sagittal yellow, coronal green. */
@@ -552,6 +556,9 @@ export const radiotherapyToolbarSections = {
     'rtBev',
     // Eclipse-style vector isodose lines over the MPR viewports.
     'rtIsodoseLines',
+    // RTV-203: screenshot → DICOM Secondary Capture → PACS (STOW-RS).
+    'rtCaptureSc',
+    'rtCaptureLayoutSc',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -665,6 +672,28 @@ const rtPanelButtons = [
       label: 'Isodose Lines',
       tooltip: 'Toggle isodose lines (RTDOSE) on the MPR',
       commands: 'toggleIsodoseLines',
+    },
+  },
+  {
+    // RTV-203: active viewport → DICOM Secondary Capture → PACS (Alt+C).
+    id: 'rtCaptureSc',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-capture',
+      label: 'Capture to PACS',
+      tooltip: 'Save the active viewport to the PACS as DICOM Secondary Capture (Alt+C)',
+      commands: 'captureViewportSc',
+    },
+  },
+  {
+    // RTV-203: whole layout composed as ONE Secondary Capture.
+    id: 'rtCaptureLayoutSc',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-stack-image-sync',
+      label: 'Capture Layout',
+      tooltip: 'Save the current layout (all viewports) to the PACS as one Secondary Capture',
+      commands: 'captureLayoutSc',
     },
   },
   {
