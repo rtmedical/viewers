@@ -1,0 +1,38 @@
+{
+  "name": "@ohif/extension-rtmedical-theme",
+  "version": "3.12.5",
+  "description": "RT Medical white-labeling/branding and custom theme for OHIF v3 (RTV board).",
+  "author": "RT Medical",
+  "license": "MIT",
+  "repository": "rtmedical/viewers",
+  "main": "index.js",
+  "module": "index.js",
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6",
+    "yarn": ">=1.18.0"
+  },
+  "files": [
+    "src",
+    "index.js",
+    "README.md"
+  ],
+  "keywords": [
+    "ohif-extension",
+    "rtmedical",
+    "white-labeling"
+  ],
+  "scripts": {
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@ohif/core": "3.12.5",
+    "prop-types": "15.8.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "dependencies": {
+    "@carbon/icons-react": "^11.83.0"
+  }
+}

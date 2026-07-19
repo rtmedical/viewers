@@ -21,7 +21,11 @@ export class ObjectPath {
       while (i < last) {
         let field = components[i];
 
-        if (field in currentObject) {
+        if (field === '__proto__' || field === 'constructor' || field === 'prototype') {
+          return false;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(currentObject, field)) {
           if (!ObjectPath.isValidObject(currentObject[field])) {
             break;
           }
@@ -34,7 +38,12 @@ export class ObjectPath {
       }
 
       if (i === last) {
-        currentObject[components[last]] = value;
+        const field = components[last];
+        if (field === '__proto__' || field === 'constructor' || field === 'prototype') {
+          return false;
+        }
+
+        currentObject[field] = value;
         result = true;
       }
     }
@@ -63,7 +72,7 @@ export class ObjectPath {
         let field = components[i];
 
         const isValid = ObjectPath.isValidObject(currentObject[field]);
-        if (field in currentObject && isValid) {
+        if (Object.prototype.hasOwnProperty.call(currentObject, field) && isValid) {
           currentObject = currentObject[field];
           i++;
         } else {
@@ -89,7 +98,17 @@ export class ObjectPath {
   }
 
   static getPathComponents(path) {
-    return typeof path === 'string' ? path.split('.') : null;
+    if (typeof path !== 'string') {
+      return null;
+    }
+
+    const components = path.split('.');
+    const containsUnsafeComponent = components.some(
+      component =>
+        component === '__proto__' || component === 'prototype' || component === 'constructor'
+    );
+
+    return containsUnsafeComponent ? null : components;
   }
 }
 

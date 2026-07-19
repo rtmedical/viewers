@@ -1,9 +1,50 @@
 // extensions/rtmedical-theme/index.js
 
 import ViewerLayout from './src/ViewerLayout';
+import getCustomizationModule from './src/getCustomizationModule';
+import getPanelModule from './src/getPanelModule';
+import getHangingProtocolModule from './src/getHangingProtocolModule';
+import getCommandsModule from './src/getCommandsModule';
+import WorklistQueueService from './src/worklist/WorklistQueueService';
+import i18n from 'i18next';
+import { RT_NAMESPACE, rtPtBR, rtEn } from './src/i18n/rtPtBR';
+import { defaultBranding } from './src/whiteLabeling/defaultBranding';
+import { buildThemeCssVars } from './src/whiteLabeling/applyThemeOverride';
+import { applyCarbonTheme, applyCarbonIconStyle } from './src/whiteLabeling/carbonTheme';
+import { applyCarbonIcons } from './src/whiteLabeling/carbonIcons';
 
 export default {
   id: 'rtmedical-theme',
+  preRegistration({ servicesManager }) {
+    servicesManager.registerService(WorklistQueueService.REGISTRATION);
+    // RTV-9: RT-specific PT-BR strings (OHIF already ships the base pt-BR locale).
+    i18n.addResourceBundle('pt-BR', RT_NAMESPACE, rtPtBR, true, true);
+    i18n.addResourceBundle('en-US', RT_NAMESPACE, rtEn, true, true);
+    // RTV-7: apply the default RT Medical theme palette (dark) at startup as
+    // :root CSS variables. Tenant white-labeling (RTV-156) overrides these.
+    try {
+      if (typeof document !== 'undefined') {
+        // RTV-7: repaint OHIF's ui-next design tokens with the IBM Carbon g100
+        // palette (neutral greys + focused blue) so the whole viewer matches the
+        // autoseg Carbon look. Icons use currentColor, so they follow along.
+        applyCarbonTheme();
+        applyCarbonIconStyle();
+        applyCarbonIcons();
+        // Tenant white-labeling accent vars (RTV-156) layered on top.
+
+        const vars = buildThemeCssVars(defaultBranding.theme);
+        Object.entries(vars).forEach(([name, value]) =>
+          document.documentElement.style.setProperty(name, value)
+        );
+      }
+    } catch (e) {
+      /* theming is non-fatal */
+    }
+  },
+  getCustomizationModule,
+  getPanelModule,
+  getHangingProtocolModule,
+  getCommandsModule,
   getLayoutTemplateModule({ commandsManager, extensionManager, hotkeysManager, servicesManager }) {
     return [
       {

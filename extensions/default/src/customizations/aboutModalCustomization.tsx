@@ -14,7 +14,7 @@ function AboutModalDefault() {
 
   return (
     <AboutModal className="w-[400px]">
-      <AboutModal.ProductName>OHIF Viewer</AboutModal.ProductName>
+      <AboutModal.ProductName>RT Medical Viewer</AboutModal.ProductName>
       <AboutModal.ProductVersion>{main}</AboutModal.ProductVersion>
       {beta && <AboutModal.ProductBeta>{beta}</AboutModal.ProductBeta>}
 
@@ -27,10 +27,9 @@ function AboutModalDefault() {
           label={t('Current Browser & OS')}
           value={`${browser}, ${os}`}
         />
-        <AboutModal.SocialItem
-          icon="SocialGithub"
-          url="OHIF/Viewers"
-          text="github.com/OHIF/Viewers"
+        <AboutModal.DetailItem
+          label={t('Support')}
+          value="suporte@rtmedical.com.br"
         />
       </AboutModal.Body>
     </AboutModal>

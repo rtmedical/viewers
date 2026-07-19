@@ -43,6 +43,17 @@ Describe how we can test your changes.
 
 ### Checklist
 
+#### RTV — Conformidade arquitetural (RTV-114, binding)
+
+<!-- Ver ARCH.md na raiz do repo. PRs que modificam pacotes core do OHIF são reprovadas pelo CI. -->
+
+- [] Li o `ARCH.md` (política extension-first, zero fork do `@ohif/core`).
+- [] **Não modifiquei** `@ohif/core`, `@ohif/app`, `@ohif/ui`/`@ohif/ui-next`,
+  `@ohif/extension-cornerstone`, `@ohif/extension-default`, `@ohif/extension-cornerstone-dicom-sr`,
+  `@ohif/extension-cornerstone-dicom-seg` (nem via `patch-package`, nem copiando código para o repo).
+- [] Minha customização usa, nesta ordem de preferência: CustomizationService → Extension → Mode → hooks.
+- [] Cada `@rt/extension-*` / `@rt/mode-*` que toquei tem `README.md` com os module types exportados.
+
 #### PR
 
 <!--

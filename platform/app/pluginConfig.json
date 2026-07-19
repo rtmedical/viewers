@@ -65,6 +65,69 @@
     {
       "packageName": "@ohif/extension-ultrasound-pleura-bline",
       "version": "3.0.0"
+    },
+    {
+      "packageName": "@ohif/extension-rtmedical-theme"
+    },
+    {
+      "packageName": "@ohif/extension-rtmedical-key-images"
+    },
+    {
+      "packageName": "@ohif/extension-rt-plan"
+    },
+    {
+      "packageName": "@ohif/extension-rt-dvh"
+    },
+    {
+      "packageName": "@ohif/extension-rt-services"
+    },
+    {
+      "packageName": "@ohif/extension-rt-struct"
+    },
+    {
+      "packageName": "@ohif/extension-rt-record"
+    },
+    {
+      "packageName": "@ohif/extension-rt-timeline"
+    },
+    {
+      "packageName": "@ohif/extension-dose-tracking"
+    },
+    {
+      "packageName": "@ohif/extension-rt-print"
+    },
+    {
+      "packageName": "@ohif/extension-rt-isodose"
+    },
+    {
+      "packageName": "@ohif/extension-mammography"
+    },
+    {
+      "packageName": "@ohif/extension-rt-fusion"
+    },
+    {
+      "packageName": "@ohif/extension-rt-fusion-timeline"
+    },
+    {
+      "packageName": "@ohif/extension-cad"
+    },
+    {
+      "packageName": "@ohif/extension-deid"
+    },
+    {
+      "packageName": "@ohif/extension-measurements"
+    },
+    {
+      "packageName": "@ohif/extension-rt-sr"
+    },
+    {
+      "packageName": "@ohif/extension-rt-tps"
+    },
+    {
+      "packageName": "@ohif/extension-rt-bev"
+    },
+    {
+      "packageName": "@ohif/extension-cardiology"
     }
   ],
   "modes": [
@@ -99,6 +162,12 @@
     {
       "packageName": "@ohif/mode-ultrasound-pleura-bline",
       "version": "3.0.0"
+    },
+    {
+      "packageName": "@rt/mode-radiology"
+    },
+    {
+      "packageName": "@rt/mode-radiotherapy"
     }
   ],
   "public": [

@@ -1,0 +1,43 @@
+{
+  "name": "@rt/mode-radiology",
+  "version": "3.13.0-beta.105",
+  "description": "RT Medical — general diagnostic radiology workflow (RTV-115/116)",
+  "author": "RT Medical",
+  "license": "MIT",
+  "repository": "rtmedical/viewers",
+  "main": "dist/rt-mode-radiology.js",
+  "module": "src/index.tsx",
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "cross-env NODE_ENV=production rspack build --config .webpack/webpack.prod.js",
+    "build:package": "pnpm run build",
+    "dev": "cross-env NODE_ENV=development rspack build --config .webpack/webpack.dev.js --watch",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage --passWithNoTests"
+  },
+  "peerDependencies": {
+    "@ohif/core": "workspace:*",
+    "@ohif/extension-cornerstone": "workspace:*",
+    "@ohif/extension-cornerstone-dicom-sr": "workspace:*",
+    "@ohif/extension-cornerstone-dicom-seg": "workspace:*",
+    "@ohif/extension-default": "workspace:*",
+    "@ohif/extension-rtmedical-theme": "workspace:*",
+    "@ohif/extension-rtmedical-key-images": "workspace:*",
+    "@ohif/mode-basic": "workspace:*"
+  },
+  "dependencies": {
+    "@babel/runtime": "7.29.7",
+    "i18next": "17.3.1"
+  },
+  "keywords": [
+    "ohif-mode"
+  ]
+}

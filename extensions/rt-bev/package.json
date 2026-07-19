@@ -1,0 +1,37 @@
+{
+  "name": "@ohif/extension-rt-bev",
+  "version": "3.12.5",
+  "description": "RT Medical Beam's Eye View — pure RTPLAN MLC/jaw parser and RTIMAGE mm→px geometry for BEV overlays on DRR/portal images in OHIF v3 (port of connectviewer DrawBlockAndMlcTool).",
+  "author": "RT Medical",
+  "license": "MIT",
+  "repository": "rtmedical/viewers",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6",
+    "yarn": ">=1.18.0"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "ohif-extension",
+    "rtmedical",
+    "rtplan",
+    "rtimage",
+    "bev",
+    "mlc",
+    "radiotherapy"
+  ],
+  "scripts": {
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage --passWithNoTests"
+  },
+  "peerDependencies": {
+    "prop-types": "15.8.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

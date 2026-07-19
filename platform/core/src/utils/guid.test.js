@@ -1,15 +1,12 @@
 import guid from './guid';
 
 describe('guid', () => {
-  Math.random = jest.fn(() => 0.4677647565236618);
   const guidValue = guid();
 
-  afterAll(() => {
-    jest.clearAllMocks();
-  });
-
-  test('should return 77bf77bf-77bf-77bf-77bf-77bf77bf77bf when the random value is fixed on 0.4677647565236618', () => {
-    expect(guidValue).toBe('77bf77bf-77bf-77bf-77bf-77bf77bf77bf');
+  test('should return an RFC 4122 version 4 GUID', () => {
+    expect(guidValue).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
   });
 
   test('should always return a guid of size 36', () => {
