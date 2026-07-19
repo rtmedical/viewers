@@ -121,6 +121,20 @@ export const radiologyToolbarSections = {
  */
 function onModeEnter(props) {
   basicOnModeEnter.call(this, props);
+  // RTV-212: centered spinner + shell skeleton while the study loads. The
+  // component is registered by rtmedical-theme under its own namespace and
+  // promoted to the stock id at MODE scope, so other modes keep the default.
+  try {
+    const { customizationService } = props.servicesManager.services;
+    const rtLoading = customizationService?.getCustomization?.('rtmedical.loadingIndicatorProgress');
+    if (rtLoading) {
+      customizationService.setCustomizations({
+        'ui.loadingIndicatorProgress': { $set: rtLoading },
+      });
+    }
+  } catch (e) {
+    /* loading customization unavailable — non-fatal */
+  }
   try {
     this._rtTouchGesturesTeardown = props.commandsManager?.runCommand?.('applyTouchGestures', {
       toolGroupIds: ['default', 'mpr', 'SRToolGroup', 'volume3d'],
