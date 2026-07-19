@@ -31,6 +31,13 @@ describe('objectPath', () => {
     expect(expectedPathComponents).toEqual(['path1path2path3']);
   });
 
+  test.each(['__proto__.polluted', 'constructor.prototype.polluted', 'prototype.polluted'])(
+    'should reject unsafe path %s',
+    path => {
+      expect(objectPath.getPathComponents(path)).toBeNull();
+    }
+  );
+
   test('should return the property obj.myProperty when the object contains myProperty', () => {
     const searchObject = {
       obj: {
@@ -95,5 +102,24 @@ describe('objectPath', () => {
 
     const output = objectPath.set(searchObject, path, newValue);
     expect(output).toEqual(false);
+  });
+
+  test.each(['__proto__.polluted', 'constructor.prototype.polluted', 'prototype.polluted'])(
+    'should not allow prototype pollution through %s',
+    path => {
+      const target = {};
+
+      expect(objectPath.set(target, path, 'unsafe')).toBe(false);
+      expect({}.polluted).toBeUndefined();
+    }
+  );
+
+  test('should not traverse an inherited object while setting a path', () => {
+    const prototype = { nested: {} };
+    const target = Object.create(prototype);
+
+    expect(objectPath.set(target, 'nested.value', 'safe')).toBe(true);
+    expect(target.nested.value).toBe('safe');
+    expect(prototype.nested.value).toBeUndefined();
   });
 });
