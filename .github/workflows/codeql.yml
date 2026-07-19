@@ -13,7 +13,7 @@ name: "CodeQL Advanced"
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
   schedule:
     - cron: '15 1 * * 5'
 
