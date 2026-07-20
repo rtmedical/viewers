@@ -1,0 +1,35 @@
+{
+  "name": "@ohif/extension-rt-worklist",
+  "version": "3.12.5",
+  "description": "RT Medical RIS-style study list — patient-grouped worklist page at /worklist-rt with filters, on-demand series expansion, study info modal and DICOM import (RTV-161).",
+  "author": "RT Medical",
+  "license": "MIT",
+  "repository": "rtmedical/viewers",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6",
+    "yarn": ">=1.18.0"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "ohif-extension",
+    "rtmedical",
+    "worklist",
+    "study-list",
+    "ris"
+  ],
+  "scripts": {
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage --passWithNoTests"
+  },
+  "peerDependencies": {
+    "prop-types": "15.8.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
