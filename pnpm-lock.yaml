@@ -1035,6 +1035,18 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
 
+  extensions/rt-worklist:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
   extensions/rtmedical-key-images:
     dependencies:
       '@ohif/core':
