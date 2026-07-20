@@ -1,0 +1,35 @@
+{
+  "name": "@ohif/extension-rt-display-cal",
+  "version": "3.12.5",
+  "description": "RT Medical display calibration QC — DICOM PS3.14 GSDF targets, TG18 test patterns and a visual-conformance audit trail (RTV-211).",
+  "author": "RT Medical",
+  "license": "MIT",
+  "repository": "rtmedical/viewers",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6",
+    "yarn": ">=1.18.0"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "ohif-extension",
+    "rtmedical",
+    "gsdf",
+    "tg18",
+    "display-calibration"
+  ],
+  "scripts": {
+    "test:unit": "jest --watchAll",
+    "test:unit:ci": "jest --ci --runInBand --collectCoverage --passWithNoTests"
+  },
+  "peerDependencies": {
+    "prop-types": "15.8.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}
