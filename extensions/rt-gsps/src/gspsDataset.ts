@@ -151,12 +151,25 @@ export type NaturalizedGspsDataset = Record<string, unknown>;
  * to {@link GSPS_DEFAULT_CONTENT_LABEL} when nothing survives. Pure.
  */
 export function sanitizeContentLabel(label: unknown): string {
-  const sanitized = String(label ?? '')
+  const collapsed = String(label ?? '')
     .toUpperCase()
-    .replace(/[^A-Z0-9_]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, GSPS_CONTENT_LABEL_MAX_LENGTH)
-    .replace(/_+$/g, '');
+    .replace(/[^A-Z0-9_]+/g, '_');
+  // Underscore trimming is done with index scans: the previous regexes
+  // (/^_+|_+$/ and /_+$/) backtrack polynomially on long '_' runs
+  // (CodeQL js/polynomial-redos — same class as the PR #88 URL fix).
+  let start = 0;
+  let end = collapsed.length;
+  while (start < end && collapsed.charCodeAt(start) === 95 /* '_' */) {
+    start++;
+  }
+  while (end > start && collapsed.charCodeAt(end - 1) === 95) {
+    end--;
+  }
+  let cut = Math.min(end, start + GSPS_CONTENT_LABEL_MAX_LENGTH);
+  while (cut > start && collapsed.charCodeAt(cut - 1) === 95) {
+    cut--;
+  }
+  const sanitized = collapsed.slice(start, cut);
   return sanitized || GSPS_DEFAULT_CONTENT_LABEL;
 }
 
