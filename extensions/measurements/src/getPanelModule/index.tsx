@@ -3,6 +3,7 @@
  * Opt in via '@ohif/extension-measurements.panelModule.measurements'.
  */
 import React from 'react';
+import i18n from 'i18next';
 import MeasurementsPanel from './MeasurementsPanel';
 import LineProfilePanel from './LineProfilePanel';
 
@@ -24,8 +25,11 @@ function getPanelModule(_params: PanelModuleParams) {
     {
       name: 'lineProfile',
       iconName: 'tab-linear',
-      iconLabel: 'Perfil',
-      label: 'Perfil de Densidade',
+      // getPanelModule runs at mode setup (after rtmedical-theme registered
+      // the RTMedical bundle in preRegistration), so i18n.t is safe here; the
+      // defaultValue keeps English when the bundle is absent (e.g. tests).
+      iconLabel: i18n.t('RTMedical:lineprofile_panel_iconlabel', { defaultValue: 'Profile' }),
+      label: i18n.t('RTMedical:lineprofile_panel_label', { defaultValue: 'Density Profile' }),
       component: () => <LineProfilePanel />,
     },
   ];

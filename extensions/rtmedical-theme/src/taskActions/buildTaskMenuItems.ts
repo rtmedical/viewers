@@ -45,6 +45,8 @@ export interface BuildTaskMenuItemsOptions {
   actor?: string;
   /** Unauthorized actions: `'hide'` (default) removes them; `'disable'` greys them out. */
   unauthorized?: 'hide' | 'disable';
+  /** i18n resolver: (labelKey, englishFallback) → localized label. */
+  translate?: (key: string, fallback: string) => string;
 }
 
 function errorDetail(error: unknown): string {
@@ -63,7 +65,13 @@ export function buildTaskMenuItems(options: BuildTaskMenuItemsOptions): HeaderMe
     audit = NOOP_AUDIT_LOGGER,
     actor = 'unknown',
     unauthorized = 'hide',
+    translate,
   } = options;
+
+  // i18n: labels are English source; a caller-supplied translator (typically
+  // i18next's t bound to the RTMedical namespace) localizes them per labelKey.
+  const labelOf = (action: { label: string; labelKey?: string }): string =>
+    (action.labelKey && translate?.(action.labelKey, action.label)) || action.label;
 
   const items: HeaderMenuItem[] = [];
 
@@ -85,7 +93,7 @@ export function buildTaskMenuItems(options: BuildTaskMenuItemsOptions): HeaderMe
       // backstop that records the denied attempt and never runs a handler.
       items.push({
         id: action.id,
-        label: action.label,
+        label: labelOf(action),
         disabled: true,
         onClick: () => {
           audit.log({ action: action.id, actor, status: 'denied' });
@@ -124,7 +132,7 @@ export function buildTaskMenuItems(options: BuildTaskMenuItemsOptions): HeaderMe
 
     items.push({
       id: action.id,
-      label: action.label,
+      label: labelOf(action),
       onClick,
     });
   }

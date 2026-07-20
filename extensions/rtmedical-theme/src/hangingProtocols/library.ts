@@ -72,20 +72,20 @@ export function gridProtocol({ id, name, modalities, rows, cols, weight = 15 }: 
 const SPECS: GridSpec[] = [
   // ---- CT ----
   { id: 'rt-ct-1up', name: 'CT (1x1)', modalities: ['CT'], rows: 1, cols: 1 },
-  { id: 'rt-ct-compare-1x2', name: 'CT Comparação (1x2)', modalities: ['CT'], rows: 1, cols: 2 },
-  { id: 'rt-ct-chest-1x3', name: 'CT Tórax (1x3)', modalities: ['CT'], rows: 1, cols: 3 },
+  { id: 'rt-ct-compare-1x2', name: 'CT Compare (1x2)', modalities: ['CT'], rows: 1, cols: 2 },
+  { id: 'rt-ct-chest-1x3', name: 'CT Chest (1x3)', modalities: ['CT'], rows: 1, cols: 3 },
   { id: 'rt-ct-2x2', name: 'CT (2x2)', modalities: ['CT'], rows: 2, cols: 2 },
-  { id: 'rt-ct-neuro-1up', name: 'CT Crânio AVC (1x1)', modalities: ['CT'], rows: 1, cols: 1, weight: 16 },
+  { id: 'rt-ct-neuro-1up', name: 'CT Head Stroke (1x1)', modalities: ['CT'], rows: 1, cols: 1, weight: 16 },
   // ---- MR ----
   { id: 'rt-mr-1up', name: 'MR (1x1)', modalities: ['MR'], rows: 1, cols: 1 },
-  { id: 'rt-mr-compare-1x2', name: 'MR Comparação (1x2)', modalities: ['MR'], rows: 1, cols: 2 },
-  { id: 'rt-mr-brain-2x2', name: 'MR Crânio (2x2 T1/T2/FLAIR/DWI)', modalities: ['MR'], rows: 2, cols: 2 },
-  { id: 'rt-mr-multiseq-1x4', name: 'MR Multi-sequência (1x4)', modalities: ['MR'], rows: 1, cols: 4 },
-  { id: 'rt-mr-perfusion-2x2', name: 'MR Crânio Perfusão (2x2)', modalities: ['MR'], rows: 2, cols: 2 },
+  { id: 'rt-mr-compare-1x2', name: 'MR Compare (1x2)', modalities: ['MR'], rows: 1, cols: 2 },
+  { id: 'rt-mr-brain-2x2', name: 'MR Brain (2x2 T1/T2/FLAIR/DWI)', modalities: ['MR'], rows: 2, cols: 2 },
+  { id: 'rt-mr-multiseq-1x4', name: 'MR Multi-sequence (1x4)', modalities: ['MR'], rows: 1, cols: 4 },
+  { id: 'rt-mr-perfusion-2x2', name: 'MR Brain Perfusion (2x2)', modalities: ['MR'], rows: 2, cols: 2 },
   // ---- MG ----
-  { id: 'rt-mg-1up', name: 'Mamografia (1x1)', modalities: ['MG'], rows: 1, cols: 1 },
-  { id: 'rt-mg-ccmlo-2x2', name: 'Mamografia CC/MLO (2x2)', modalities: ['MG'], rows: 2, cols: 2 },
-  { id: 'rt-mg-compare-1x4', name: 'Mamografia Bilateral (1x4)', modalities: ['MG'], rows: 1, cols: 4 },
+  { id: 'rt-mg-1up', name: 'Mammography (1x1)', modalities: ['MG'], rows: 1, cols: 1 },
+  { id: 'rt-mg-ccmlo-2x2', name: 'Mammography CC/MLO (2x2)', modalities: ['MG'], rows: 2, cols: 2 },
+  { id: 'rt-mg-compare-1x4', name: 'Mammography Bilateral (1x4)', modalities: ['MG'], rows: 1, cols: 4 },
   // ---- US ----
   { id: 'rt-us-1up', name: 'US (1x1)', modalities: ['US'], rows: 1, cols: 1 },
   { id: 'rt-us-doppler-1x2', name: 'US Doppler (1x2)', modalities: ['US'], rows: 1, cols: 2 },
@@ -94,21 +94,21 @@ const SPECS: GridSpec[] = [
   { id: 'rt-petct-1x2', name: 'PET/CT (1x2)', modalities: ['PT', 'CT'], rows: 1, cols: 2 },
   { id: 'rt-petct-totalbody-2x2', name: 'PET/CT Total Body (2x2)', modalities: ['PT', 'CT'], rows: 2, cols: 2 },
   // ---- CR / DX (radiography) ----
-  { id: 'rt-cr-1up', name: 'Raio-X (1x1)', modalities: ['CR', 'DX'], rows: 1, cols: 1 },
-  { id: 'rt-cr-compare-1x2', name: 'Raio-X Comparação (1x2)', modalities: ['CR', 'DX'], rows: 1, cols: 2 },
-  { id: 'rt-cr-pa-lat-1x2', name: 'Raio-X PA/Perfil (1x2)', modalities: ['CR', 'DX'], rows: 1, cols: 2 },
+  { id: 'rt-cr-1up', name: 'X-ray (1x1)', modalities: ['CR', 'DX'], rows: 1, cols: 1 },
+  { id: 'rt-cr-compare-1x2', name: 'X-ray Compare (1x2)', modalities: ['CR', 'DX'], rows: 1, cols: 2 },
+  { id: 'rt-cr-pa-lat-1x2', name: 'X-ray PA/Lateral (1x2)', modalities: ['CR', 'DX'], rows: 1, cols: 2 },
   // ---- NM ----
-  { id: 'rt-nm-1up', name: 'Medicina Nuclear (1x1)', modalities: ['NM'], rows: 1, cols: 1 },
-  { id: 'rt-nm-2x2', name: 'Medicina Nuclear (2x2)', modalities: ['NM'], rows: 2, cols: 2 },
+  { id: 'rt-nm-1up', name: 'Nuclear Medicine (1x1)', modalities: ['NM'], rows: 1, cols: 1 },
+  { id: 'rt-nm-2x2', name: 'Nuclear Medicine (2x2)', modalities: ['NM'], rows: 2, cols: 2 },
   // ---- XA (angiography) ----
-  { id: 'rt-xa-1up', name: 'Angiografia (1x1)', modalities: ['XA'], rows: 1, cols: 1 },
-  { id: 'rt-xa-2x2', name: 'Angiografia (2x2)', modalities: ['XA'], rows: 2, cols: 2 },
+  { id: 'rt-xa-1up', name: 'Angiography (1x1)', modalities: ['XA'], rows: 1, cols: 1 },
+  { id: 'rt-xa-2x2', name: 'Angiography (2x2)', modalities: ['XA'], rows: 2, cols: 2 },
   // ---- Generic / multi-modality layouts ----
-  { id: 'rt-generic-1up', name: 'Genérico (1x1)', rows: 1, cols: 1, weight: 1 },
-  { id: 'rt-generic-1x2', name: 'Genérico Comparação (1x2)', rows: 1, cols: 2, weight: 1 },
-  { id: 'rt-generic-2x1', name: 'Genérico Empilhado (2x1)', rows: 2, cols: 1, weight: 1 },
-  { id: 'rt-generic-2x2', name: 'Genérico (2x2)', rows: 2, cols: 2, weight: 1 },
-  { id: 'rt-generic-3x3', name: 'Genérico (3x3)', rows: 3, cols: 3, weight: 1 },
+  { id: 'rt-generic-1up', name: 'Generic (1x1)', rows: 1, cols: 1, weight: 1 },
+  { id: 'rt-generic-1x2', name: 'Generic Compare (1x2)', rows: 1, cols: 2, weight: 1 },
+  { id: 'rt-generic-2x1', name: 'Generic Stacked (2x1)', rows: 2, cols: 1, weight: 1 },
+  { id: 'rt-generic-2x2', name: 'Generic (2x2)', rows: 2, cols: 2, weight: 1 },
+  { id: 'rt-generic-3x3', name: 'Generic (3x3)', rows: 3, cols: 3, weight: 1 },
 ];
 
 export const rtHangingProtocolLibrary = SPECS.map(gridProtocol);

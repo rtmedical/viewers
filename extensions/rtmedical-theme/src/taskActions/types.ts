@@ -23,6 +23,8 @@ export interface TaskActionDescriptor {
   id: TaskActionId;
   /** Visible (PT-BR) label. */
   label: string;
+  /** i18n key (RTMedical namespace) — `label` is the English fallback. */
+  labelKey?: string;
   /**
    * Permission keys the user must hold to run the action. ALL are required
    * (AND semantics). An empty array means the action is always permitted.

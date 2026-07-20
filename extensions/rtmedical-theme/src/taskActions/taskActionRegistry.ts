@@ -11,39 +11,46 @@ import type { TaskActionDescriptor, TaskActionId } from './types';
 export const TASK_ACTIONS: TaskActionDescriptor[] = [
   {
     id: 'export',
-    label: 'Exportar estudo',
+    label: 'Export study',
+    labelKey: 'task_export',
     requiredPermissions: ['study:export'],
   },
   {
     id: 'import',
-    label: 'Importar arquivos',
+    label: 'Import files',
+    labelKey: 'task_import',
     requiredPermissions: ['study:import'],
   },
   {
     id: 'updateCalibration',
-    label: 'Atualizar calibração',
+    label: 'Update calibration',
+    labelKey: 'task_update_calibration',
     requiredPermissions: ['image:calibrate'],
   },
   {
     id: 'saveReport',
-    label: 'Salvar laudo',
+    label: 'Save report',
+    labelKey: 'task_save_report',
     requiredPermissions: ['report:write'],
   },
   {
     id: 'generateKeyImages',
-    label: 'Gerar imagens-chave',
+    label: 'Generate key images',
+    labelKey: 'task_generate_key_images',
     requiredPermissions: ['keyimage:create'],
   },
   {
     id: 'changePatientInfo',
-    label: 'Alterar dados do paciente',
+    label: 'Edit patient info',
+    labelKey: 'task_change_patient_info',
     requiredPermissions: ['patient:edit'],
     // Non-destructive but sensitive: edits patient demographics → confirm first.
     requiresConfirmation: true,
   },
   {
     id: 'deleteStudy',
-    label: 'Excluir estudo',
+    label: 'Delete study',
+    labelKey: 'task_delete_study',
     requiredPermissions: ['study:delete'],
     // Destructive: irreversible removal → always confirm + audit.
     destructive: true,
