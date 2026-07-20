@@ -50,13 +50,30 @@ export function pickVideoMimeType(
   return null;
 }
 
-/** Keep [A-Za-z0-9._-], collapse the rest into single dashes, cap length. */
+/**
+ * Keep [A-Za-z0-9._-], collapse the rest into single dashes, cap length.
+ * Edge trimming uses index scans — the previous /^[-.]+|[-.]+$/ alternation
+ * backtracks polynomially on long '-'/'.' runs of untrusted input (CodeQL
+ * js/polynomial-redos, same class as the rt-gsps ContentLabel fix in #99).
+ */
 function sanitizeToken(value: string | undefined, maxLength = 60): string {
-  return (value ?? '')
+  const collapsed = (value ?? '')
     .replace(/[^A-Za-z0-9._-]+/g, '-')
-    .replace(/-{2,}/g, '-')
-    .replace(/^[-.]+|[-.]+$/g, '')
-    .slice(0, maxLength);
+    .replace(/-{2,}/g, '-');
+  const isEdge = (ch: string) => ch === '-' || ch === '.';
+  let start = 0;
+  let end = collapsed.length;
+  while (start < end && isEdge(collapsed[start])) {
+    start++;
+  }
+  while (end > start && isEdge(collapsed[end - 1])) {
+    end--;
+  }
+  let cut = Math.min(end, start + maxLength);
+  while (cut > start && isEdge(collapsed[cut - 1])) {
+    cut--;
+  }
+  return collapsed.slice(start, cut);
 }
 
 /**
