@@ -103,6 +103,9 @@
       "packageName": "@ohif/extension-rt-capture"
     },
     {
+      "packageName": "@ohif/extension-rt-gsps"
+    },
+    {
       "packageName": "@ohif/extension-mammography"
     },
     {

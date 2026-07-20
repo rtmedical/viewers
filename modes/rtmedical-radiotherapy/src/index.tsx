@@ -75,6 +75,8 @@ export const extensionDependencies = {
   // RTV-211: GSDF/TG18 display QA — fullscreen /display-calibration route
   // (no toolbar button; access by URL).
   '@ohif/extension-rt-display-cal': '^3.0.0',
+  // RTV-200: save/load W/L + annotations as DICOM Presentation States (GSPS).
+  '@ohif/extension-rt-gsps': '^3.0.0',
 };
 
 /**
@@ -89,6 +91,8 @@ export const sopClassHandlers = [
   ...basicSopClassHandlers,
   '@ohif/extension-rt-plan.sopClassHandlerModule.rtplan',
   '@ohif/extension-rt-record.sopClassHandlerModule.rtRecord',
+  // RTV-200: stored GSPS objects → display sets carrying the parsed state.
+  '@ohif/extension-rt-gsps.sopClassHandlerModule.gsps',
 ];
 
 /**
@@ -597,6 +601,9 @@ export const radiotherapyToolbarSections = {
     // RTV-203: screenshot → DICOM Secondary Capture → PACS (STOW-RS).
     'rtCaptureSc',
     'rtCaptureLayoutSc',
+    // RTV-200: save W/L + annotations as a DICOM Presentation State (GSPS).
+    'rtGspsSave',
+    'rtGspsApply',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -744,6 +751,30 @@ const rtPanelButtons = [
       label: 'Capture Layout',
       tooltip: 'Save the current layout (all viewports) to the PACS as one Secondary Capture',
       commands: 'captureLayoutSc',
+    },
+  },
+  {
+    // RTV-200: current W/L + annotations → DICOM GSPS → PACS (STOW-RS).
+    id: 'rtGspsSave',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-capture',
+      label: 'Save GSPS',
+      tooltip:
+        'Save the current window/level and annotations to the PACS as a DICOM Presentation State (GSPS)',
+      commands: 'saveGsps',
+    },
+  },
+  {
+    // RTV-200: apply the newest stored GSPS of the loaded study (W/L; graphic
+    // rehydration is GSPS Phase 2).
+    id: 'rtGspsApply',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-window-level',
+      label: 'Apply GSPS',
+      tooltip: 'Apply the newest saved presentation state (window/level)',
+      commands: 'applyGsps',
     },
   },
   {
