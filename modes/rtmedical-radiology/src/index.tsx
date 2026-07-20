@@ -124,6 +124,8 @@ export const radiologyToolbarSections = {
     // RTV-200: save W/L + annotations as a DICOM Presentation State (GSPS).
     'rtGspsSave',
     'rtGspsApply',
+    // RTV-95: cine → MP4/WebM video download of the active viewport.
+    'rtCineExport',
   ],
 };
 
@@ -171,6 +173,18 @@ const scToolbarButtons = [
       label: 'Apply GSPS',
       tooltip: 'Apply the newest saved presentation state (window/level)',
       commands: 'applyGsps',
+    },
+  },
+  {
+    // RTV-95: cine → video — record the active viewport's frame sweep to
+    // an MP4 (or WebM fallback) download.
+    id: 'rtCineExport',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-cine',
+      label: 'Export Cine',
+      tooltip: 'Export the active viewport cine as an MP4/WebM video download',
+      commands: 'exportCineVideo',
     },
   },
 ];

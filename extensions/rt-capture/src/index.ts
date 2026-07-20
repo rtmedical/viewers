@@ -7,10 +7,20 @@
  * PACS via the data source's STOW-RS (`store.dicom`). Zero-fork (RTV-114):
  * pure dataset builder + dcmjs glue + commands; modes opt in via toolbar
  * buttons/hotkeys.
+ *
+ * Also home to the cine → video export (RTV-95): sweep the active viewport's
+ * frames and record them (MediaRecorder) into an MP4/WebM download.
  */
 export * from './scDataset';
 export * from './scSerialize';
 export { composeViewportCanvas, composeLayoutCanvas, canvasPixels } from './captureCompose';
+export {
+  VIDEO_MIME_CANDIDATES,
+  pickVideoMimeType,
+  exportFilename,
+  recordCanvasFrames,
+  downloadBlob,
+} from './cineExport';
 export { getCommandsModule } from './getCommandsModule';
 
 import { getCommandsModule } from './getCommandsModule';
