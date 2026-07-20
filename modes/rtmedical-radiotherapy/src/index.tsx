@@ -168,6 +168,39 @@ const eclipseHotkeys = [
   { commandName: 'showRtStructIn3D', label: 'Structures in 3D', keys: ['shift+3'], isEditable: true },
   // RTV-203: capture the active viewport straight to the PACS as DICOM SC.
   { commandName: 'captureViewportSc', label: 'Capture to PACS (SC)', keys: ['alt+c'], isEditable: true },
+  // RTV-128: RT-specific panel hotkeys. F1–F4 reveal the RT analysis panels
+  // (activateRtPanel is registered by rtmedical-theme). W/L presets on keys
+  // 1–4 are already OHIF defaults (setWindowLevelPreset) and stay untouched;
+  // persistence, the editing UI and reset-to-defaults come from the native
+  // HotkeysManager ('user-preferred-keys' localStorage) + Preferences modal.
+  {
+    commandName: 'activateRtPanel',
+    commandOptions: { panelId: rtmedical.fusionTimeline },
+    label: 'Fusion panel',
+    keys: ['f1'],
+    isEditable: true,
+  },
+  {
+    commandName: 'activateRtPanel',
+    commandOptions: { panelId: rtmedical.isodose },
+    label: 'Isodose panel',
+    keys: ['f2'],
+    isEditable: true,
+  },
+  {
+    commandName: 'activateRtPanel',
+    commandOptions: { panelId: rtmedical.dvh },
+    label: 'DVH panel',
+    keys: ['f3'],
+    isEditable: true,
+  },
+  {
+    commandName: 'activateRtPanel',
+    commandOptions: { panelId: rtmedical.rtPrint },
+    label: 'RT print panel',
+    keys: ['f4'],
+    isEditable: true,
+  },
 ];
 
 /** autoseg reference-line palette (constants.ts): axial blue, sagittal yellow, coronal green. */
