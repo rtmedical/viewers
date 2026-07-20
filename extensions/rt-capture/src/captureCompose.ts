@@ -79,8 +79,10 @@ export async function composeViewportCanvas(viewport: {
   element: HTMLElement;
 }): Promise<HTMLCanvasElement> {
   const el = viewport.element;
-  const w = el?.clientWidth || viewport.getCanvas().width;
-  const h = el?.clientHeight || viewport.getCanvas().height;
+  // Device pixels (the on-screen canvas) — CSS clientWidth would discard the
+  // extra resolution on HiDPI displays before any downstream upscale.
+  const w = viewport.getCanvas()?.width || el?.clientWidth || 0;
+  const h = viewport.getCanvas()?.height || el?.clientHeight || 0;
   const out = document.createElement('canvas');
   out.width = w;
   out.height = h;

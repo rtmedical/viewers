@@ -9,14 +9,37 @@
  * series (one SeriesInstanceUID per study per app session, so successive
  * captures group together). Success/failure surfaces as a toast; STOW failure
  * (PACS offline) is caught and reported without crashing (acceptance item 5).
+ *
+ * Cine export command (RTV-95):
+ *
+ * - `exportCineVideo`    — sweep the ACTIVE viewport's frames/slices and
+ *   record them (image + burned annotations, ≥1080p) into an MP4 or WebM
+ *   download. MP4/H.264 depends on the browser's MediaRecorder encoders
+ *   (Chrome ≥126); otherwise it falls back to WebM. Audio (recorded report
+ *   narration) is a follow-up.
  */
+import { Enums as csEnums, utilities as csUtils } from '@cornerstonejs/core';
 import { rgbaToRgb, ScPatientStudyContext, ScSourceImageRef } from './scDataset';
 import { buildScDatasetWithRealUids, newUid, toDa } from './scSerialize';
 import { canvasPixels, composeLayoutCanvas, composeViewportCanvas } from './captureCompose';
+import {
+  downloadBlob,
+  exportFilename,
+  pickVideoMimeType,
+  recordCanvasFrames,
+} from './cineExport';
+
+/** Exported videos target at least this on the longer side (RTV-95: ≥1080p). */
+const CINE_EXPORT_MIN_MAX_SIDE = 1080;
+
+/** Frame rate when neither the caller nor the viewport's cine specify one. */
+const CINE_EXPORT_DEFAULT_FPS = 24;
 
 /** One capture series per study per session, so captures group in the PACS. */
 const seriesByStudy = new Map<string, string>();
 let instanceCounter = 0;
+/** RTV-95: one cine export at a time (concurrent runs fight over the slice). */
+let cineExportInProgress = false;
 
 function scSeriesFor(studyInstanceUID: string): string {
   let uid = seriesByStudy.get(studyInstanceUID);
@@ -63,11 +86,85 @@ function contextFromDisplaySets(displaySets: any[]): {
   return { context, sourceImages };
 }
 
+/** Frames/slices the viewport can sweep (stack imageIds, else volume slices). */
+function viewportFrameCount(viewport: any): number {
+  // getNumberOfSlices counts steps along the CURRENT orientation — on an
+  // MPR coronal/sagittal it differs from the acquisition count returned by
+  // getImageIds (review M1), so it wins whenever available.
+  const fromSlices = viewport?.getNumberOfSlices?.();
+  if (Number.isFinite(fromSlices) && fromSlices > 0) {
+    return fromSlices;
+  }
+  const fromImageIds = viewport?.getImageIds?.()?.length;
+  return Number.isFinite(fromImageIds) && fromImageIds > 0 ? fromImageIds : 0;
+}
+
+/**
+ * Navigate the viewport to `imageIndex` — the core `jumpToSlice` utility
+ * handles stack AND volume viewports (prior art: cardiology BullseyePanel),
+ * with a StackViewport `setImageIdIndex` fallback if the generic jump rejects.
+ */
+async function jumpToIndex(viewport: any, imageIndex: number): Promise<void> {
+  // StackViewport.setImageIdIndex resolves AFTER load+display and has no
+  // debounce; the generic jumpToSlice scroll path debounces uncached images
+  // (40 ms) and composes deltas, which a fast export loop turns into stale
+  // frames or compounded overshoot (review B2). Volume viewports (no
+  // setImageIdIndex) keep the synchronous camera-based jumpToSlice.
+  if (typeof viewport?.setImageIdIndex === 'function') {
+    try {
+      await viewport.setImageIdIndex(imageIndex);
+      return;
+    } catch (e) {
+      /* fall through to the generic jump */
+    }
+  }
+  try {
+    await csUtils.jumpToSlice(viewport.element, { imageIndex });
+  } catch (e) {
+    /* frame unavailable — the previous frame is recorded instead */
+  }
+}
+
+/**
+ * Resolve when the viewport reports a render (IMAGE_RENDERED /
+ * VOLUME_NEW_IMAGE on its element) or after `timeoutMs` (~2× the frame
+ * period), whichever comes first. Never rejects — a missed event only costs
+ * the timeout. Attach BEFORE triggering the navigation so the event isn't
+ * lost to the race.
+ */
+function waitForRender(viewport: any, timeoutMs: number): { done: Promise<void> } {
+  const done = new Promise<void>(resolve => {
+    const element: HTMLElement | undefined = viewport?.element;
+    if (!element?.addEventListener) {
+      resolve();
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      element.removeEventListener(csEnums.Events.IMAGE_RENDERED, finish);
+      element.removeEventListener(csEnums.Events.VOLUME_NEW_IMAGE, finish);
+      clearTimeout(timer);
+      resolve();
+    };
+    timer = setTimeout(finish, timeoutMs);
+    element.addEventListener(csEnums.Events.IMAGE_RENDERED, finish);
+    element.addEventListener(csEnums.Events.VOLUME_NEW_IMAGE, finish);
+  });
+  return { done };
+}
+
+/** `YYYYMMDD-HHMMSS` local timestamp for the export filename. */
+function fileTimestamp(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${toDa(d)}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
 export function getCommandsModule({ servicesManager, extensionManager }: any) {
   const {
     viewportGridService,
     cornerstoneViewportService,
     uiNotificationService,
+    cineService,
   } = servicesManager.services;
 
   const notify = (type: 'success' | 'error' | 'info', title: string, message: string) => {
@@ -158,6 +255,155 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
       );
       return storeCapture(canvas, displaySets, 'layout');
     },
+
+    /**
+     * RTV-95: active viewport's cine (every frame/slice, image + burned
+     * annotations) → MP4/WebM download.
+     *
+     * - fps: explicit option > the viewport's cine player rate > 24.
+     * - Resolution: the viewport is upscaled (smoothed drawImage) so the
+     *   longer side is ≥1080 px unless an explicit `scale` is given.
+     * - MP4 (H.264) when the browser's MediaRecorder can encode it
+     *   (Chrome ≥126), WebM otherwise; no encoder at all → error toast.
+     * - The viewport is restored to its original frame afterwards.
+     */
+    exportCineVideo: async ({ fps, bitsPerSecond, scale }: {
+      fps?: number;
+      bitsPerSecond?: number;
+      scale?: number;
+    } = {}) => {
+      const activeViewportId = viewportGridService.getActiveViewportId?.()
+        ?? viewportGridService.getState?.()?.activeViewportId;
+      const viewport = cornerstoneViewportService.getCornerstoneViewport(activeViewportId);
+      if (!viewport) {
+        notify('error', 'Export Cine', 'No active viewport to export.');
+        return false;
+      }
+      const frameCount = viewportFrameCount(viewport);
+      if (frameCount < 2) {
+        notify(
+          'error',
+          'Export Cine',
+          'The active viewport has a single image. Cine export needs a multi-frame series.'
+        );
+        return false;
+      }
+      const mimeType = pickVideoMimeType();
+      if (!mimeType) {
+        notify('error', 'Export Cine', 'This browser cannot record video (no MP4/WebM encoder).');
+        return false;
+      }
+      const cineFrameRate = cineService?.getState?.()?.cines?.[activeViewportId]?.frameRate;
+      const effectiveFps = Math.max(
+        1,
+        (Number(fps) > 0 && Number(fps)) ||
+          (Number(cineFrameRate) > 0 && Number(cineFrameRate)) ||
+          CINE_EXPORT_DEFAULT_FPS
+      );
+
+      // Export canvas: viewport aspect, upscaled to ≥1080 on the longer side
+      // (unless an explicit scale is given). Even dimensions for H.264.
+      // Device pixels (the on-screen canvas), NOT clientWidth — on HiDPI the
+      // CSS size would throw away half the real resolution before upscaling.
+      const srcW = viewport.getCanvas()?.width || viewport.element?.clientWidth || 0;
+      const srcH = viewport.getCanvas()?.height || viewport.element?.clientHeight || 0;
+      const maxSide = Math.max(srcW, srcH) || 1;
+      const effectiveScale =
+        Number(scale) > 0
+          ? Number(scale)
+          : Math.max(1, CINE_EXPORT_MIN_MAX_SIDE / maxSide);
+      const toEven = (n: number) => Math.max(2, 2 * Math.round((n * effectiveScale) / 2));
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = toEven(srcW);
+      exportCanvas.height = toEven(srcH);
+      const ctx = exportCanvas.getContext('2d');
+      if (!ctx) {
+        notify('error', 'Export Cine', '2D canvas unavailable.');
+        return false;
+      }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      const originalIndex =
+        viewport.getCurrentImageIdIndex?.() ?? viewport.getSliceIndex?.() ?? 0;
+      const renderTimeoutMs = Math.max(100, 2 * (1000 / effectiveFps));
+
+      if (cineExportInProgress) {
+        notify('error', 'Export Cine', 'A cine export is already running.');
+        return false;
+      }
+      cineExportInProgress = true;
+      // Hidden tabs throttle timers to ≥1 s and pause the render loop — the
+      // recording would silently degrade to duplicated frames (review M4).
+      let hiddenAbort = false;
+      const onVisibility = () => {
+        if (document.hidden) {
+          hiddenAbort = true;
+        }
+      };
+      document.addEventListener('visibilitychange', onVisibility);
+      notify(
+        'info',
+        'Export Cine',
+        `Recording ${frameCount} frames at ${effectiveFps} fps — keep this tab visible...`
+      );
+      try {
+        const blob = await recordCanvasFrames({
+          canvas: exportCanvas,
+          frameCount,
+          fps: effectiveFps,
+          mimeType,
+          bitsPerSecond,
+          drawFrame: async (i: number) => {
+            if (hiddenAbort) {
+              throw new Error('Export aborted: the tab went to the background.');
+            }
+            const currentIndex = () =>
+              viewport.getCurrentImageIdIndex?.() ?? viewport.getSliceIndex?.();
+            // Already displaying this frame → no navigation, no render wait
+            // (a forced render here used to fire IMAGE_RENDERED for the OLD
+            // image and defeat the wait — review B2).
+            if (currentIndex() !== i) {
+              const rendered = waitForRender(viewport, renderTimeoutMs);
+              await jumpToIndex(viewport, i);
+              await rendered.done;
+              // Volume path may still be streaming the slice — one bounded
+              // re-wait when the reported index hasn't landed yet.
+              const idx = currentIndex();
+              if (idx !== undefined && idx !== i) {
+                await waitForRender(viewport, renderTimeoutMs).done;
+              }
+            }
+            const frame = await composeViewportCanvas(viewport);
+            ctx.drawImage(frame, 0, 0, exportCanvas.width, exportCanvas.height);
+          },
+        });
+        const displaySets =
+          cornerstoneViewportService.getViewportDisplaySets?.(activeViewportId) ?? [];
+        const seriesDescription =
+          displaySets[0]?.SeriesDescription ??
+          (displaySets[0]?.instances?.[0] ?? displaySets[0]?.instance)?.SeriesDescription;
+        const filename = exportFilename(seriesDescription, mimeType, fileTimestamp(new Date()));
+        downloadBlob(blob, filename);
+        const container = /mp4/i.test(mimeType) ? 'MP4' : 'WebM';
+        notify('success', 'Export Cine', `Cine exported as ${container} (${filename}).`);
+        return true;
+      } catch (e) {
+        notify(
+          'error',
+          'Export Cine',
+          e instanceof Error && /aborted/.test(e.message)
+            ? e.message
+            : 'Video recording failed. Try again.'
+        );
+        return false;
+      } finally {
+        cineExportInProgress = false;
+        document.removeEventListener('visibilitychange', onVisibility);
+        // Put the viewport back on the frame the user was reading.
+        jumpToIndex(viewport, originalIndex).catch(() => undefined);
+      }
+    },
   };
 
   return {
@@ -165,6 +411,7 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
     definitions: {
       captureViewportSc: { commandFn: actions.captureViewportSc },
       captureLayoutSc: { commandFn: actions.captureLayoutSc },
+      exportCineVideo: { commandFn: actions.exportCineVideo },
     },
     defaultContext: 'CORNERSTONE',
   };
