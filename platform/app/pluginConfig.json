@@ -136,6 +136,9 @@
       "packageName": "@ohif/extension-rt-display-cal"
     },
     {
+      "packageName": "@ohif/extension-rt-worklist"
+    },
+    {
       "packageName": "@ohif/extension-cardiology"
     }
   ],
