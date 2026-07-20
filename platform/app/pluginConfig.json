@@ -130,6 +130,9 @@
       "packageName": "@ohif/extension-rt-bev"
     },
     {
+      "packageName": "@ohif/extension-rt-display-cal"
+    },
+    {
       "packageName": "@ohif/extension-cardiology"
     }
   ],

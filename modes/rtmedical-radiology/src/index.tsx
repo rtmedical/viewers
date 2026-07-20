@@ -50,6 +50,9 @@ export const extensionDependencies = {
   '@ohif/extension-cad': '^3.0.0',
   // RTV-203: viewport/layout screenshot → DICOM Secondary Capture → STOW-RS.
   '@ohif/extension-rt-capture': '^3.0.0',
+  // RTV-211: GSDF/TG18 display QA — fullscreen /display-calibration route
+  // (no toolbar button; access by URL).
+  '@ohif/extension-rt-display-cal': '^3.0.0',
 };
 
 /**
