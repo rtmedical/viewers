@@ -190,6 +190,41 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
     }
   };
 
+  // RTV-159: best-effort background-task tracking via rtmedical-theme's
+  // BgTaskService. The service is resolved at CALL time (it registers in a
+  // sibling extension's preRegistration) and every call is guarded — the
+  // exports must keep working unchanged when it is absent.
+  const bgTasks = () => servicesManager.services?.rtmedicalBgTaskService;
+  const bgTaskStart = (kind: string, label: string): string | undefined => {
+    try {
+      return bgTasks()?.startTask?.({ kind, label });
+    } catch (e) {
+      return undefined;
+    }
+  };
+  const bgTaskProgress = (id: string | undefined, progress: number) => {
+    try {
+      if (id) {
+        bgTasks()?.updateTask?.(id, { progress });
+      }
+    } catch (e) {
+      /* tracking only */
+    }
+  };
+  const bgTaskComplete = (
+    id: string | undefined,
+    status: 'success' | 'error',
+    detail?: string
+  ) => {
+    try {
+      if (id) {
+        bgTasks()?.completeTask?.(id, { status, detail });
+      }
+    } catch (e) {
+      /* tracking only */
+    }
+  };
+
   /** Compose → build SC → STOW. Shared by both commands. */
   const storeCapture = async (
     canvas: HTMLCanvasElement,
@@ -348,6 +383,9 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
         return false;
       }
       cineExportInProgress = true;
+      // RTV-159: track the export as a background task (toast + panel).
+      const bgTaskId = bgTaskStart('cine-export', 'Export Cine');
+      let bgLastPct = 0;
       // Hidden tabs throttle timers to ≥1 s and pause the render loop — the
       // recording would silently degrade to duplicated frames (review M4).
       let hiddenAbort = false;
@@ -391,6 +429,12 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
             }
             const frame = await composeViewportCanvas(viewport);
             ctx.drawImage(frame, 0, 0, exportCanvas.width, exportCanvas.height);
+            // RTV-159: per-frame progress, throttled to ~10% steps.
+            const pct = Math.round(((i + 1) / frameCount) * 100);
+            if (pct - bgLastPct >= 10 || pct >= 100) {
+              bgLastPct = pct;
+              bgTaskProgress(bgTaskId, pct);
+            }
           },
         });
         const displaySets =
@@ -402,15 +446,15 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
         downloadBlob(blob, filename);
         const container = /mp4/i.test(mimeType) ? 'MP4' : 'WebM';
         notify('success', 'Export Cine', `Cine exported as ${container} (${filename}).`);
+        bgTaskComplete(bgTaskId, 'success', `${container}: ${filename}`);
         return true;
       } catch (e) {
-        notify(
-          'error',
-          'Export Cine',
+        const message =
           e instanceof Error && /aborted/.test(e.message)
             ? e.message
-            : 'Video recording failed. Try again.'
-        );
+            : 'Video recording failed. Try again.';
+        notify('error', 'Export Cine', message);
+        bgTaskComplete(bgTaskId, 'error', message);
         return false;
       } finally {
         cineExportInProgress = false;
@@ -512,6 +556,10 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
         return false;
       }
       cineExportInProgress = true;
+      // RTV-159: track the export as a background task (toast + panel).
+      const bgTaskId = bgTaskStart('rotational-3d-export', 'Export 3D Spin');
+      let bgLastPct = 0;
+      let bgFrameIndex = 0;
       // Snapshot the camera BEFORE the first step so finally can restore the
       // exact view the user set up (copies — getCamera may return live arrays).
       const cam0 = viewport.getCamera();
@@ -566,6 +614,13 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
             await rendered.done;
             const frame = await composeViewportCanvas(viewport);
             ctx.drawImage(frame, 0, 0, exportCanvas.width, exportCanvas.height);
+            // RTV-159: per-frame progress, throttled to ~10% steps (this
+            // drawFrame gets no index, so count the recorded frames locally).
+            const pct = Math.round((++bgFrameIndex / frameCount) * 100);
+            if (pct - bgLastPct >= 10 || pct >= 100) {
+              bgLastPct = pct;
+              bgTaskProgress(bgTaskId, pct);
+            }
           },
         });
         const displaySets =
@@ -581,15 +636,15 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
         downloadBlob(blob, filename);
         const container = /mp4/i.test(mimeType) ? 'MP4' : 'WebM';
         notify('success', 'Export 3D Spin', `3D spin exported as ${container} (${filename}).`);
+        bgTaskComplete(bgTaskId, 'success', `${container}: ${filename}`);
         return true;
       } catch (e) {
-        notify(
-          'error',
-          'Export 3D Spin',
+        const message =
           e instanceof Error && /aborted/.test(e.message)
             ? e.message
-            : 'Video recording failed. Try again.'
-        );
+            : 'Video recording failed. Try again.';
+        notify('error', 'Export 3D Spin', message);
+        bgTaskComplete(bgTaskId, 'error', message);
         return false;
       } finally {
         cineExportInProgress = false;
