@@ -1,12 +1,17 @@
 import WorklistQueueService from './worklist/WorklistQueueService';
 import { applyTouchGestures, removeTouchGestures } from './touch/touchGestures';
 import type { TeardownTouchGestures } from './touch/touchGestures';
+import { createMipSlabActions } from './mipSlabCommands';
 
 /**
  * RT workflow commands (RTV-120). Worklist next/prev navigation built on the
  * stock `navigateHistory` command (SPA navigation), reading the queue/cursor
  * from WorklistQueueService. Bind to header buttons or hotkeys (k/j).
  * RTV-114: only public command/service APIs.
+ *
+ * RTV-15/19: setSlabProjection / adjustSlabThickness / clearSlabProjection —
+ * MIP/MinIP/AvgIP + 2D slab thickness on the active MPR viewport (see
+ * ./mipSlabCommands for the Cornerstone3D glue and ./mipSlab for the model).
  */
 interface CommandsModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -37,7 +42,11 @@ export default function getCommandsModule({
     return true;
   };
 
+  // RTV-15/19: MIP/MinIP/AvgIP + slab thickness on the active viewport.
+  const mipSlabActions = createMipSlabActions({ servicesManager });
+
   const actions = {
+    ...mipSlabActions,
     nextStudyInWorklist: (): boolean => navigateToStudy(getQueue()?.getNextStudyUID()),
     prevStudyInWorklist: (): boolean => navigateToStudy(getQueue()?.getPrevStudyUID()),
     // RTV-124: reveal an RT side panel by id from a toolbar button (FUSÃO/LAUDO/
@@ -71,6 +80,9 @@ export default function getCommandsModule({
     activateRtPanel: { commandFn: actions.activateRtPanel },
     applyTouchGestures: { commandFn: actions.applyTouchGestures },
     removeTouchGestures: { commandFn: actions.removeTouchGestures },
+    setSlabProjection: { commandFn: actions.setSlabProjection },
+    adjustSlabThickness: { commandFn: actions.adjustSlabThickness },
+    clearSlabProjection: { commandFn: actions.clearSlabProjection },
   };
 
   return { actions, definitions, defaultContext: 'DEFAULT' };
