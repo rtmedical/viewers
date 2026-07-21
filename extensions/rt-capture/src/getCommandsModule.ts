@@ -17,11 +17,20 @@
  *   download. MP4/H.264 depends on the browser's MediaRecorder encoders
  *   (Chrome ≥126); otherwise it falls back to WebM. Audio (recorded report
  *   narration) is a follow-up.
+ *
+ * Rotational 3D cine command (RTV-96):
+ *
+ * - `exportRotational3D` — spin the layout's 3D (volume3d) viewport camera a
+ *   full 360° turn around its focal point (default axis: the camera's own
+ *   viewUp — a turntable spin) and record the sweep into the same MP4/WebM
+ *   download pipeline. The viewport does not need to be active; the original
+ *   camera is restored afterwards.
  */
 import { Enums as csEnums, utilities as csUtils } from '@cornerstonejs/core';
 import { rgbaToRgb, ScPatientStudyContext, ScSourceImageRef } from './scDataset';
 import { buildScDatasetWithRealUids, newUid, toDa } from './scSerialize';
 import { canvasPixels, composeLayoutCanvas, composeViewportCanvas } from './captureCompose';
+import { orbitStep, Vec3 } from './orbitCamera';
 import {
   downloadBlob,
   exportFilename,
@@ -34,6 +43,12 @@ const CINE_EXPORT_MIN_MAX_SIDE = 1080;
 
 /** Frame rate when neither the caller nor the viewport's cine specify one. */
 const CINE_EXPORT_DEFAULT_FPS = 24;
+
+/** RTV-96: full-turn frame count when the caller gives none (5 s at 24 fps). */
+const ROTATIONAL_3D_DEFAULT_FRAMES = 120;
+
+/** Cornerstone3D Enums.ViewportType.VOLUME_3D (+ the -next variant). */
+const VOLUME_3D_VIEWPORT_TYPES = ['volume3d', 'volume3dNext'];
 
 /** One capture series per study per session, so captures group in the PACS. */
 const seriesByStudy = new Map<string, string>();
@@ -404,6 +419,190 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
         jumpToIndex(viewport, originalIndex).catch(() => undefined);
       }
     },
+
+    /**
+     * RTV-96: 3D viewport → rotational cine (360° turntable spin) → MP4/WebM
+     * download.
+     *
+     * - Targets the grid's `volume3d` viewport wherever it sits in the layout
+     *   (it does NOT need to be active) — no 3D viewport → honest error toast.
+     * - frames (default 120) camera steps of 2π/frames around the focal
+     *   point about `axis` (default: the camera's viewUp), each rendered,
+     *   composed (image + annotations, ≥1080 on the longer side) and recorded
+     *   at `fps` (default 24 → a 5 s full turn).
+     * - Shares the single-flight guard with `exportCineVideo` (both drive a
+     *   live viewport) and the hidden-tab abort (throttled timers would
+     *   silently duplicate frames).
+     * - The ORIGINAL camera is restored in `finally`, success or not.
+     */
+    exportRotational3D: async ({ frames, fps, bitsPerSecond, axis }: {
+      frames?: number;
+      fps?: number;
+      bitsPerSecond?: number;
+      axis?: Vec3;
+    } = {}) => {
+      // Find the 3D viewport anywhere in the grid (active or not).
+      const state = viewportGridService.getState?.();
+      const viewportIds: string[] = state?.viewports ? [...state.viewports.keys()] : [];
+      const viewport3dId = viewportIds.find(id => {
+        const vp = cornerstoneViewportService.getCornerstoneViewport(id);
+        return vp && VOLUME_3D_VIEWPORT_TYPES.includes((vp as { type?: string }).type);
+      });
+      const viewport = viewport3dId
+        ? cornerstoneViewportService.getCornerstoneViewport(viewport3dId)
+        : undefined;
+      if (!viewport) {
+        notify(
+          'error',
+          'Export 3D Spin',
+          'No 3D (volume) viewport in the current layout. Open a 3D view first.'
+        );
+        return false;
+      }
+      if (typeof viewport.getCamera !== 'function' || typeof viewport.setCamera !== 'function') {
+        notify('error', 'Export 3D Spin', 'The 3D viewport does not expose camera controls.');
+        return false;
+      }
+      const mimeType = pickVideoMimeType();
+      if (!mimeType) {
+        notify(
+          'error',
+          'Export 3D Spin',
+          'This browser cannot record video (no MP4/WebM encoder).'
+        );
+        return false;
+      }
+      const frameCount =
+        Number(frames) >= 2 ? Math.floor(Number(frames)) : ROTATIONAL_3D_DEFAULT_FRAMES;
+      const effectiveFps = Math.max(
+        1,
+        (Number(fps) > 0 && Number(fps)) || CINE_EXPORT_DEFAULT_FPS
+      );
+      // Degenerate/zero axes would record a static video — fall back to the
+      // default (the camera's viewUp) instead.
+      const axisVec: Vec3 | undefined =
+        Array.isArray(axis) &&
+        axis.length === 3 &&
+        axis.every(n => Number.isFinite(n)) &&
+        Math.hypot(axis[0], axis[1], axis[2]) > 0
+          ? (axis.map(Number) as Vec3)
+          : undefined;
+
+      // Export canvas: same sizing rule as exportCineVideo — viewport aspect
+      // at device pixels, upscaled so the longer side is ≥1080, even
+      // dimensions for H.264.
+      const srcW = viewport.getCanvas()?.width || viewport.element?.clientWidth || 0;
+      const srcH = viewport.getCanvas()?.height || viewport.element?.clientHeight || 0;
+      const maxSide = Math.max(srcW, srcH) || 1;
+      const effectiveScale = Math.max(1, CINE_EXPORT_MIN_MAX_SIDE / maxSide);
+      const toEven = (n: number) => Math.max(2, 2 * Math.round((n * effectiveScale) / 2));
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = toEven(srcW);
+      exportCanvas.height = toEven(srcH);
+      const ctx = exportCanvas.getContext('2d');
+      if (!ctx) {
+        notify('error', 'Export 3D Spin', '2D canvas unavailable.');
+        return false;
+      }
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      if (cineExportInProgress) {
+        notify('error', 'Export 3D Spin', 'A video export is already running.');
+        return false;
+      }
+      cineExportInProgress = true;
+      // Snapshot the camera BEFORE the first step so finally can restore the
+      // exact view the user set up (copies — getCamera may return live arrays).
+      const cam0 = viewport.getCamera();
+      const originalCamera = {
+        position: [...cam0.position] as Vec3,
+        focalPoint: [...cam0.focalPoint] as Vec3,
+        viewUp: [...cam0.viewUp] as Vec3,
+      };
+      const stepAngle = (2 * Math.PI) / frameCount;
+      const renderTimeoutMs = Math.max(100, 2 * (1000 / effectiveFps));
+      // Hidden tabs throttle timers to ≥1 s and pause the render loop — the
+      // recording would silently degrade to duplicated frames (review M4).
+      let hiddenAbort = false;
+      const onVisibility = () => {
+        if (document.hidden) {
+          hiddenAbort = true;
+        }
+      };
+      document.addEventListener('visibilitychange', onVisibility);
+      notify(
+        'info',
+        'Export 3D Spin',
+        `Recording a 360° spin (${frameCount} frames at ${effectiveFps} fps) — keep this tab visible...`
+      );
+      try {
+        const blob = await recordCanvasFrames({
+          canvas: exportCanvas,
+          frameCount,
+          fps: effectiveFps,
+          mimeType,
+          bitsPerSecond,
+          drawFrame: async () => {
+            if (hiddenAbort) {
+              throw new Error('Export aborted: the tab went to the background.');
+            }
+            // One fixed step from the CURRENT camera — the last frame lands
+            // back on the starting view (2π/frames × frames = 360°).
+            const cam = viewport.getCamera();
+            const next = orbitStep(
+              {
+                position: [...cam.position] as Vec3,
+                focalPoint: [...cam.focalPoint] as Vec3,
+                viewUp: [...cam.viewUp] as Vec3,
+              },
+              stepAngle,
+              axisVec
+            );
+            // Attach the render wait BEFORE triggering it (race — review B2).
+            const rendered = waitForRender(viewport, renderTimeoutMs);
+            viewport.setCamera({ position: next.position, viewUp: next.viewUp });
+            viewport.render?.();
+            await rendered.done;
+            const frame = await composeViewportCanvas(viewport);
+            ctx.drawImage(frame, 0, 0, exportCanvas.width, exportCanvas.height);
+          },
+        });
+        const displaySets =
+          cornerstoneViewportService.getViewportDisplaySets?.(viewport3dId) ?? [];
+        const seriesDescription =
+          displaySets[0]?.SeriesDescription ??
+          (displaySets[0]?.instances?.[0] ?? displaySets[0]?.instance)?.SeriesDescription;
+        const filename = exportFilename(
+          seriesDescription ? `rotational-3d-${seriesDescription}` : 'rotational-3d',
+          mimeType,
+          fileTimestamp(new Date())
+        );
+        downloadBlob(blob, filename);
+        const container = /mp4/i.test(mimeType) ? 'MP4' : 'WebM';
+        notify('success', 'Export 3D Spin', `3D spin exported as ${container} (${filename}).`);
+        return true;
+      } catch (e) {
+        notify(
+          'error',
+          'Export 3D Spin',
+          e instanceof Error && /aborted/.test(e.message)
+            ? e.message
+            : 'Video recording failed. Try again.'
+        );
+        return false;
+      } finally {
+        cineExportInProgress = false;
+        document.removeEventListener('visibilitychange', onVisibility);
+        // Put the camera back exactly where the user left it.
+        try {
+          viewport.setCamera(originalCamera);
+          viewport.render?.();
+        } catch (e) {
+          /* restoring the view must never mask the export outcome */
+        }
+      }
+    },
   };
 
   return {
@@ -412,6 +611,7 @@ export function getCommandsModule({ servicesManager, extensionManager }: any) {
       captureViewportSc: { commandFn: actions.captureViewportSc },
       captureLayoutSc: { commandFn: actions.captureLayoutSc },
       exportCineVideo: { commandFn: actions.exportCineVideo },
+      exportRotational3D: { commandFn: actions.exportRotational3D },
     },
     defaultContext: 'CORNERSTONE',
   };
