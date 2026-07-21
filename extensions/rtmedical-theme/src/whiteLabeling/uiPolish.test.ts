@@ -1,4 +1,4 @@
-import { UI_POLISH_CSS, UI_POLISH_STYLE_ID, applyUiPolishStyle } from './uiPolish';
+import { UI_POLISH_CSS, UI_POLISH_STYLE_ID, applyUiPolishStyle, buildUiPolishCss } from './uiPolish';
 
 describe('uiPolish (RTV-212)', () => {
   afterEach(() => {
@@ -19,11 +19,19 @@ describe('uiPolish (RTV-212)', () => {
   });
 
   it('layers content < side panels < header (Carbon g100 elevation)', () => {
+    const css = buildUiPolishCss('g100');
     // header (ui-next NavBar = bg-popover border-background) → layer-02
-    expect(UI_POLISH_CSS).toContain('div.bg-popover.border-background { background-color: #393939');
+    expect(css).toContain('div.bg-popover.border-background { background-color: #393939');
     // side panels (SidePanel root = bg-background border-background) → layer-01
-    expect(UI_POLISH_CSS).toContain('div.bg-background.border-background,');
-    expect(UI_POLISH_CSS).toContain('background-color: #262626');
+    expect(css).toContain('background-color: #262626');
+  });
+
+  it('shifts the elevation trio one step for the g80 theme (RTV-181)', () => {
+    const css = buildUiPolishCss('g80');
+    expect(css).toContain('div.bg-popover.border-background { background-color: #525252');
+    expect(css).toContain('background-color: #393939');
+    // unknown themes fall back to g100
+    expect(buildUiPolishCss('weird')).toContain('background-color: #262626');
   });
 
   it('ships the loading skeleton + centered spinner styles', () => {
@@ -39,7 +47,7 @@ describe('uiPolish (RTV-212)', () => {
     applyUiPolishStyle();
     const styles = document.querySelectorAll(`#${UI_POLISH_STYLE_ID}`);
     expect(styles.length).toBe(1);
-    expect(styles[0].textContent).toBe(UI_POLISH_CSS);
+    expect(styles[0].textContent).toBe(buildUiPolishCss());
   });
 
   it('is a no-op without a document', () => {

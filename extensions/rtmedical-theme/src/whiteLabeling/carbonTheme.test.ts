@@ -1,5 +1,7 @@
 import {
   CARBON_G100_TOKENS,
+  CARBON_G80_TOKENS,
+  resolveCarbonTheme,
   applyCarbonTheme,
   applyCarbonIconStyle,
   CARBON_ICON_STYLE_ID,
@@ -42,5 +44,32 @@ describe('carbonTheme (RTV-7)', () => {
     expect(appended.length).toBe(1);
     expect(appended[0].id).toBe(CARBON_ICON_STYLE_ID);
     expect(appended[0].textContent).toContain('stroke-width');
+  });
+});
+
+describe('carbon g80 alternative (RTV-181)', () => {
+  it('shifts only the neutral surfaces one step lighter', () => {
+    expect(CARBON_G80_TOKENS['--background']).toBe('0 0% 14.9%'); // #262626
+    expect(CARBON_G80_TOKENS['--card']).toBe('0 0% 22.4%'); // #393939
+    expect(CARBON_G80_TOKENS['--secondary']).toBe('0 0% 32.2%'); // #525252
+    // shared accent/foreground/radius
+    expect(CARBON_G80_TOKENS['--primary']).toBe(CARBON_G100_TOKENS['--primary']);
+    expect(CARBON_G80_TOKENS['--foreground']).toBe(CARBON_G100_TOKENS['--foreground']);
+    expect(CARBON_G80_TOKENS['--radius']).toBe(CARBON_G100_TOKENS['--radius']);
+  });
+
+  it('resolveCarbonTheme defaults to g100 for unknown names', () => {
+    expect(resolveCarbonTheme('g80')).toBe(CARBON_G80_TOKENS);
+    expect(resolveCarbonTheme('g100')).toBe(CARBON_G100_TOKENS);
+    expect(resolveCarbonTheme(undefined)).toBe(CARBON_G100_TOKENS);
+    expect(resolveCarbonTheme('weird')).toBe(CARBON_G100_TOKENS);
+  });
+
+  it('applyCarbonTheme applies the selected theme tokens', () => {
+    const el = { style: { setProperty: jest.fn() } } as unknown as HTMLElement;
+    applyCarbonTheme(el, 'g80');
+    expect((el.style.setProperty as jest.Mock).mock.calls).toEqual(
+      expect.arrayContaining([['--background', '0 0% 14.9%']])
+    );
   });
 });

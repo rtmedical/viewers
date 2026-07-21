@@ -64,10 +64,26 @@ export default {
         // RTV-7: repaint OHIF's ui-next design tokens with the IBM Carbon g100
         // palette (neutral greys + focused blue) so the whole viewer matches the
         // autoseg Carbon look. Icons use currentColor, so they follow along.
-        applyCarbonTheme();
+        // RTV-181: per-workstation Carbon theme choice — `?theme=g80|g100`
+        // persists to localStorage; the product DEFAULT stays g100.
+        let carbonThemeName = 'g100';
+        try {
+          const requested = new URLSearchParams(window.location.search).get('theme');
+          if (requested === 'g80' || requested === 'g100') {
+            localStorage.setItem('rt-carbon-theme', requested);
+          }
+          const stored = localStorage.getItem('rt-carbon-theme');
+          if (stored === 'g80' || stored === 'g100') {
+            carbonThemeName = stored;
+          }
+        } catch (e) {
+          /* storage/URL unavailable — keep the default */
+        }
+        applyCarbonTheme(undefined, carbonThemeName);
         applyCarbonIconStyle();
-        // RTV-212: tooltip clamps, shrinkable study cards, grey elevation, loading skeleton.
-        applyUiPolishStyle();
+        // RTV-212: tooltip clamps, shrinkable study cards, grey elevation,
+        // loading skeleton — elevation surfaces follow the RTV-181 theme.
+        applyUiPolishStyle(undefined, carbonThemeName);
         applyCarbonIcons();
         // Tenant white-labeling accent vars (RTV-156) layered on top.
 
