@@ -6,7 +6,7 @@ describe('@ohif/extension-rt-worklist manifest', () => {
     expect(typeof rtWorklistExtension.getCustomizationModule).toBe('function');
   });
 
-  it('registers a PRIVATE /worklist-rt custom route in the default module', () => {
+  it('registers PRIVATE custom routes for the worklist and the IHE IID entry points', () => {
     const modules = rtWorklistExtension.getCustomizationModule({
       servicesManager: { services: {} },
       extensionManager: {},
@@ -16,14 +16,18 @@ describe('@ohif/extension-rt-worklist manifest', () => {
     expect(modules[0].name).toBe('default');
 
     const pushed = modules[0].value['routes.customRoutes'].routes.$push;
-    expect(pushed).toHaveLength(1);
+    const paths = pushed.map((route: any) => route.path);
+    // /IHEInvokeImageDisplay is the conformance alias the IID profile itself
+    // uses; /ihe-invoke is the friendly path (RTV-157).
+    expect(paths).toEqual(['/worklist-rt', '/ihe-invoke', '/IHEInvokeImageDisplay']);
 
-    const route = pushed[0];
-    expect(route.path).toBe('/worklist-rt');
-    // The app router only wraps in PrivateRoute when private === true
-    // (platform/app/src/routes/index.tsx) — this must never regress, the
-    // worklist shows patient names and MRNs.
-    expect(route.private).toBe(true);
-    expect(typeof route.children).toBe('function');
+    for (const route of pushed) {
+      // The app router only wraps in PrivateRoute when private === true
+      // (platform/app/src/routes/index.tsx) — this must never regress: the
+      // worklist shows patient names/MRNs and the IID entry points resolve
+      // Study Instance UIDs / PatientIDs to patient data.
+      expect(route.private).toBe(true);
+      expect(typeof route.children).toBe('function');
+    }
   });
 });

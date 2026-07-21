@@ -13,9 +13,18 @@
  * and requires a PACS backend API (e.g. Orthanc REST); the button ships
  * disabled as a backend follow-up. Promoting /worklist-rt to '/' is a
  * deployment/config decision (`showStudyList: false`), not code.
+ *
+ * RTV-157 adds the IHE Invoke Image Display (IID) profile entry points at
+ * /ihe-invoke and /IHEInvokeImageDisplay (conformance alias):
+ * requestType=STUDY|STUDYBASE64|PATIENT HTTP GET invocations resolve through
+ * QIDO and open the study set in the auto-selected mode (radiotherapy when
+ * any study carries an RT modality, radiology otherwise). The pure request
+ * parsing lives in iheInvoke.ts.
  */
 export * from './worklistModel';
+export * from './iheInvoke';
 export { RtWorklistPage } from './RtWorklistPage';
+export { IheInvokePage } from './IheInvokePage';
 
 import getCustomizationModule from './getCustomizationModule';
 
