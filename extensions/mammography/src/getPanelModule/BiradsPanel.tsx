@@ -2,9 +2,10 @@
  * BI-RADS form right-panel (RTV-78): structured mammography assessment.
  *
  * Pure model/report from {@link ../birads}. Builds a BI-RADS assessment
- * (laterality / density / findings / category) with a live report preview and
- * copy-to-clipboard. RTV-114: `@ohif/ui-next` only. Drawing finding markers on
- * the image and DICOM SR (TID 2000) export are viewport/SR follow-ups.
+ * (laterality / density / findings / category) with a live report preview,
+ * copy-to-clipboard, DICOM SR (TID 2000) download (RTV-37) and send-to-PACS
+ * via the `storeBiradsSrToPacs` command (RTV-39). RTV-114: `@ohif/ui-next`
+ * only. Drawing finding markers on the image is a viewport follow-up.
  */
 import React, { useMemo, useState } from 'react';
 import { Button } from '@ohif/ui-next';
@@ -19,13 +20,20 @@ import { downloadBiradsSr } from '../srExport';
 
 const LATERALITIES = ['Right', 'Left', 'Bilateral'] as const;
 
-export function BiradsPanel(): React.ReactElement {
+export interface BiradsPanelProps {
+  /** Runs `storeBiradsSrToPacs` (RTV-39); the send button hides without it. */
+  commandsManager?: { runCommand: (name: string, options?: Record<string, unknown>) => unknown };
+}
+
+export function BiradsPanel({ commandsManager }: BiradsPanelProps = {}): React.ReactElement {
   const [laterality, setLaterality] = useState<'Right' | 'Left' | 'Bilateral'>('Right');
   const [density, setDensity] = useState('b');
   const [category, setCategory] = useState('1');
   const [findingTypes, setFindingTypes] = useState<Set<string>>(new Set());
   const [massShape, setMassShape] = useState('');
   const [massMargin, setMassMargin] = useState('');
+  /** True while a send-to-PACS awaits (M1): disables the button meanwhile. */
+  const [sending, setSending] = useState(false);
 
   const findings: BiradsFinding[] = useMemo(() => {
     return Array.from(findingTypes).map(type => {
@@ -56,6 +64,25 @@ export function BiradsPanel(): React.ReactElement {
     }
   };
 
+  /**
+   * Send-to-PACS (M1): disables the button while the command awaits and never
+   * leaves an unhandled rejection — the command already toasts its own
+   * success/failure, so an error here is only swallowed and logged.
+   */
+  const sendToPacs = () => {
+    if (!commandsManager || sending) {
+      return;
+    }
+    setSending(true);
+    Promise.resolve(
+      commandsManager.runCommand('storeBiradsSrToPacs', {
+        assessment: { laterality, density, findings, category },
+      })
+    )
+      .catch(e => console.warn('storeBiradsSrToPacs failed', e))
+      .finally(() => setSending(false));
+  };
+
   const sel = (value: string, opts: readonly string[] | { code: string }[], onChange: (v: string) => void, label: string, codeKey = false) => (
     <label className="mb-2 flex items-center justify-between gap-2">
       <span className="text-muted-foreground text-xs">{label}</span>
@@ -81,6 +108,16 @@ export function BiradsPanel(): React.ReactElement {
           >
             Export SR
           </Button>
+          {commandsManager && (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={sending}
+              onClick={sendToPacs}
+            >
+              {sending ? 'Sending…' : 'Send to PACS'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -110,7 +147,7 @@ export function BiradsPanel(): React.ReactElement {
       <pre className="whitespace-pre-wrap rounded bg-black/30 p-2 text-xs">{report}</pre>
 
       <p className="text-muted-foreground mt-2 text-xs">
-        Finding markers on the image + DICOM SR (TID 2000) export are follow-ups.
+        Finding markers on the image are a follow-up.
       </p>
     </div>
   );

@@ -58,4 +58,35 @@ describe('buildCadRadsSr', () => {
     const cs: any[] = (buildCadRadsSr({ category: '1', modifiers: ['ZZ'] }, { generateUID: counter() }) as any).ContentSequence;
     expect(cs.some(c => c.ConceptNameCodeSequence?.[0]?.CodeMeaning === 'CAD-RADS Modifier')).toBe(false);
   });
+
+  it('emits the Type 2 patient/study fields as empty strings by default (M2)', () => {
+    const ds: any = buildCadRadsSr({ category: '1' }, { generateUID: counter() });
+    expect(ds.PatientBirthDate).toBe('');
+    expect(ds.PatientSex).toBe('');
+    expect(ds.StudyDate).toBe('');
+    expect(ds.StudyTime).toBe('');
+    expect(ds.ReferringPhysicianName).toBe('');
+    expect(ds.StudyID).toBe('');
+  });
+
+  it('stamps the full study context when provided (M2)', () => {
+    const ds: any = buildCadRadsSr(
+      { category: '1' },
+      {
+        generateUID: counter(),
+        PatientBirthDate: '19700101',
+        PatientSex: 'M',
+        StudyDate: '20260721',
+        StudyTime: '101500',
+        ReferringPhysicianName: 'Ref^Doc',
+        StudyID: 'STU-7',
+      }
+    );
+    expect(ds.PatientBirthDate).toBe('19700101');
+    expect(ds.PatientSex).toBe('M');
+    expect(ds.StudyDate).toBe('20260721');
+    expect(ds.StudyTime).toBe('101500');
+    expect(ds.ReferringPhysicianName).toBe('Ref^Doc');
+    expect(ds.StudyID).toBe('STU-7');
+  });
 });

@@ -60,4 +60,31 @@ describe('buildMammographyCadSr', () => {
     expect(ds.PatientName).toBe('X');
     expect(ds.PatientID).toBe('PID');
   });
+
+  it('emits the Type 2 patient/study fields as empty strings by default (M2)', () => {
+    const ds: any = build();
+    expect(ds.PatientBirthDate).toBe('');
+    expect(ds.PatientSex).toBe('');
+    expect(ds.StudyDate).toBe('');
+    expect(ds.StudyTime).toBe('');
+    expect(ds.ReferringPhysicianName).toBe('');
+    expect(ds.StudyID).toBe('');
+  });
+
+  it('stamps the full study context when provided (M2)', () => {
+    const ds: any = build({
+      PatientBirthDate: '19700101',
+      PatientSex: 'F',
+      StudyDate: '20260721',
+      StudyTime: '101500',
+      ReferringPhysicianName: 'Ref^Doc',
+      StudyID: 'STU-7',
+    });
+    expect(ds.PatientBirthDate).toBe('19700101');
+    expect(ds.PatientSex).toBe('F');
+    expect(ds.StudyDate).toBe('20260721');
+    expect(ds.StudyTime).toBe('101500');
+    expect(ds.ReferringPhysicianName).toBe('Ref^Doc');
+    expect(ds.StudyID).toBe('STU-7');
+  });
 });

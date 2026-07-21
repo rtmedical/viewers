@@ -1,7 +1,8 @@
 /**
  * dcmjs glue for the SR builders (RTV-36): serialize a built SR dataset to a
- * Part-10 file. Mirrors the KOS / Mammography-CAD-SR exporters. STOW-RS push to
- * PACS is a separate backend ticket (RTV-39).
+ * Part-10 file. Mirrors the KOS / Mammography-CAD-SR exporters. The
+ * `build*WithRealUids` helpers expose the naturalized dataset so the STOW-RS
+ * push to the PACS (RTV-39, {@link ./getCommandsModule}) can store it directly.
  */
 import dcmjs from 'dcmjs';
 import {
@@ -41,19 +42,29 @@ export function serializeSrToArrayBuffer(dataset: Record<string, any>): ArrayBuf
 
 export type MeasurementSrSerializeOptions = Omit<BuildMeasurementSrOptions, 'generateUID' | 'now'>;
 
+/**
+ * Build a TID 1500 SR with real (dcmjs) UIDs and a current timestamp,
+ * returning the NATURALIZED dataset (the shape `dataSource.store.dicom` takes).
+ */
+export function buildMeasurementSrWithRealUids(
+  measurements: SrMeasurement[],
+  options: MeasurementSrSerializeOptions = {}
+): Record<string, any> {
+  const { DicomMetaDictionary } = (dcmjs as any).data;
+  const now = new Date();
+  return buildMeasurementSr(measurements, {
+    generateUID: () => DicomMetaDictionary.uid(),
+    now: { date: toDa(now), time: toTm(now) },
+    ...options,
+  });
+}
+
 /** Build a TID 1500 SR (real UIDs + timestamp) and serialize to Part-10. */
 export function serializeMeasurementSr(
   measurements: SrMeasurement[],
   options: MeasurementSrSerializeOptions = {}
 ): ArrayBuffer {
-  const { DicomMetaDictionary } = (dcmjs as any).data;
-  const now = new Date();
-  const dataset = buildMeasurementSr(measurements, {
-    generateUID: () => DicomMetaDictionary.uid(),
-    now: { date: toDa(now), time: toTm(now) },
-    ...options,
-  });
-  return serializeSrToArrayBuffer(dataset);
+  return serializeSrToArrayBuffer(buildMeasurementSrWithRealUids(measurements, options));
 }
 
 /** Build + download a TID 1500 measurement SR. No-op outside a DOM. */
@@ -78,19 +89,29 @@ export function downloadMeasurementSr(
 
 export type CadRadsSrSerializeOptions = Omit<BuildCadRadsSrOptions, 'generateUID' | 'now'>;
 
+/**
+ * Build a TID 3000 CAD-RADS SR with real (dcmjs) UIDs and a current timestamp,
+ * returning the NATURALIZED dataset (the shape `dataSource.store.dicom` takes).
+ */
+export function buildCadRadsSrWithRealUids(
+  assessment: CadRadsAssessment,
+  options: CadRadsSrSerializeOptions = {}
+): Record<string, any> {
+  const { DicomMetaDictionary } = (dcmjs as any).data;
+  const now = new Date();
+  return buildCadRadsSr(assessment, {
+    generateUID: () => DicomMetaDictionary.uid(),
+    now: { date: toDa(now), time: toTm(now) },
+    ...options,
+  });
+}
+
 /** Build a TID 3000 CAD-RADS SR (real UIDs + timestamp) and serialize to Part-10. */
 export function serializeCadRadsSr(
   assessment: CadRadsAssessment,
   options: CadRadsSrSerializeOptions = {}
 ): ArrayBuffer {
-  const { DicomMetaDictionary } = (dcmjs as any).data;
-  const now = new Date();
-  const dataset = buildCadRadsSr(assessment, {
-    generateUID: () => DicomMetaDictionary.uid(),
-    now: { date: toDa(now), time: toTm(now) },
-    ...options,
-  });
-  return serializeSrToArrayBuffer(dataset);
+  return serializeSrToArrayBuffer(buildCadRadsSrWithRealUids(assessment, options));
 }
 
 /** Build + download a CAD-RADS SR. No-op outside a DOM. */

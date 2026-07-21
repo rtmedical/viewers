@@ -64,4 +64,116 @@ describe('buildMeasurementSr (TID 1500)', () => {
     const group: any = (buildMeasurementSr([], { generateUID: counter() }) as any).ContentSequence[0].ContentSequence[0];
     expect(group.ContentSequence).toEqual([]);
   });
+
+  it('emits the Type 2 patient/study fields as empty strings by default (M2)', () => {
+    const ds: any = build();
+    expect(ds.PatientBirthDate).toBe('');
+    expect(ds.PatientSex).toBe('');
+    expect(ds.StudyDate).toBe('');
+    expect(ds.StudyTime).toBe('');
+    expect(ds.ReferringPhysicianName).toBe('');
+    expect(ds.StudyID).toBe('');
+  });
+
+  it('stamps the full study context when provided (M2)', () => {
+    const ds: any = build({
+      PatientBirthDate: '19700101',
+      PatientSex: 'F',
+      StudyDate: '20260721',
+      StudyTime: '101500',
+      ReferringPhysicianName: 'Ref^Doc',
+      StudyID: 'STU-7',
+    });
+    expect(ds.PatientBirthDate).toBe('19700101');
+    expect(ds.PatientSex).toBe('F');
+    expect(ds.StudyDate).toBe('20260721');
+    expect(ds.StudyTime).toBe('101500');
+    expect(ds.ReferringPhysicianName).toBe('Ref^Doc');
+    expect(ds.StudyID).toBe('STU-7');
+  });
+});
+
+describe('image references + evidence sequence (M3)', () => {
+  const imageRefOf = (ds: any, index = 0) => {
+    const nums = ds.ContentSequence[0].ContentSequence[0].ContentSequence;
+    return nums[index].ContentSequence?.find((c: any) => c.ValueType === 'IMAGE');
+  };
+
+  it('emits ReferencedSOPClassUID alongside the instance UID when provided', () => {
+    const ds: any = buildMeasurementSr(
+      [
+        {
+          name: 'L',
+          value: 1,
+          unit: 'mm',
+          referencedSopInstanceUID: '1.2.img',
+          referencedSopClassUID: '1.2.840.10008.5.1.4.1.1.2',
+        },
+      ],
+      { generateUID: counter() }
+    );
+    expect(imageRefOf(ds).ReferencedSOPSequence[0]).toEqual({
+      ReferencedSOPInstanceUID: '1.2.img',
+      ReferencedSOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+    });
+  });
+
+  it('emits the instance UID only (no SOP class fallback) when not provided', () => {
+    const ds: any = build();
+    const ref = imageRefOf(ds, 1).ReferencedSOPSequence[0];
+    expect(ref).toEqual({ ReferencedSOPInstanceUID: '1.2.img' });
+    expect(ref.ReferencedSOPClassUID).toBeUndefined();
+  });
+
+  it('emits CurrentRequestedProcedureEvidenceSequence for complete references, deduped per series', () => {
+    const full = {
+      name: 'L',
+      value: 1,
+      unit: 'mm',
+      referencedSopInstanceUID: '1.2.img',
+      referencedSopClassUID: '1.2.840.10008.5.1.4.1.1.2',
+      referencedSeriesInstanceUID: '1.2.series',
+    };
+    const ds: any = buildMeasurementSr(
+      [
+        full,
+        { ...full, name: 'W' }, // same image → deduped
+        { name: 'H', value: 2, unit: 'mm', referencedSopInstanceUID: '1.2.other' }, // no series/class → inline only
+      ],
+      { generateUID: counter(), StudyInstanceUID: '1.2.study' }
+    );
+    expect(ds.CurrentRequestedProcedureEvidenceSequence).toEqual([
+      {
+        StudyInstanceUID: '1.2.study',
+        ReferencedSeriesSequence: [
+          {
+            SeriesInstanceUID: '1.2.series',
+            ReferencedSOPSequence: [
+              {
+                ReferencedSOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+                ReferencedSOPInstanceUID: '1.2.img',
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('omits the evidence sequence when no reference has a known series (documented limit)', () => {
+    const ds: any = buildMeasurementSr(
+      [
+        {
+          name: 'L',
+          value: 1,
+          unit: 'mm',
+          referencedSopInstanceUID: '1.2.img',
+          referencedSopClassUID: '1.2.840.10008.5.1.4.1.1.2',
+        },
+      ],
+      { generateUID: counter() }
+    );
+    expect(ds.CurrentRequestedProcedureEvidenceSequence).toBeUndefined();
+    expect(ds).not.toHaveProperty('CurrentRequestedProcedureEvidenceSequence');
+  });
 });

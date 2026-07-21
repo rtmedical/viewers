@@ -11,14 +11,14 @@ interface PanelModuleParams {
   extensionManager?: unknown;
 }
 
-function getPanelModule(_params: PanelModuleParams) {
+function getPanelModule(params: PanelModuleParams) {
   return [
     {
       name: 'birads',
       iconName: 'tab-studies',
       iconLabel: 'BI-RADS',
       label: 'BI-RADS',
-      component: () => <BiradsPanel />,
+      component: () => <BiradsPanel commandsManager={params?.commandsManager} />,
     },
   ];
 }
