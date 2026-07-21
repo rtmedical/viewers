@@ -43,6 +43,8 @@ import {
   formatStudyRow,
   groupStudiesByPatient,
 } from './worklistModel';
+import { studyPath } from './iheInvoke';
+import { getActiveDataSource, initializeDataSourceOnce } from './dataSourceUtils';
 
 interface ManagersProps {
   servicesManager?: { services?: Record<string, any> };
@@ -60,58 +62,12 @@ type SeriesState =
 const inputClassName =
   'bg-background text-foreground border-input h-8 rounded border px-2 text-sm outline-none focus:border-primary';
 
-/** Data sources already initialize()d by this page (per SPA session). */
-const initializedSources = new WeakSet<object>();
-
 const actionButtonClassName =
   'border-input text-foreground hover:bg-popover rounded border px-2 py-0.5 text-xs disabled:cursor-not-allowed disabled:opacity-40';
 
-/**
- * Resolve the data source, honoring an explicit `?datasources=` param like
- * the stock DataSourceWrapper (review M2 — getActiveDataSources is not an
- * ExtensionManager method; the singular getActiveDataSource is).
- */
-function getActiveDataSource(extensionManager?: ManagersProps['extensionManager']) {
-  try {
-    const named = new URLSearchParams(window.location.search).get('datasources');
-    if (named) {
-      const byName = (extensionManager as any)?.getDataSources?.(named)?.[0];
-      if (byName) {
-        return byName;
-      }
-    }
-  } catch (e) {
-    /* fall through to the active source */
-  }
-  return (
-    (extensionManager as any)?.getActiveDataSource?.()?.[0] ??
-    extensionManager?.getDataSources?.()?.[0]
-  );
-}
-
-/**
- * Build the viewer-mode path for a study. Navigation MUST go through the
- * router: the app mounts under a basename (production serves at /viewer), so
- * a raw location.href='/mode?...' would 404 (review B2). Deployment-driving
- * params (configUrl, multimonitor, ...) are preserved like the stock list.
- */
-function studyPath(routeName: string, studyInstanceUid: string): string {
-  const query = new URLSearchParams();
-  query.set('StudyInstanceUIDs', studyInstanceUid);
-  try {
-    // Same set the stock WorkList preserves (see preserveQueryParameters).
-    const current = new URLSearchParams(window.location.search);
-    for (const key of ['configUrl', 'multimonitor', 'screenNumber', 'hangingProtocolId', 'datasources']) {
-      const value = current.get(key);
-      if (value) {
-        query.set(key, value);
-      }
-    }
-  } catch (e) {
-    /* URL introspection is best-effort */
-  }
-  return `/${routeName}?${query.toString()}`;
-}
+// Data-source resolution (?datasources= honored, initialize-once) lives in
+// dataSourceUtils.ts and mode-path building (basename-safe, preserved query
+// params) in iheInvoke.ts — both shared with the IHE IID page (RTV-157).
 
 function StudyInfoContent({
   study,
@@ -188,7 +144,11 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
   const [reloadToken, setReloadToken] = useState(0);
 
   const [nameFilter, setNameFilter] = useState('');
-  const [mrnFilter, setMrnFilter] = useState('');
+  // The MRN filter honors an initial `?mrn=` query param — the IHE Invoke
+  // Image Display PATIENT fallback (RTV-157) lands here pre-filtered.
+  const [mrnFilter, setMrnFilter] = useState(
+    () => new URLSearchParams(window.location.search).get('mrn') ?? ''
+  );
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [modalityFilter, setModalityFilter] = useState('');
@@ -220,13 +180,7 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
     setLoadError('');
     const run = async () => {
       try {
-        if (!initializedSources.has(dataSource)) {
-          await dataSource.initialize?.({
-            params: {},
-            query: new URLSearchParams(window.location.search),
-          });
-          initializedSources.add(dataSource);
-        }
+        await initializeDataSourceOnce(dataSource);
         const limit = dataSource.getConfig?.()?.queryLimit ?? 101;
         const serverFilters: Record<string, unknown> = { offset: 0, limit };
         if (nameFilter.trim()) {
@@ -575,7 +529,13 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
                                       className={actionButtonClassName}
                                       title="Open in the radiology viewer"
                                       onClick={() =>
-                                        navigate(studyPath('rtmedical-radiology', study.studyInstanceUid))
+                                        navigate(
+                                          studyPath(
+                                            'rtmedical-radiology',
+                                            study.studyInstanceUid,
+                                            window.location.search
+                                          )
+                                        )
                                       }
                                     >
                                       Open
@@ -585,7 +545,13 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
                                       className={actionButtonClassName}
                                       title="Open in the radiotherapy viewer"
                                       onClick={() =>
-                                        navigate(studyPath('rtmedical-radiotherapy', study.studyInstanceUid))
+                                        navigate(
+                                          studyPath(
+                                            'rtmedical-radiotherapy',
+                                            study.studyInstanceUid,
+                                            window.location.search
+                                          )
+                                        )
                                       }
                                     >
                                       Open RT
