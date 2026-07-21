@@ -5,6 +5,7 @@ const sampleRtPlan = () => ({
   RTPlanLabel: 'PROST IMRT',
   RTPlanName: 'Prostate',
   ApprovalStatus: 'APPROVED',
+  PlanIntent: 'CURATIVE',
   Manufacturer: 'Varian',
   DoseReferenceSequence: [
     {
@@ -76,6 +77,18 @@ describe('parseRtPlan', () => {
     expect(p.approvalStatus).toBe('APPROVED');
     expect(p.machine).toBe('TrueBeam');
     expect(p.manufacturer).toBe('Varian');
+  });
+
+  it('extracts PlanIntent (300A,000A) for the Course Timeline plan filter (RTV-174)', () => {
+    expect(parseRtPlan(sampleRtPlan()).planIntent).toBe('CURATIVE');
+
+    const verification: any = sampleRtPlan();
+    verification.PlanIntent = 'VERIFICATION';
+    expect(parseRtPlan(verification).planIntent).toBe('VERIFICATION');
+
+    const absent: any = sampleRtPlan();
+    delete absent.PlanIntent;
+    expect(parseRtPlan(absent).planIntent).toBeUndefined();
   });
 
   it('parses prescriptions from the dose reference sequence', () => {

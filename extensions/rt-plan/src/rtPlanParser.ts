@@ -82,6 +82,12 @@ export interface RtPlan {
   name?: string;
   date?: string;
   approvalStatus?: string;
+  /**
+   * PlanIntent (300A,000A): CURATIVE | PALLIATIVE | PROPHYLACTIC | VERIFICATION |
+   * MACHINE_QA | RESEARCH | SERVICE. The Course Timeline plan filter (RTV-174)
+   * uses it to identify verification plans.
+   */
+  planIntent?: string;
   machine?: string;
   manufacturer?: string;
   prescriptions: RtPlanPrescription[];
@@ -157,6 +163,7 @@ export function parseRtPlan(instance: Record<string, any>): RtPlan {
     name: instance?.RTPlanName,
     date: instance?.RTPlanDate,
     approvalStatus: instance?.ApprovalStatus,
+    planIntent: instance?.PlanIntent,
     manufacturer: instance?.Manufacturer,
     prescriptions: [],
     fractionGroups: [],

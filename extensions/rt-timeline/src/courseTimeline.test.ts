@@ -2,6 +2,8 @@ import {
   buildPrescriptionTimeline,
   buildTreatmentTimeline,
   buildCourseTimeline,
+  filterPlans,
+  DEFAULT_PLAN_FILTERS,
   RtPlanLike,
   RtRecordLike,
 } from './courseTimeline';
@@ -50,6 +52,66 @@ describe('buildPrescriptionTimeline (RTV-165)', () => {
   it('still emits a row for a plan with no fraction groups', () => {
     const rows = buildPrescriptionTimeline([{ label: 'P', beams: [{ energy: '10 MV', type: 'STATIC' }] }]);
     expect(rows).toEqual([{ phase: 'P', energy: '10 MV', technique: 'STATIC' }]);
+  });
+
+  it('carries plan date / approvalStatus / planIntent onto every row (RTV-164/174)', () => {
+    const rows = buildPrescriptionTimeline([
+      {
+        ...plan,
+        date: '20260102',
+        approvalStatus: 'APPROVED',
+        planIntent: 'CURATIVE',
+      },
+    ]);
+    expect(rows[0]).toMatchObject({
+      date: '20260102',
+      approvalStatus: 'APPROVED',
+      planIntent: 'CURATIVE',
+    });
+  });
+});
+
+describe('filterPlans (RTV-174)', () => {
+  const curativeApproved: RtPlanLike = { label: 'A', approvalStatus: 'APPROVED', planIntent: 'CURATIVE' };
+  const curativeUnapproved: RtPlanLike = { label: 'B', approvalStatus: 'UNAPPROVED' };
+  const rejected: RtPlanLike = { label: 'C', approvalStatus: 'REJECTED' };
+  const noStatus: RtPlanLike = { label: 'D' };
+  const verificationApproved: RtPlanLike = { label: 'V', approvalStatus: 'APPROVED', planIntent: 'VERIFICATION' };
+  const all = [curativeApproved, curativeUnapproved, rejected, noStatus, verificationApproved];
+
+  it('defaults show everything', () => {
+    expect(filterPlans(all)).toEqual(all);
+    expect(filterPlans(all, DEFAULT_PLAN_FILTERS)).toEqual(all);
+  });
+
+  it('hides PlanIntent=VERIFICATION plans when showVerification is off', () => {
+    const rows = filterPlans(all, { ...DEFAULT_PLAN_FILTERS, showVerification: false });
+    expect(rows.map(p => p.label)).toEqual(['A', 'B', 'C', 'D']);
+  });
+
+  it('hides ApprovalStatus=APPROVED plans when showApproved is off', () => {
+    const rows = filterPlans(all, { ...DEFAULT_PLAN_FILTERS, showApproved: false });
+    expect(rows.map(p => p.label)).toEqual(['B', 'C', 'D']);
+  });
+
+  it('treats UNAPPROVED, REJECTED and missing status as "unapproved" (DICOM-honest)', () => {
+    const rows = filterPlans(all, { ...DEFAULT_PLAN_FILTERS, showUnapproved: false });
+    expect(rows.map(p => p.label)).toEqual(['A', 'V']);
+  });
+
+  it('composes the verification and approval axes with AND', () => {
+    const rows = filterPlans(all, {
+      showVerification: true,
+      showApproved: false,
+      showUnapproved: true,
+    });
+    // V is APPROVED, so hiding approved plans hides it despite showVerification.
+    expect(rows.map(p => p.label)).toEqual(['B', 'C', 'D']);
+  });
+
+  it('is defensive about empty input', () => {
+    expect(filterPlans([] as RtPlanLike[])).toEqual([]);
+    expect(filterPlans(undefined as unknown as RtPlanLike[])).toEqual([]);
   });
 });
 

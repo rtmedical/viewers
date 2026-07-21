@@ -16,6 +16,12 @@
 export interface RtPlanLike {
   label?: string;
   name?: string;
+  /** RTPlanDate (DICOM DA, YYYYMMDD) — places the plan on the calendar axis. */
+  date?: string;
+  /** ApprovalStatus (300E,0002): APPROVED | UNAPPROVED | REJECTED. */
+  approvalStatus?: string;
+  /** PlanIntent (300A,000A): CURATIVE | PALLIATIVE | … | VERIFICATION | MACHINE_QA. */
+  planIntent?: string;
   prescriptions?: { targetPrescriptionDoseGy?: number; type?: string }[];
   fractionGroups?: { number?: number; numberOfFractionsPlanned?: number; fractionDoseGy?: number }[];
   beams?: { energy?: string; type?: string }[];
@@ -35,11 +41,17 @@ export interface RtRecordLike {
 
 export interface PrescriptionTimelineRow {
   phase: string;
+  /** RTPlanDate (DICOM DA) of the originating plan, for the calendar axis. */
+  date?: string;
   fractions?: number;
   dosePerFractionGy?: number;
   totalDoseGy?: number;
   energy?: string;
   technique?: string;
+  /** ApprovalStatus (300E,0002) of the originating plan. */
+  approvalStatus?: string;
+  /** PlanIntent (300A,000A) of the originating plan. */
+  planIntent?: string;
 }
 
 export interface TreatmentTimelineRow {
@@ -89,9 +101,10 @@ export function buildPrescriptionTimeline(plans: RtPlanLike[]): PrescriptionTime
     const phase = plan.label || plan.name || 'Plan';
     const energy = mode((plan.beams ?? []).map(b => b.energy));
     const technique = mode((plan.beams ?? []).map(b => b.type));
+    const { date, approvalStatus, planIntent } = plan;
     const groups = plan.fractionGroups ?? [];
     if (!groups.length) {
-      rows.push({ phase, energy, technique });
+      rows.push({ phase, date, energy, technique, approvalStatus, planIntent });
       continue;
     }
     for (const g of groups) {
@@ -99,16 +112,65 @@ export function buildPrescriptionTimeline(plans: RtPlanLike[]): PrescriptionTime
       const dosePerFractionGy = g.fractionDoseGy;
       rows.push({
         phase: groups.length > 1 ? `${phase} (FG ${g.number ?? '?'})` : phase,
+        date,
         fractions,
         dosePerFractionGy,
         totalDoseGy:
           fractions != null && dosePerFractionGy != null ? fractions * dosePerFractionGy : undefined,
         energy,
         technique,
+        approvalStatus,
+        planIntent,
       });
     }
   }
   return rows;
+}
+
+// ---- RTV-174 — plan filter ----
+
+export interface PlanFilterOptions {
+  /** Show plans whose PlanIntent (300A,000A) is VERIFICATION. */
+  showVerification: boolean;
+  /** Show plans whose ApprovalStatus (300E,0002) is APPROVED. */
+  showApproved: boolean;
+  /** Show plans that are not APPROVED (UNAPPROVED, REJECTED, or absent). */
+  showUnapproved: boolean;
+}
+
+export const DEFAULT_PLAN_FILTERS: PlanFilterOptions = {
+  showVerification: true,
+  showApproved: true,
+  showUnapproved: true,
+};
+
+/**
+ * RTV-174 — plan-filter predicate over *standard DICOM* RT Plan attributes.
+ *
+ * Honest DICOM semantics: TPS-specific approval states such as Varian ARIA's
+ * "Planning Approved" / "Treatment Approved" do NOT exist in the standard
+ * RTPLAN object — ApprovalStatus (300E,0002) enumerates only APPROVED /
+ * UNAPPROVED / REJECTED. "Approved" here therefore means
+ * `ApprovalStatus === APPROVED` and "Unapproved" means anything else
+ * (UNAPPROVED, REJECTED or a missing attribute). Verification plans are
+ * identified via PlanIntent (300A,000A) === VERIFICATION.
+ *
+ * The verification and approval axes compose with AND: an APPROVED
+ * verification plan needs both `showVerification` and `showApproved`.
+ * Works on any plan-shaped value (RtPlanLike or PrescriptionTimelineRow).
+ */
+export function filterPlans<T extends { approvalStatus?: string; planIntent?: string }>(
+  plans: T[],
+  filters: PlanFilterOptions = DEFAULT_PLAN_FILTERS
+): T[] {
+  return (plans ?? []).filter(p => {
+    const isVerification = String(p.planIntent ?? '').trim().toUpperCase() === 'VERIFICATION';
+    if (isVerification && !filters.showVerification) {
+      return false;
+    }
+    const isApproved = String(p.approvalStatus ?? '').trim().toUpperCase() === 'APPROVED';
+    return isApproved ? filters.showApproved : filters.showUnapproved;
+  });
 }
 
 /** RTV-166 — treatment timeline (one row per record, chronological). */
