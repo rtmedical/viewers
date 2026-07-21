@@ -14,7 +14,7 @@ interface PanelModuleParams {
   extensionManager?: unknown;
 }
 
-function getPanelModule({ servicesManager }: PanelModuleParams) {
+function getPanelModule({ servicesManager, commandsManager }: PanelModuleParams) {
   return [
     {
       name: 'rtPlan',
@@ -22,7 +22,11 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
       iconLabel: 'RT Plan',
       label: 'RT Plan',
       component: (props: Record<string, unknown>) => (
-        <RTPlanPanel {...props} servicesManager={servicesManager} />
+        <RTPlanPanel
+          {...props}
+          servicesManager={servicesManager}
+          commandsManager={commandsManager}
+        />
       ),
     },
   ];
