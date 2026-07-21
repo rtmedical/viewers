@@ -9,6 +9,7 @@
  * not a duplicate.
  */
 export * from './rtRecordParser';
+export * from './overrideEvents';
 export { getSopClassHandlerModule } from './getSopClassHandlerModule';
 
 import getSopClassHandlerModule from './getSopClassHandlerModule';

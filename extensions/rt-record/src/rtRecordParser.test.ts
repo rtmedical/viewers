@@ -87,6 +87,89 @@ describe('parseRtRecord', () => {
     expect(r.totalDeliveredMeterset).toBe(50);
   });
 
+  it('defaults overrides/corrections to empty arrays when absent (RTV-168)', () => {
+    const r = parseRtRecord(sampleBeamsRecord());
+    for (const s of r.sessions) {
+      expect(s.overrides).toEqual([]);
+      expect(s.corrections).toEqual([]);
+      expect(s.verificationStatus).toBeUndefined();
+    }
+  });
+
+  it('parses OverrideSequence at the beam level AND inside ControlPointDeliverySequence (RTV-168)', () => {
+    const inst: any = {
+      SOPClassUID: RT_TREATMENT_RECORD_SOP_CLASS_UIDS.BEAMS,
+      TreatmentSessionBeamSequence: [
+        {
+          ReferencedBeamNumber: 1,
+          // Beam-level placement (seen in real-world records).
+          OverrideSequence: [
+            {
+              OverrideParameterPointer: '300A011E',
+              OverrideReason: 'Couch shift approved',
+              OperatorsName: 'Doe^Jane',
+            },
+          ],
+          ControlPointDeliverySequence: [
+            { GantryAngle: '0' },
+            {
+              // PS3.3 C.8.8.21 placement — inside the control point item.
+              OverrideSequence: [
+                { OverrideParameterPointer: '300A0120', OverrideReason: 'Gantry tolerance' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const r = parseRtRecord(inst);
+    expect(r.sessions[0].overrides).toEqual([
+      {
+        parameterPointer: '300A011E',
+        reason: 'Couch shift approved',
+        operator: 'Doe^Jane',
+      },
+      {
+        parameterPointer: '300A0120',
+        reason: 'Gantry tolerance',
+        operator: undefined,
+        controlPointIndex: 1,
+      },
+    ]);
+  });
+
+  it('naturalizes PN operators ({ Alphabetic }) in override items (RTV-168)', () => {
+    const inst: any = {
+      SOPClassUID: RT_TREATMENT_RECORD_SOP_CLASS_UIDS.BEAMS,
+      TreatmentSessionBeamSequence: [
+        { OverrideSequence: [{ OperatorsName: { Alphabetic: 'Roe^Rick' } }] },
+      ],
+    };
+    expect(parseRtRecord(inst).sessions[0].overrides[0].operator).toBe('Roe^Rick');
+  });
+
+  it('parses CorrectedParameterSequence and TreatmentVerificationStatus (RTV-168)', () => {
+    const inst: any = {
+      SOPClassUID: RT_TREATMENT_RECORD_SOP_CLASS_UIDS.BEAMS,
+      TreatmentSessionBeamSequence: [
+        {
+          ReferencedBeamNumber: 3,
+          TreatmentVerificationStatus: 'VERIFIED_OVR',
+          CorrectedParameterSequence: [
+            { ParameterSequencePointer: '30080040', CorrectionValue: '0.5' },
+            { CorrectionValue: '-1.25' },
+          ],
+        },
+      ],
+    };
+    const s = parseRtRecord(inst).sessions[0];
+    expect(s.verificationStatus).toBe('VERIFIED_OVR');
+    expect(s.corrections).toEqual([
+      { parameterPointer: '30080040', value: 0.5 },
+      { parameterPointer: undefined, value: -1.25 },
+    ]);
+  });
+
   it('is defensive about empty/summary records with no beam sequence', () => {
     expect(parseRtRecord(undefined as any).sessions).toEqual([]);
     const summary = parseRtRecord({ SOPClassUID: RT_TREATMENT_RECORD_SOP_CLASS_UIDS.SUMMARY });
