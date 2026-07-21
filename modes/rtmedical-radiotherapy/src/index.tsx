@@ -606,6 +606,13 @@ export const radiotherapyToolbarSections = {
     'rtGspsApply',
     // RTV-95: cine → MP4/WebM video download of the active viewport.
     'rtCineExport',
+    // RTV-15/19: slab projections (MIP/MinIP/AvgIP) + slab thickness ±.
+    'rtMip',
+    'rtMinIp',
+    'rtAvgIp',
+    'rtSlabInc',
+    'rtSlabDec',
+    'rtSlabOff',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -823,7 +830,108 @@ const rtPanelButtons = [
   },
 ];
 
-export const radiotherapyToolbarButtons = [...basicToolbarButtons, ...rtPanelButtons];
+/**
+ * RTV-15 (MIP/MinIP/AvgIP) + RTV-19 (2D slab): slab-projection buttons. The
+ * mode buttons TOGGLE (re-clicking the active projection returns to normal
+ * composite rendering); Slab +/− steps the thickness by 5 mm (0.5–100 mm).
+ * The commands are registered by rtmedical-theme's getCommandsModule, act on
+ * the ACTIVE viewport, and toast when it is not an MPR/volume viewport.
+ */
+const mipSlabToolbarButtons = [
+  {
+    id: 'rtMip',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-stack-scroll',
+      label: 'MIP',
+      tooltip: 'Maximum intensity projection over a slab (MPR viewports; click again to turn off)',
+      commands: { commandName: 'setSlabProjection', commandOptions: { mode: 'mip' } },
+      evaluate: {
+        name: 'evaluate.displaySetIsReconstructable',
+        disabledText: 'Slab projection requires a reconstructable (volume) series',
+      },
+    },
+  },
+  {
+    id: 'rtMinIp',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-invert',
+      label: 'MinIP',
+      tooltip: 'Minimum intensity projection over a slab (MPR viewports; click again to turn off)',
+      commands: { commandName: 'setSlabProjection', commandOptions: { mode: 'minip' } },
+      evaluate: {
+        name: 'evaluate.displaySetIsReconstructable',
+        disabledText: 'Slab projection requires a reconstructable (volume) series',
+      },
+    },
+  },
+  {
+    id: 'rtAvgIp',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-stack-image-sync',
+      label: 'AvgIP',
+      tooltip: 'Average intensity projection over a slab (MPR viewports; click again to turn off)',
+      commands: { commandName: 'setSlabProjection', commandOptions: { mode: 'avg' } },
+      evaluate: {
+        name: 'evaluate.displaySetIsReconstructable',
+        disabledText: 'Slab projection requires a reconstructable (volume) series',
+      },
+    },
+  },
+  {
+    id: 'rtSlabInc',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'Plus',
+      label: 'Slab +',
+      tooltip: 'Increase slab thickness by 5 mm (max 100 mm)',
+      commands: { commandName: 'adjustSlabThickness', commandOptions: { deltaMm: 5 } },
+      evaluate: {
+        name: 'evaluate.displaySetIsReconstructable',
+        disabledText: 'Slab thickness requires a reconstructable (volume) series',
+      },
+    },
+  },
+  {
+    id: 'rtSlabDec',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'Minus',
+      label: 'Slab -',
+      tooltip: 'Decrease slab thickness by 5 mm (min 0.5 mm)',
+      commands: { commandName: 'adjustSlabThickness', commandOptions: { deltaMm: -5 } },
+      evaluate: {
+        name: 'evaluate.displaySetIsReconstructable',
+        disabledText: 'Slab thickness requires a reconstructable (volume) series',
+      },
+    },
+  },
+  {
+    // RTV-19: full reset — composite blend + hair-thin default slab (the
+    // mode buttons only toggle their own projection).
+    id: 'rtSlabOff',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'Close',
+      label: 'Slab off',
+      tooltip: 'Reset slab projection and thickness on the active viewport',
+      commands: 'clearSlabProjection',
+      evaluate: {
+        name: 'evaluate.displaySetIsReconstructable',
+        disabledText: 'Requires a reconstructable series',
+      },
+    },
+  },
+];
+
+export const radiotherapyToolbarButtons = [
+  ...basicToolbarButtons,
+  ...rtPanelButtons,
+  // RTV-15/19: slab projection (MIP/MinIP/AvgIP) and Slab +/− buttons.
+  ...mipSlabToolbarButtons,
+];
 
 export const modeInstance = {
   ...basicModeInstance,
