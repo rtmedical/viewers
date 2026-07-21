@@ -56,19 +56,31 @@ export const UI_POLISH_CSS = `
 [class*='minmax(0,135px)'] img, [class*='minmax(0,275px)'] img { max-width: 100%; }
 
 /* ---- RTV-212(4): grey elevation — content < side panels < header ---- */
-div.bg-popover.border-background { background-color: #393939 !important; }
+div.bg-popover.border-background { background-color: __HEADER__ !important; }
 div.bg-background.border-background,
-div.bg-background.border-background .bg-background { background-color: #262626 !important; }
+div.bg-background.border-background .bg-background { background-color: __SIDEBAR__ !important; }
 `;
 
+/** Elevation trio per Carbon theme (RTV-212 hierarchy follows RTV-181's theme). */
+const ELEVATION = {
+  g100: { sidebar: '#262626', header: '#393939' },
+  g80: { sidebar: '#393939', header: '#525252' },
+} as const;
+
+/** The polish CSS with the elevation surfaces resolved for `theme`. */
+export function buildUiPolishCss(theme?: string | null): string {
+  const level = theme === 'g80' ? ELEVATION.g80 : ELEVATION.g100;
+  return UI_POLISH_CSS.replace('__HEADER__', level.header).replace('__SIDEBAR__', level.sidebar);
+}
+
 /** Injects the UI-polish stylesheet once (no-op outside the browser). */
-export function applyUiPolishStyle(doc?: Document | null): void {
+export function applyUiPolishStyle(doc?: Document | null, theme?: string | null): void {
   const d = doc ?? (typeof document !== 'undefined' ? document : null);
   if (!d || d.getElementById(UI_POLISH_STYLE_ID)) {
     return;
   }
   const style = d.createElement('style');
   style.id = UI_POLISH_STYLE_ID;
-  style.textContent = UI_POLISH_CSS;
+  style.textContent = buildUiPolishCss(theme);
   d.head.appendChild(style);
 }

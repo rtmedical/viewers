@@ -44,16 +44,43 @@ export const CARBON_G100_TOKENS: Record<string, string> = {
 };
 
 /**
- * Applies the Carbon g100 token overrides to `element` (defaults to the document
+ * Carbon g80 alternative (RTV-181): one step LIGHTER than g100 — base #262626,
+ * layers #393939/#525252 — closer to VSCode Dark, intended for long reading
+ * shifts. Only the neutral surfaces shift; the Blue50 accent, foreground and
+ * radius are shared with g100. NOT the default: opt in per workstation via
+ * `?theme=g80` (persisted) — the product default remains g100.
+ */
+export const CARBON_G80_TOKENS: Record<string, string> = {
+  ...CARBON_G100_TOKENS,
+  '--background': '0 0% 14.9%', // Gray90 #262626 — app background
+  '--card': '0 0% 22.4%', // Gray80 #393939 — layer-01
+  '--popover': '0 0% 22.4%', // #393939
+  '--secondary': '0 0% 32.2%', // Gray70 #525252 — layer-02
+  '--muted': '0 0% 32.2%',
+  '--accent': '0 0% 32.2%',
+  '--border': '0 0% 32.2%',
+  '--input': '0 0% 32.2%',
+  '--neutral-dark': '0 0% 32.2%',
+};
+
+export type CarbonThemeName = 'g100' | 'g80';
+
+/** Token map for a theme name (unknown values fall back to g100). */
+export function resolveCarbonTheme(theme?: string | null): Record<string, string> {
+  return theme === 'g80' ? CARBON_G80_TOKENS : CARBON_G100_TOKENS;
+}
+
+/**
+ * Applies the Carbon token overrides to `element` (defaults to the document
  * root). Inline custom properties on <html> beat the ui-next stylesheet's
  * :root/.dark rules. No-op outside the browser (SSR / tests).
  */
-export function applyCarbonTheme(element?: HTMLElement | null): void {
+export function applyCarbonTheme(element?: HTMLElement | null, theme?: string | null): void {
   const target = element ?? (typeof document !== 'undefined' ? document.documentElement : null);
   if (!target) {
     return;
   }
-  Object.entries(CARBON_G100_TOKENS).forEach(([name, value]) => {
+  Object.entries(resolveCarbonTheme(theme)).forEach(([name, value]) => {
     target.style.setProperty(name, value);
   });
 }
