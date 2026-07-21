@@ -29,14 +29,35 @@ export interface SrMeasurement {
   unitMeaning?: string;
   trackingIdentifier?: string;
   referencedSopInstanceUID?: string;
+  /**
+   * SOP Class of the referenced image. When provided together with
+   * `referencedSopInstanceUID`, the IMAGE reference carries BOTH UIDs (a
+   * complete ReferencedSOPSequence item). When absent, the reference is
+   * emitted with the instance UID only — no fallback: guessing a SOP class
+   * (e.g. CT) would be wrong more often than an incomplete-but-honest ref.
+   */
+  referencedSopClassUID?: string;
+  /**
+   * Series of the referenced image. Needed (together with both SOP UIDs) for
+   * the instance to appear in CurrentRequestedProcedureEvidenceSequence; refs
+   * without a known series are still emitted inline but are left out of the
+   * evidence sequence (known limit).
+   */
+  referencedSeriesInstanceUID?: string;
 }
 
 export interface BuildMeasurementSrOptions {
   generateUID: () => string;
   PatientName?: string;
   PatientID?: string;
+  PatientBirthDate?: string;
+  PatientSex?: string;
   StudyInstanceUID?: string;
+  StudyDate?: string;
+  StudyTime?: string;
   AccessionNumber?: string;
+  ReferringPhysicianName?: string;
+  StudyID?: string;
   title?: string;
   now?: { date?: string; time?: string };
 }
@@ -74,14 +95,48 @@ function numItem(m: SrMeasurement): Record<string, unknown> {
     });
   }
   if (m.referencedSopInstanceUID) {
+    const referencedSop: Record<string, unknown> = {
+      ReferencedSOPInstanceUID: m.referencedSopInstanceUID,
+    };
+    if (m.referencedSopClassUID) {
+      referencedSop.ReferencedSOPClassUID = m.referencedSopClassUID;
+    }
     contentSeq.push({
       RelationshipType: 'INFERRED FROM',
       ValueType: 'IMAGE',
-      ReferencedSOPSequence: [{ ReferencedSOPInstanceUID: m.referencedSopInstanceUID }],
+      ReferencedSOPSequence: [referencedSop],
     });
   }
   if (contentSeq.length) item.ContentSequence = contentSeq;
   return item;
+}
+
+/**
+ * Group fully-specified references (SOP class + SOP instance + series UIDs,
+ * deduped per series) for CurrentRequestedProcedureEvidenceSequence. Refs
+ * missing any of the three UIDs are skipped — the evidence sequence must be
+ * complete, so partially-known refs stay inline-only (documented limit).
+ */
+function evidenceSeriesFor(measurements: SrMeasurement[]): Record<string, unknown>[] {
+  const bySeries = new Map<string, Map<string, Record<string, unknown>>>();
+  for (const m of measurements) {
+    if (!m.referencedSopInstanceUID || !m.referencedSopClassUID || !m.referencedSeriesInstanceUID) {
+      continue;
+    }
+    let refs = bySeries.get(m.referencedSeriesInstanceUID);
+    if (!refs) {
+      refs = new Map();
+      bySeries.set(m.referencedSeriesInstanceUID, refs);
+    }
+    refs.set(m.referencedSopInstanceUID, {
+      ReferencedSOPClassUID: m.referencedSopClassUID,
+      ReferencedSOPInstanceUID: m.referencedSopInstanceUID,
+    });
+  }
+  return Array.from(bySeries, ([seriesUID, refs]) => ({
+    SeriesInstanceUID: seriesUID,
+    ReferencedSOPSequence: Array.from(refs.values()),
+  }));
 }
 
 /** Build a naturalized TID 1500 Measurement Report SR from measurements. */
@@ -110,17 +165,29 @@ export function buildMeasurementSr(measurements: SrMeasurement[], options: Build
     ContentSequence: [measurementGroup],
   };
 
-  return {
+  // UID generation order (SOP → Study → Series) is part of the builder's
+  // observable contract with the injected factory.
+  const sopInstanceUID = generateUID();
+  const studyInstanceUID = options.StudyInstanceUID ?? generateUID();
+  const dataset: NaturalizedSr = {
     SOPClassUID: COMPREHENSIVE_SR_SOP_CLASS_UID,
-    SOPInstanceUID: generateUID(),
+    SOPInstanceUID: sopInstanceUID,
     SpecificCharacterSet: 'ISO_IR 192',
     InstanceCreationDate: date,
     InstanceCreationTime: time,
     Modality: 'SR',
+    // Patient (Type 2 emitted empty when unknown, mirroring the KOS builder)
     PatientName: options.PatientName ?? '',
     PatientID: options.PatientID ?? '',
-    StudyInstanceUID: options.StudyInstanceUID ?? generateUID(),
+    PatientBirthDate: options.PatientBirthDate ?? '',
+    PatientSex: options.PatientSex ?? '',
+    // General Study
+    StudyInstanceUID: studyInstanceUID,
+    StudyDate: options.StudyDate ?? '',
+    StudyTime: options.StudyTime ?? '',
     AccessionNumber: options.AccessionNumber ?? '',
+    ReferringPhysicianName: options.ReferringPhysicianName ?? '',
+    StudyID: options.StudyID ?? '',
     SeriesInstanceUID: generateUID(),
     SeriesNumber: '1',
     InstanceNumber: '1',
@@ -136,6 +203,22 @@ export function buildMeasurementSr(measurements: SrMeasurement[], options: Build
     ContentTemplateSequence: [{ MappingResource: 'DCMR', TemplateIdentifier: '1500' }],
     ContentSequence: [imagingMeasurements],
   };
+
+  // Evidence sequence only when at least one reference is complete (SOP class
+  // + instance + series). References lacking a series UID cannot be listed
+  // (ReferencedSeriesSequence requires one), so with none complete the
+  // sequence is omitted entirely rather than emitted half-filled.
+  const evidenceSeries = evidenceSeriesFor(list);
+  if (evidenceSeries.length) {
+    dataset.CurrentRequestedProcedureEvidenceSequence = [
+      {
+        StudyInstanceUID: studyInstanceUID,
+        ReferencedSeriesSequence: evidenceSeries,
+      },
+    ];
+  }
+
+  return dataset;
 }
 
 export default buildMeasurementSr;

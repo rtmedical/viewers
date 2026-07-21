@@ -6,8 +6,9 @@
  * exporter + command. Follows RTV-114 (extension-first / zero fork). A home for
  * further SR templates (e.g. TID 3000 CAD-RADS, RTV-38).
  *
- * Scope: SR construction + Part-10 export delivered. STOW-RS push to PACS is a
- * separate backend ticket (RTV-39).
+ * Scope: SR construction + Part-10 export (RTV-36/38) and STOW-RS push to the
+ * PACS (RTV-39, `store*ToPacs` commands) delivered. An offline queue (RTVW
+ * desktop) is a follow-up.
  */
 export * from './measurementSr';
 export * from './cadRadsSr';

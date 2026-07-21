@@ -25,8 +25,14 @@ export interface BuildSrOptions {
   generateUID: () => string;
   PatientName?: string;
   PatientID?: string;
+  PatientBirthDate?: string;
+  PatientSex?: string;
   StudyInstanceUID?: string;
+  StudyDate?: string;
+  StudyTime?: string;
   AccessionNumber?: string;
+  ReferringPhysicianName?: string;
+  StudyID?: string;
   now?: { date?: string; time?: string };
 }
 
@@ -121,11 +127,18 @@ export function buildMammographyCadSr(assessment: BiradsAssessment, options: Bui
     InstanceCreationDate: date,
     InstanceCreationTime: time,
     Modality: 'SR',
-    // Patient / Study
+    // Patient (Type 2 emitted empty when unknown, mirroring the KOS builder)
     PatientName: options.PatientName ?? '',
     PatientID: options.PatientID ?? '',
+    PatientBirthDate: options.PatientBirthDate ?? '',
+    PatientSex: options.PatientSex ?? '',
+    // General Study
     StudyInstanceUID: options.StudyInstanceUID ?? generateUID(),
+    StudyDate: options.StudyDate ?? '',
+    StudyTime: options.StudyTime ?? '',
     AccessionNumber: options.AccessionNumber ?? '',
+    ReferringPhysicianName: options.ReferringPhysicianName ?? '',
+    StudyID: options.StudyID ?? '',
     SeriesInstanceUID: generateUID(),
     SeriesNumber: '1',
     InstanceNumber: '1',

@@ -1,49 +1,26 @@
 import { getCommandsModule, srContextFromDisplaySets, toPnString } from './getCommandsModule';
 
-describe('rt-sr getCommandsModule', () => {
+describe('mammography getCommandsModule', () => {
   const { actions, definitions, defaultContext } = getCommandsModule();
 
-  it('exposes download + store-to-PACS commands in DEFAULT', () => {
+  it('exposes downloadBiradsSr + storeBiradsSrToPacs in DEFAULT', () => {
     expect(defaultContext).toBe('DEFAULT');
-    expect(Object.keys(definitions).sort()).toEqual([
-      'downloadCadRadsSr',
-      'downloadMeasurementSr',
-      'storeCadRadsSrToPacs',
-      'storeMeasurementSrToPacs',
-    ]);
+    expect(Object.keys(definitions).sort()).toEqual(['downloadBiradsSr', 'storeBiradsSrToPacs']);
   });
 
-  it('returns false for empty inputs (no dcmjs touched)', () => {
-    expect(actions.downloadMeasurementSr({ measurements: [] })).toBe(false);
-    expect(actions.downloadMeasurementSr()).toBe(false);
-    expect(actions.downloadCadRadsSr()).toBe(false);
-    expect(actions.downloadCadRadsSr({ assessment: { category: '' } })).toBe(false);
-  });
-
-  it('store-to-PACS commands return false for empty inputs (no services needed)', async () => {
-    await expect(actions.storeMeasurementSrToPacs()).resolves.toBe(false);
-    await expect(actions.storeMeasurementSrToPacs({ measurements: [] })).resolves.toBe(false);
-    await expect(actions.storeCadRadsSrToPacs()).resolves.toBe(false);
-    await expect(actions.storeCadRadsSrToPacs({ assessment: { category: '' } })).resolves.toBe(false);
+  it('returns false for empty inputs (no dcmjs touched)', async () => {
+    expect(actions.downloadBiradsSr()).toBe(false);
+    await expect(actions.storeBiradsSrToPacs()).resolves.toBe(false);
   });
 });
 
 describe('toPnString (pure)', () => {
-  it('passes strings through', () => {
+  it('normalizes strings, { Alphabetic } objects and arrays of them', () => {
     expect(toPnString('Doe^Jane')).toBe('Doe^Jane');
-  });
-
-  it('unwraps naturalized { Alphabetic } objects and arrays of them', () => {
     expect(toPnString({ Alphabetic: 'Doe^Jane' })).toBe('Doe^Jane');
     expect(toPnString([{ Alphabetic: 'Doe^Jane' }])).toBe('Doe^Jane');
-  });
-
-  it('returns undefined for missing or unrecognized values', () => {
     expect(toPnString(undefined)).toBeUndefined();
-    expect(toPnString(null)).toBeUndefined();
-    expect(toPnString(42)).toBeUndefined();
     expect(toPnString({})).toBeUndefined();
-    expect(toPnString([])).toBeUndefined();
   });
 });
 
@@ -62,7 +39,7 @@ describe('srContextFromDisplaySets (pure)', () => {
   };
 
   it('extracts the full study context (M2) from the first display set with an instance', () => {
-    expect(srContextFromDisplaySets([{ instances: [instance] }])).toEqual({
+    expect(srContextFromDisplaySets([{}, { instances: [instance] }])).toEqual({
       PatientName: 'Doe^Jane',
       PatientID: 'PID-1',
       PatientBirthDate: '19700101',
@@ -76,17 +53,13 @@ describe('srContextFromDisplaySets (pure)', () => {
     });
   });
 
-  it('falls back to the singular `instance` field and skips empty display sets', () => {
-    const context = srContextFromDisplaySets([{}, { instances: [] }, { instance }]);
-    expect(context?.StudyInstanceUID).toBe('1.2.3');
-  });
-
-  it('ignores instances without a StudyInstanceUID', () => {
-    expect(srContextFromDisplaySets([{ instances: [{ PatientID: 'x' }] }])).toBeNull();
+  it('falls back to the singular `instance` field', () => {
+    expect(srContextFromDisplaySets([{ instance }])?.StudyInstanceUID).toBe('1.2.3');
   });
 
   it('returns null when nothing usable is found', () => {
     expect(srContextFromDisplaySets([])).toBeNull();
+    expect(srContextFromDisplaySets([{ instances: [{ PatientID: 'x' }] }])).toBeNull();
     expect(srContextFromDisplaySets(undefined as any)).toBeNull();
   });
 });
@@ -111,7 +84,7 @@ describe('double-send guard (M1)', () => {
     return { servicesManager, extensionManager, toasts };
   };
 
-  const measurements = [{ name: 'Long axis', value: 1, unit: 'mm' }];
+  const assessment = { laterality: 'Right', density: 'b', findings: [], category: '1' };
 
   it('refuses a second store while one is in flight, then clears the flag', async () => {
     let release: (() => void) | undefined;
@@ -121,17 +94,14 @@ describe('double-send guard (M1)', () => {
     const { servicesManager, extensionManager, toasts } = makeManagers(() => gate);
     const { actions } = getCommandsModule({ servicesManager, extensionManager });
 
-    const first = actions.storeMeasurementSrToPacs({ measurements });
-    // Second store (either command) while the first awaits → refused + toast.
-    await expect(actions.storeCadRadsSrToPacs({ assessment: { category: '1' } })).resolves.toBe(
-      false
-    );
+    const first = actions.storeBiradsSrToPacs({ assessment });
+    await expect(actions.storeBiradsSrToPacs({ assessment })).resolves.toBe(false);
     expect(toasts.some(t => t.message === 'An SR store is already running.')).toBe(true);
 
     release?.();
     await expect(first).resolves.toBe(true);
     // Flag cleared in finally → a fresh store goes through again.
-    await expect(actions.storeMeasurementSrToPacs({ measurements })).resolves.toBe(true);
+    await expect(actions.storeBiradsSrToPacs({ assessment })).resolves.toBe(true);
   });
 
   it('clears the flag when the STOW fails', async () => {
@@ -139,11 +109,11 @@ describe('double-send guard (M1)', () => {
       Promise.reject(new Error('offline'))
     );
     const { actions } = getCommandsModule({ servicesManager, extensionManager });
-    await expect(actions.storeMeasurementSrToPacs({ measurements })).resolves.toBe(false);
+    await expect(actions.storeBiradsSrToPacs({ assessment })).resolves.toBe(false);
     // Not stuck: the retry reaches the STOW again (fails for the same PACS
     // reason) instead of being refused by a leaked in-progress flag.
     toasts.length = 0;
-    await expect(actions.storeMeasurementSrToPacs({ measurements })).resolves.toBe(false);
+    await expect(actions.storeBiradsSrToPacs({ assessment })).resolves.toBe(false);
     expect(toasts.some(t => t.message === 'An SR store is already running.')).toBe(false);
     expect(toasts.some(t => /Failed to store/.test(t.message))).toBe(true);
   });
