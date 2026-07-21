@@ -195,6 +195,11 @@ export const rtPtBR: Record<string, string> = {
   tl_lane_overrides: 'Overrides',
   tl_lane_trends: 'Tendências',
   tl_lane_placeholder: 'Dados pendentes da integração PACS/backend ({{ticket}}).',
+  // --- Overrides lane event types (RTV-168, PS3.3 C.8.8.21) ---
+  tl_overrides_machine_override: 'Override de máquina',
+  tl_overrides_parameter_correction: 'Correção de parâmetro',
+  tl_overrides_verify_override: 'Verificação com override (VERIFIED_OVR)',
+  tl_overrides_manual_treatment: 'Tratamento manual (interrompido pelo operador)',
   tl_calendar_options: 'Opções de calendário',
   tl_show_work_week: 'Mostrar semana útil',
   tl_hide_empty_weeks: 'Ocultar semanas vazias',
@@ -462,6 +467,11 @@ export const rtEn: Record<string, string> = {
   tl_lane_overrides: 'Overrides',
   tl_lane_trends: 'Trends',
   tl_lane_placeholder: 'Data pending PACS/backend integration ({{ticket}}).',
+  // --- Overrides lane event types (RTV-168, PS3.3 C.8.8.21) ---
+  tl_overrides_machine_override: 'Machine override',
+  tl_overrides_parameter_correction: 'Parameter correction',
+  tl_overrides_verify_override: 'Verify override (VERIFIED_OVR)',
+  tl_overrides_manual_treatment: 'Manual treatment (operator termination)',
   tl_calendar_options: 'Calendar Options',
   tl_show_work_week: 'Show work week',
   tl_hide_empty_weeks: 'Hide empty weeks',

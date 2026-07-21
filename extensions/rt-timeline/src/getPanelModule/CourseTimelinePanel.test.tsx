@@ -68,7 +68,7 @@ describe('CourseTimelinePanel', () => {
     expect(getByText('tl_empty')).toBeTruthy();
   });
 
-  it('renders 5 lanes (2 data + 3 honest placeholders) over the shared axis', () => {
+  it('renders 5 lanes (2 data + 3 honest placeholders when records carry no overrides) over the shared axis', () => {
     const { container, getAllByText } = render(
       <CourseTimelinePanel
         servicesManager={makeServicesManager([
@@ -84,10 +84,73 @@ describe('CourseTimelinePanel', () => {
     // Real events on the two data lanes.
     expect(cy(container, 'rt-tl-presc-event')).toHaveLength(1);
     expect(cy(container, 'rt-tl-tx-event')).toHaveLength(2);
-    // Placeholder lanes are labeled as pending backend integration.
+    // Placeholder lanes (incl. Overrides with 0 events — RTV-168) are labeled
+    // as pending backend integration.
     expect(getAllByText('tl_lane_placeholder')).toHaveLength(3);
+    expect(cy(container, 'rt-tl-ovr-event')).toHaveLength(0);
     // Short course → no complete-history checkbox (RTV-176 gate).
     expect(cy(container, 'rt-tl-complete-history')).toHaveLength(0);
+  });
+
+  it('renders the Overrides lane with real events when the records carry override data (RTV-168)', () => {
+    const overrideRecord = {
+      rtRecord: {
+        recordType: 'BEAMS',
+        treatmentDate: '20260107',
+        treatmentTime: '101500',
+        fractionNumber: 1,
+        totalDeliveredMeterset: 200,
+        sessions: [
+          {
+            beamNumber: 1,
+            verificationStatus: 'VERIFIED_OVR',
+            overrides: [
+              { parameterPointer: '300A011E', reason: 'Couch shift', operator: 'Doe^Jane' },
+            ],
+            corrections: [{ value: 0.5 }],
+          },
+        ],
+      },
+    };
+    const { container, getAllByText, queryByText } = render(
+      <CourseTimelinePanel
+        servicesManager={makeServicesManager([overrideRecord, record('20260108', 2)])}
+      />
+    );
+    // The Overrides lane is real: 3 events on one day → one cell, no placeholder.
+    const cells = cy(container, 'rt-tl-ovr-event');
+    expect(cells).toHaveLength(1);
+    expect(getAllByText('tl_lane_placeholder')).toHaveLength(2); // imaging + trends only
+    // Tooltip: translated type label + detail + operator + time, per event.
+    const title = (cells[0] as HTMLElement).getAttribute('title') as string;
+    expect(title).toContain('tl_overrides_machine_override');
+    expect(title).toContain('Beam 1 · 300A011E · Couch shift');
+    expect(title).toContain('Doe^Jane');
+    expect(title).toContain('10:15');
+    expect(title).toContain('tl_overrides_parameter_correction');
+    expect(title).toContain('tl_overrides_verify_override');
+    // Clicking the cell opens the persistent detail with the same lines.
+    fireEvent.click(cells[0]);
+    expect(cy(container, 'rt-tl-event-detail')).toHaveLength(1);
+    expect(queryByText(/tl_overrides_verify_override/)).toBeTruthy();
+    // Lane header shows the event count.
+    expect(cy(container, 'rt-tl-lane-overrides')[0].textContent).toContain('(3)');
+  });
+
+  it('collapses the Overrides lane from its header button (RTV-168)', () => {
+    const overrideRecord = {
+      rtRecord: {
+        recordType: 'BEAMS',
+        treatmentDate: '20260107',
+        sessions: [{ beamNumber: 1, verificationStatus: 'VERIFIED_OVR' }],
+      },
+    };
+    const { container } = render(
+      <CourseTimelinePanel servicesManager={makeServicesManager([overrideRecord])} />
+    );
+    expect(cy(container, 'rt-tl-ovr-event')).toHaveLength(1);
+    fireEvent.click(cy(container, 'rt-tl-lane-overrides')[0]);
+    expect(cy(container, 'rt-tl-ovr-event')).toHaveLength(0);
   });
 
   it('collapses a lane from its header button', () => {

@@ -1,6 +1,7 @@
 import {
   buildPrescriptionTimeline,
   buildTreatmentTimeline,
+  buildOverrideTimeline,
   buildCourseTimeline,
   filterPlans,
   DEFAULT_PLAN_FILTERS,
@@ -120,6 +121,79 @@ describe('buildTreatmentTimeline (RTV-166)', () => {
     const rows = buildTreatmentTimeline(records);
     expect(rows.map(r => r.date)).toEqual(['20260115', '20260117']);
     expect(rows[0]).toMatchObject({ fraction: 1, beams: 2, deliveredMeterset: 219.8 });
+  });
+});
+
+describe('buildOverrideTimeline (RTV-168)', () => {
+  it('returns no rows for records without override/exception data (placeholder stays)', () => {
+    expect(buildOverrideTimeline([])).toEqual([]);
+    expect(buildOverrideTimeline(undefined as unknown as RtRecordLike[])).toEqual([]);
+    expect(buildOverrideTimeline(records)).toEqual([]); // plain sessions, no overrides
+  });
+
+  it('classifies the 4 DICOM-derivable types (PS3.3 C.8.8.21) and sorts chronologically', () => {
+    const withOverrides: RtRecordLike[] = [
+      {
+        treatmentDate: '20260118',
+        treatmentTime: '090000',
+        sessions: [
+          {
+            beamNumber: 2,
+            verificationStatus: 'VERIFIED_OVR',
+            corrections: [{ parameterPointer: '30080040', value: 0.5 }],
+          },
+        ],
+      },
+      {
+        treatmentDate: '20260116',
+        treatmentTime: '101500',
+        sessions: [
+          {
+            beamNumber: 1,
+            terminationStatus: 'OPERATOR',
+            specifiedMeterset: 120,
+            deliveredMeterset: 80,
+            overrides: [
+              {
+                parameterPointer: '300A011E',
+                reason: 'Couch shift approved',
+                operator: 'Doe^Jane',
+                controlPointIndex: 0,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const rows = buildOverrideTimeline(withOverrides);
+    expect(rows.map(r => [r.date, r.type])).toEqual([
+      ['20260116', 'machine-override'],
+      ['20260116', 'manual-treatment'],
+      ['20260118', 'parameter-correction'],
+      ['20260118', 'verify-override'],
+    ]);
+    expect(rows[0]).toMatchObject({
+      time: '101500',
+      beamNumber: 1,
+      label: 'Machine override',
+      detail: 'Beam 1 · 300A011E · CP 0 · Couch shift approved',
+      operator: 'Doe^Jane',
+    });
+    expect(rows[1].detail).toBe('Beam 1 · 80/120 MU · TreatmentTerminationStatus=OPERATOR');
+  });
+
+  it('does not invent manual-treatment on full delivery or missing metersets (best-effort heuristic)', () => {
+    const rows = buildOverrideTimeline([
+      {
+        treatmentDate: '20260115',
+        sessions: [
+          { beamNumber: 1, terminationStatus: 'OPERATOR', specifiedMeterset: 100, deliveredMeterset: 100 },
+          { beamNumber: 2, terminationStatus: 'OPERATOR' },
+          { beamNumber: 3, terminationStatus: 'MACHINE', specifiedMeterset: 100, deliveredMeterset: 50 },
+        ],
+      },
+    ]);
+    expect(rows).toEqual([]);
   });
 });
 

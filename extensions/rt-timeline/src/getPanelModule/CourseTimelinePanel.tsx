@@ -2,9 +2,11 @@
  * Course Timeline right-panel (RTV-164) — the RT Summary "Course Timeline":
  * lanes stacked vertically over a shared calendar X axis (Varian Treatment
  * Delivery IFU, Fig. 10). Lanes: Prescriptions (RTV-165, real data),
- * Treatments (RTV-166, real data) and honest placeholders for Imaging /
- * Overrides / Trends, which are pending PACS/backend integration
- * (RTV-167/168/169).
+ * Treatments (RTV-166, real data), Overrides (RTV-168, real data — the
+ * DICOM-derivable override/exception events of the RT Treatment Records per
+ * PS3.3 C.8.8.21; falls back to the honest placeholder when a course has no
+ * such events) and honest placeholders for Imaging / Trends, which are
+ * pending PACS/backend integration (RTV-167/169).
  *
  * Data: the parsed `rtPlan` / `rtRecord` models the sibling extensions attach
  * to their display sets (duck-typed; no cross-extension import — RTV-114).
@@ -26,8 +28,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import {
   buildCourseTimeline,
+  buildOverrideTimeline,
   buildPrescriptionTimeline,
   filterPlans,
+  OverrideTimelineRow,
   PrescriptionTimelineRow,
   TreatmentTimelineRow,
   RtPlanLike,
@@ -63,6 +67,15 @@ const AXIS_HEIGHT = 30;
 const LANE_HEIGHT = 26;
 const PRESCRIPTION_COLOR = '#5acce6';
 const TREATMENT_COLOR = '#7bb662';
+const OVERRIDE_COLOR = '#e6a23c';
+
+/** RTV-168 — i18n key per override event type (both maps in rtPtBR.ts). */
+const OVERRIDE_TYPE_KEYS: Record<string, string> = {
+  'machine-override': 'tl_overrides_machine_override',
+  'parameter-correction': 'tl_overrides_parameter_correction',
+  'verify-override': 'tl_overrides_verify_override',
+  'manual-treatment': 'tl_overrides_manual_treatment',
+};
 
 function collect(displaySetService: any): { plans: RtPlanLike[]; records: RtRecordLike[] } {
   const all = displaySetService?.getActiveDisplaySets?.() ?? displaySetService?.activeDisplaySets ?? [];
@@ -196,12 +209,15 @@ export function CourseTimelinePanel({ servicesManager }: CourseTimelinePanelProp
     () => buildPrescriptionTimeline(filterPlans(data.plans, prefs)),
     [data.plans, prefs]
   );
+  // RTV-168 — override/exception events derived from the same records.
+  const overrideRows = useMemo(() => buildOverrideTimeline(data.records), [data.records]);
   const prescriptionsByDay = useMemo(() => byDay(prescriptionRows), [prescriptionRows]);
   const treatmentsByDay = useMemo(() => byDay(timeline.treatment), [timeline.treatment]);
+  const overridesByDay = useMemo(() => byDay(overrideRows), [overrideRows]);
 
   const eventDates = useMemo(
-    () => [...prescriptionsByDay.keys(), ...treatmentsByDay.keys()],
-    [prescriptionsByDay, treatmentsByDay]
+    () => [...prescriptionsByDay.keys(), ...treatmentsByDay.keys(), ...overridesByDay.keys()],
+    [prescriptionsByDay, treatmentsByDay, overridesByDay]
   );
   const range = useMemo(() => {
     let first: string | undefined;
@@ -228,8 +244,9 @@ export function CourseTimelinePanel({ servicesManager }: CourseTimelinePanelProp
   const undatedCount = useMemo(
     () =>
       prescriptionRows.filter(r => !toIsoDate(r.date)).length +
-      timeline.treatment.filter(r => !toIsoDate(r.date)).length,
-    [prescriptionRows, timeline.treatment]
+      timeline.treatment.filter(r => !toIsoDate(r.date)).length +
+      overrideRows.filter(r => !toIsoDate(r.date)).length,
+    [prescriptionRows, timeline.treatment, overrideRows]
   );
 
   // ---- Horizontal virtualization (manual scrollLeft windowing, RTV-176) ----
@@ -347,6 +364,15 @@ export function CourseTimelinePanel({ servicesManager }: CourseTimelinePanelProp
     [t]
   );
 
+  // RTV-168 — label (translated by type) + detail + operator + time.
+  const overrideTooltip = useCallback(
+    (r: OverrideTimelineRow) =>
+      [t(OVERRIDE_TYPE_KEYS[r.type] ?? r.label), r.detail, r.operator, fmtTime(r.time)]
+        .filter(Boolean)
+        .join('\n'),
+    [t]
+  );
+
   const renderEventCells = useCallback(
     <T,>(
       dayMap: Map<string, T[]>,
@@ -407,9 +433,20 @@ export function CourseTimelinePanel({ servicesManager }: CourseTimelinePanelProp
           render: () =>
             renderEventCells(treatmentsByDay, TREATMENT_COLOR, 'rt-tl-tx-event', treatmentTooltip),
         },
-        // Honest placeholders — data pending PACS/backend integration.
+        // Honest placeholder — data pending PACS/backend integration.
         { id: 'imaging', labelKey: 'tl_lane_imaging', ticket: 'RTV-167' },
-        { id: 'overrides', labelKey: 'tl_lane_overrides', ticket: 'RTV-168' },
+        // RTV-168 — real when the records carry override/exception data
+        // (PS3.3 C.8.8.21); otherwise the honest placeholder remains.
+        overrideRows.length > 0
+          ? {
+              id: 'overrides',
+              labelKey: 'tl_lane_overrides',
+              count: overrideRows.length,
+              render: () =>
+                renderEventCells(overridesByDay, OVERRIDE_COLOR, 'rt-tl-ovr-event', overrideTooltip),
+            }
+          : { id: 'overrides', labelKey: 'tl_lane_overrides', ticket: 'RTV-168' },
+        // Honest placeholder — data pending PACS/backend integration.
         { id: 'trends', labelKey: 'tl_lane_trends', ticket: 'RTV-169' },
       ] as {
         id: string;
@@ -422,11 +459,14 @@ export function CourseTimelinePanel({ servicesManager }: CourseTimelinePanelProp
     [
       prescriptionRows.length,
       timeline.treatment.length,
+      overrideRows.length,
       prescriptionsByDay,
       treatmentsByDay,
+      overridesByDay,
       renderEventCells,
       planTooltip,
       treatmentTooltip,
+      overrideTooltip,
       data.plans.length,
       t,
     ]
@@ -547,7 +587,7 @@ export function CourseTimelinePanel({ servicesManager }: CourseTimelinePanelProp
       {/* ---- Shared-axis lanes ---- */}
       {win.visibleDays.length === 0 ? (
         <div className="text-muted-foreground text-xs">
-          {timeline.prescriptions.length > 0 || (data?.plans?.length ?? 0) > 0
+          {timeline.prescription.length > 0 || (data?.plans?.length ?? 0) > 0
             ? prescriptionRows.length === 0 && (data?.plans?.length ?? 0) > 0
               ? t('tl_all_plans_filtered')
               : t('tl_no_dates')
