@@ -9,7 +9,9 @@
  * buttons/hotkeys.
  *
  * Also home to the cine → video export (RTV-95): sweep the active viewport's
- * frames and record them (MediaRecorder) into an MP4/WebM download.
+ * frames and record them (MediaRecorder) into an MP4/WebM download — and to
+ * the rotational 3D cine (RTV-96): spin the layout's volume3d viewport camera
+ * a full 360° around its focal point and record the sweep the same way.
  */
 export * from './scDataset';
 export * from './scSerialize';
@@ -21,6 +23,8 @@ export {
   recordCanvasFrames,
   downloadBlob,
 } from './cineExport';
+export { rotateAroundAxis, orbitStep } from './orbitCamera';
+export type { Vec3, OrbitCameraState, OrbitStepResult } from './orbitCamera';
 export { getCommandsModule } from './getCommandsModule';
 
 import { getCommandsModule } from './getCommandsModule';

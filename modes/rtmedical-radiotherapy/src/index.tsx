@@ -606,6 +606,8 @@ export const radiotherapyToolbarSections = {
     'rtGspsApply',
     // RTV-95: cine → MP4/WebM video download of the active viewport.
     'rtCineExport',
+    // RTV-96: 360° rotational cine of the 3D viewport → video download.
+    'rtCineExport3D',
     // RTV-15/19: slab projections (MIP/MinIP/AvgIP) + slab thickness ±.
     'rtMip',
     'rtMinIp',
@@ -796,6 +798,18 @@ const rtPanelButtons = [
       label: 'Export Cine',
       tooltip: 'Export the active viewport cine as an MP4/WebM video download',
       commands: 'exportCineVideo',
+    },
+  },
+  {
+    // RTV-96: rotational 3D cine — spin the layout's 3D viewport camera a
+    // full 360° turn and record it as an MP4 (or WebM fallback) download.
+    id: 'rtCineExport3D',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-3d-rotate',
+      label: 'Export 3D Spin',
+      tooltip: 'Record a 360° rotation of the 3D viewport as an MP4/WebM video download',
+      commands: 'exportRotational3D',
     },
   },
   {
