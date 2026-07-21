@@ -10,6 +10,7 @@
  */
 export * from './rtRecordParser';
 export * from './overrideEvents';
+export * from './treatmentDetails';
 export { getSopClassHandlerModule } from './getSopClassHandlerModule';
 
 import getSopClassHandlerModule from './getSopClassHandlerModule';
