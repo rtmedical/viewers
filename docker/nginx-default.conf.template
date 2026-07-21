@@ -1,0 +1,45 @@
+# RTV-3 — nginx template for the compose `viewer` service: the upstream
+# .docker/Viewer-v3.x/default.conf.template plus a /dicom-web reverse proxy
+# to the `orthanc` compose service (keeps the browser same-origin — no CORS
+# configuration needed on Orthanc). Mounted over /usr/src/default.conf.template.
+server {
+  gzip_static  always;
+  gzip_proxied expired no-cache no-store private auth;
+  gunzip       on;
+  listen ${PORT} default_server;
+  listen [::]:${PORT} default_server;
+  absolute_redirect off;
+  location = ${PUBLIC_PATH}app-config.js {
+    root   /usr/share/nginx/html;
+    add_header Cache-Control "no-store";
+    add_header Cross-Origin-Resource-Policy same-origin;
+  }
+  location /dicom-web {
+    proxy_pass http://orthanc:8042/dicom-web;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    client_max_body_size 0;
+    proxy_read_timeout 300s;
+  }
+  ${PUBLIC_PATH_REDIRECT}
+  location ${PUBLIC_PATH} {
+    root   /usr/share/nginx/html;
+    index  index.html index.htm;
+    try_files $uri $uri/ ${PUBLIC_PATH}index.html;
+    add_header Cross-Origin-Resource-Policy same-origin;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+  }
+  location /dicom-microscopy-viewer/ {
+    root   /usr/share/nginx/html;
+    add_header Cross-Origin-Resource-Policy same-origin;
+  }
+  error_page   500 502 503 504  /50x.html;
+  location = /50x.html {
+    root   /usr/share/nginx/html;
+  }
+}

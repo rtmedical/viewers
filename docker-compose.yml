@@ -1,17 +1,53 @@
-version: '3'
+# RTV-3 — local development / demo stack for the RT Medical viewer.
+#
+# Replaces the stale connectviewer compose (yarn + Dockerfile.dev, both gone
+# since the OHIF v3.13 / pnpm+rspack migration).
+#
+# Usage:
+#   docker compose up -d              # Orthanc (PACS) + the built viewer
+#   docker compose up -d orthanc      # PACS only — then `pnpm dev` locally
+#                                     # against http://localhost:8042
+#
+# First run builds the viewer image (pnpm install + rspack build — several
+# minutes). The viewer is served at http://localhost:3000 with /dicom-web
+# reverse-proxied to the `orthanc` service (same-origin, no CORS needed);
+# its baked app config is platform/app/public/config/docker_compose_orthanc.js.
+# Orthanc's own UI/API stays available at http://localhost:8042 (auth
+# disabled — DEVELOPMENT ONLY, do not expose these ports publicly).
+# Studies persist in the `orthanc-data` named volume.
+
 services:
-  app:
-    container_name: connectviewer
+  orthanc:
+    image: orthancteam/orthanc:latest
+    container_name: rt-orthanc
+    restart: unless-stopped
+    environment:
+      # Same flags as the team's manual test container (rt-orthanc-test).
+      ORTHANC__REMOTE_ACCESS_ALLOWED: 'true'
+      ORTHANC__DICOM_WEB__ENABLE: 'true'
+      ORTHANC__AUTHENTICATION_ENABLED: 'false'
+    ports:
+      - '8042:8042'
+    volumes:
+      - orthanc-data:/var/lib/orthanc/db
+
+  viewer:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    command: yarn run dev
-    environment:
-      - NODE_OPTIONS=${NODE_OPTIONS}
-      - WEBSOCKET_URL=websocket:3000/ws
+      dockerfile: Dockerfile
+      args:
+        # Baked at build time; roots are relative (/dicom-web) and resolved
+        # by the nginx proxy below.
+        APP_CONFIG: config/docker_compose_orthanc.js
+    container_name: rt-viewer
+    restart: unless-stopped
+    depends_on:
+      - orthanc
     ports:
-      - '5000:5000'
-      - '3000:3000'
+      - '3000:80'
     volumes:
-      - /app/node_modules
-      - .:/app
+      # Upstream nginx template + a /dicom-web reverse proxy to `orthanc`.
+      - ./docker/nginx-default.conf.template:/usr/src/default.conf.template:ro
+
+volumes:
+  orthanc-data:
