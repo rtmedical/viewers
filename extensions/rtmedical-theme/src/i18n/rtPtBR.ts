@@ -44,6 +44,12 @@ export const rtPtBR: Record<string, string> = {
   task_generate_key_images: 'Gerar imagens-chave',
   task_change_patient_info: 'Alterar dados do paciente',
   task_delete_study: 'Excluir estudo',
+  // --- Background tasks panel (RTV-159) ---
+  bgtask_panel_title: 'Tarefas em segundo plano',
+  bgtask_empty: 'Nenhuma tarefa em segundo plano nesta sessão.',
+  bgtask_running: 'Em execução',
+  bgtask_success: 'Concluída',
+  bgtask_error: 'Falhou',
   // --- Wave 4/5 TPS UI (Info Window tabs) ---
   tab_fields: 'Campos',
   tab_dose: 'Dose',
@@ -308,6 +314,12 @@ export const rtEn: Record<string, string> = {
   task_generate_key_images: 'Generate key images',
   task_change_patient_info: 'Edit patient info',
   task_delete_study: 'Delete study',
+  // --- Background tasks panel (RTV-159) ---
+  bgtask_panel_title: 'Background tasks',
+  bgtask_empty: 'No background tasks this session.',
+  bgtask_running: 'Running',
+  bgtask_success: 'Completed',
+  bgtask_error: 'Failed',
   // --- Wave 4/5 TPS UI (Info Window tabs) ---
   tab_fields: 'Fields',
   tab_dose: 'Dose',

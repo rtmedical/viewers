@@ -4,12 +4,14 @@ import MeasurementsPanel from './measurements/MeasurementsPanel';
 import RTTreePanel from './rtTree/RTTreePanel';
 import SrTreePanel from './srTree/SrTreePanel';
 import HpEditorPanel from './hpEditor/HpEditorPanel';
+import BgTasksPanel from './bgTasks/BgTasksPanel';
 
 /**
  * Panels contributed by the RT theme/shell extension:
  * - 'laudo' (RTV-118 placeholder; editor in RTV-121)
  * - 'rtMeasurements' custom measurements table with jump-to + CSV (RTV-151)
  * - 'hpEditor' graphical hanging-protocol editor (RTV-23)
+ * - 'bgTasks' background-task history (RTV-159)
  * Referenced by modes as 'rtmedical-theme.panelModule.<name>'.
  */
 function getPanelModule({ servicesManager, commandsManager }) {
@@ -53,6 +55,14 @@ function getPanelModule({ servicesManager, commandsManager }) {
           commandsManager={commandsManager}
         />
       ),
+    },
+    {
+      // RTV-159: session history of background tasks (exports, uploads...).
+      name: 'bgTasks',
+      iconName: 'tab-studies',
+      iconLabel: 'Tarefas',
+      label: 'Tarefas',
+      component: props => <BgTasksPanel {...props} servicesManager={servicesManager} />,
     },
     {
       name: 'srTree',

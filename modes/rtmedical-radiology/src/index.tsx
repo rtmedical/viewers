@@ -39,6 +39,8 @@ export const rtmedical = {
   hpEditor: 'rtmedical-theme.panelModule.hpEditor',
   // RTV-79/78: CAD SR findings panel + finding-marker overlay.
   cad: '@ohif/extension-cad.panelModule.cad',
+  // RTV-159: background-task (exports/uploads) notification history.
+  bgTasks: 'rtmedical-theme.panelModule.bgTasks',
 };
 
 export const extensionDependencies = {
@@ -83,6 +85,7 @@ export const radiologyLayout = {
       rtmedical.bullseye,
       rtmedical.hpEditor,
       rtmedical.laudo,
+      rtmedical.bgTasks,
     ],
     rightPanelClosed: false,
   },

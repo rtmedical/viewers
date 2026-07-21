@@ -6,6 +6,8 @@ import getPanelModule from './src/getPanelModule';
 import getHangingProtocolModule from './src/getHangingProtocolModule';
 import getCommandsModule from './src/getCommandsModule';
 import WorklistQueueService from './src/worklist/WorklistQueueService';
+import BgTaskService from './src/bgTasks/BgTaskService';
+import wireBgTaskToasts from './src/bgTasks/wireBgTaskToasts';
 import i18n from 'i18next';
 import { RT_NAMESPACE, rtPtBR, rtEn } from './src/i18n/rtPtBR';
 import { defaultBranding } from './src/whiteLabeling/defaultBranding';
@@ -25,6 +27,18 @@ export default {
   preRegistration({ servicesManager, serviceProvidersManager, appConfig }) {
     setRouterBasename(appConfig?.routerBasename);
     servicesManager.registerService(WorklistQueueService.REGISTRATION);
+    // RTV-159: background-task registry + per-task toasts. appInit registers
+    // uiNotificationService BEFORE extensions preRegistration, so the toast
+    // wiring can live here for the app's lifetime (no teardown needed).
+    servicesManager.registerService(BgTaskService.REGISTRATION);
+    try {
+      const { rtmedicalBgTaskService, uiNotificationService } = servicesManager.services;
+      if (rtmedicalBgTaskService && uiNotificationService) {
+        wireBgTaskToasts(rtmedicalBgTaskService, uiNotificationService);
+      }
+    } catch (e) {
+      /* task toasts are non-fatal */
+    }
     servicesManager.registerService(
       WhiteLabelingService.REGISTRATION,
       appConfig?.rtmedicalWhiteLabeling

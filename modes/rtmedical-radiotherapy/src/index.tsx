@@ -49,6 +49,8 @@ export const rtmedical = {
   rtPrint: '@ohif/extension-rt-print.panelModule.rtPrint',
   lineProfile: '@ohif/extension-measurements.panelModule.lineProfile',
   bev: '@ohif/extension-rt-bev.panelModule.bev',
+  // RTV-159: background-task (exports/uploads) notification history.
+  bgTasks: 'rtmedical-theme.panelModule.bgTasks',
 };
 
 export const extensionDependencies = {
@@ -127,6 +129,7 @@ export const radiotherapyLayout = {
       rtmedical.bev,
       rtmedical.rtPrint,
       rtmedical.laudo,
+      rtmedical.bgTasks,
     ],
     rightPanelClosed: false,
   },
