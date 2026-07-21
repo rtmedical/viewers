@@ -175,6 +175,44 @@ export const rtPtBR: Record<string, string> = {
   rec_dose_corrections_footer:
     '⚠ As correções de dose são registradas separadamente e excluídas do total das frações.',
   rec_mu_rounded_title: 'MU arredondada',
+  // --- Treatment Details panel (rt-record, RTV-173) ---
+  td_title: 'Detalhes do Tratamento',
+  td_no_records: 'Nenhum Registro de Tratamento RT carregado.',
+  td_record: 'Registro',
+  td_machine: 'Máquina',
+  td_date: 'Data',
+  td_time: 'Hora',
+  td_fraction: 'Fração',
+  td_header_beam: 'Feixe',
+  td_header_name: 'Nome',
+  td_header_spec_mu: 'MU Espec.',
+  td_header_deliv_mu: 'MU Entreg.',
+  td_header_delta_mu: 'Δ MU',
+  td_header_termination: 'Término',
+  td_header_verification: 'Verificação',
+  td_header_overrides: 'Overrides (OverrideSequence)',
+  td_header_corrections: 'Correções (CorrectedParameterSequence)',
+  td_totals: 'Totais',
+  td_badge_verified_ovr_title:
+    'Sistema de verificação sobreposto neste feixe (TreatmentVerificationStatus=VERIFIED_OVR).',
+  td_badge_operator_title:
+    'Feixe interrompido pelo operador (TreatmentTerminationStatus=OPERATOR).',
+  // --- Dose Correction Details panel (rt-record, RTV-173) ---
+  dc_title: 'Detalhes de Correção de Dose',
+  dc_no_records: 'Nenhum Registro de Tratamento RT carregado.',
+  dc_no_events:
+    'Nenhuma correção ou override registrado no DICOM dos Registros de Tratamento carregados.',
+  dc_header_date: 'Data',
+  dc_header_type: 'Tipo',
+  dc_header_beam: 'Feixe',
+  dc_header_detail: 'Valor / Detalhe',
+  dc_header_operator: 'Operador',
+  dc_type_machine_override: 'Override de máquina',
+  dc_type_parameter_correction: 'Correção de parâmetro',
+  dc_type_verify_override: 'Override de verificação',
+  dc_type_manual_treatment: 'Tratamento manual',
+  dc_footer:
+    '⚠ Correções manuais de dose do prontuário são registradas no RIS/ARIA, não no DICOM — este painel mostra apenas o que o Treatment Record carrega (integração: RTV-169).',
   // --- Course Timeline panel (rt-timeline) ---
   tl_empty: 'Nenhum RT plan ou registro de tratamento carregado.',
   tl_title: 'Linha do Tempo do Curso',
@@ -447,6 +485,44 @@ export const rtEn: Record<string, string> = {
   rec_dose_corrections_footer:
     '⚠ Dose corrections are recorded separately and excluded from the fractions total.',
   rec_mu_rounded_title: 'MU rounded',
+  // --- Treatment Details panel (rt-record, RTV-173) ---
+  td_title: 'Treatment Details',
+  td_no_records: 'No RT Treatment Records loaded.',
+  td_record: 'Record',
+  td_machine: 'Machine',
+  td_date: 'Date',
+  td_time: 'Time',
+  td_fraction: 'Fraction',
+  td_header_beam: 'Beam',
+  td_header_name: 'Name',
+  td_header_spec_mu: 'Spec MU',
+  td_header_deliv_mu: 'Deliv MU',
+  td_header_delta_mu: 'Δ MU',
+  td_header_termination: 'Termination',
+  td_header_verification: 'Verification',
+  td_header_overrides: 'Overrides (OverrideSequence)',
+  td_header_corrections: 'Corrections (CorrectedParameterSequence)',
+  td_totals: 'Totals',
+  td_badge_verified_ovr_title:
+    'Verification system overridden for this beam (TreatmentVerificationStatus=VERIFIED_OVR).',
+  td_badge_operator_title:
+    'Beam terminated by the operator (TreatmentTerminationStatus=OPERATOR).',
+  // --- Dose Correction Details panel (rt-record, RTV-173) ---
+  dc_title: 'Dose Correction Details',
+  dc_no_records: 'No RT Treatment Records loaded.',
+  dc_no_events:
+    'No DICOM-recorded corrections or overrides in the loaded Treatment Records.',
+  dc_header_date: 'Date',
+  dc_header_type: 'Type',
+  dc_header_beam: 'Beam',
+  dc_header_detail: 'Value / Detail',
+  dc_header_operator: 'Operator',
+  dc_type_machine_override: 'Machine override',
+  dc_type_parameter_correction: 'Parameter correction',
+  dc_type_verify_override: 'Verify override',
+  dc_type_manual_treatment: 'Manual treatment',
+  dc_footer:
+    '⚠ Manual chart dose corrections live in the RIS/ARIA, not in DICOM — this panel lists only what the Treatment Record carries (integration: RTV-169).',
   // --- Course Timeline panel (rt-timeline) ---
   tl_empty: 'No RT plan or treatment record loaded.',
   tl_title: 'Course Timeline',

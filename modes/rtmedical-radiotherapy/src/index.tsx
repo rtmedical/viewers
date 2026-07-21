@@ -51,6 +51,9 @@ export const rtmedical = {
   bev: '@ohif/extension-rt-bev.panelModule.bev',
   // RTV-159: background-task (exports/uploads) notification history.
   bgTasks: 'rtmedical-theme.panelModule.bgTasks',
+  // RTV-173: per-record Treatment Details + DICOM-derivable Dose Corrections.
+  treatmentDetails: '@ohif/extension-rt-record.panelModule.treatmentDetails',
+  doseCorrection: '@ohif/extension-rt-record.panelModule.doseCorrection',
 };
 
 export const extensionDependencies = {
@@ -122,6 +125,10 @@ export const radiotherapyLayout = {
       cornerstone.segmentation,
       rtmedical.dvh,
       rtmedical.isodose,
+      // RTV-173: delivery detail + DICOM corrections/overrides next to the
+      // dose-analysis panels (manual RIS dose corrections land with RTV-169).
+      rtmedical.treatmentDetails,
+      rtmedical.doseCorrection,
       rtmedical.fusionTimeline,
       rtmedical.keyImages,
       cornerstone.measurements,

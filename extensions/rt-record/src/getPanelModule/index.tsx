@@ -5,6 +5,8 @@
 import React from 'react';
 import RtRecordPanel from './RtRecordPanel';
 import DoseInformationPanel from './DoseInformationPanel';
+import TreatmentDetailsPanel from './TreatmentDetailsPanel';
+import DoseCorrectionPanel from './DoseCorrectionPanel';
 
 interface PanelModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -30,6 +32,26 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
       label: 'Dose Information',
       component: (props: Record<string, unknown>) => (
         <DoseInformationPanel {...props} servicesManager={servicesManager} />
+      ),
+    },
+    // RTV-173: per-record beam delivery detail (MU delta, statuses, counts).
+    {
+      name: 'treatmentDetails',
+      iconName: 'tab-studies',
+      iconLabel: 'Treatment',
+      label: 'Treatment Details',
+      component: (props: Record<string, unknown>) => (
+        <TreatmentDetailsPanel {...props} servicesManager={servicesManager} />
+      ),
+    },
+    // RTV-173: DICOM-derivable corrections/overrides (RIS corrections: RTV-169).
+    {
+      name: 'doseCorrection',
+      iconName: 'tab-studies',
+      iconLabel: 'Corrections',
+      label: 'Dose Corrections',
+      component: (props: Record<string, unknown>) => (
+        <DoseCorrectionPanel {...props} servicesManager={servicesManager} />
       ),
     },
   ];
