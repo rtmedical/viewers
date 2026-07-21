@@ -1,6 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePlanData } from '../hooks/usePlanData';
+// Workspace-relative import (package-subpath doesn't resolve under rspack —
+// same pattern as usePlanData's type import from rt-plan).
+import { collectIsocenters, formatIsocenter } from '../../../rt-plan/src/isocenters';
 import { num, angle, pair, mmToCm } from '../format';
 
 /**
@@ -48,8 +51,10 @@ const COLS: Col[] = [
 
 export default function PlanFieldsTable({
   servicesManager,
+  commandsManager,
 }: {
   servicesManager: any;
+  commandsManager?: { runCommand: (name: string, options?: Record<string, unknown>) => unknown };
 }): React.ReactElement {
   const { t } = useTranslation('RTMedical');
   const { displaySets, selected, selectedUID, setSelectedUID, plan } = usePlanData(servicesManager);
@@ -63,6 +68,8 @@ export default function PlanFieldsTable({
   }
 
   const totalMu = plan.totalMeterset;
+  // RTV-145: unique isocenters (deduped across beams) with jump-to actions.
+  const isocenters = collectIsocenters(plan);
 
   return (
     <div className="flex h-full flex-col" data-cy="rt-tps-fields">
@@ -89,6 +96,35 @@ export default function PlanFieldsTable({
           {plan.approvalStatus ? ` · ${plan.approvalStatus}` : ''}
         </span>
       </div>
+
+      {isocenters.length > 0 && commandsManager && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 px-2 pb-1 text-xs">
+          <span className="text-muted-foreground">{t('plan_isocenters')}</span>
+          {isocenters.map((entry, index) => (
+            <span
+              key={entry.key}
+              data-cy="rt-isocenter-item"
+              className="border-input flex items-center gap-1 rounded border px-1.5 py-0.5"
+            >
+              <span className="text-muted-foreground">#{entry.beamNumbers.join(', #')}</span>
+              <span>{formatIsocenter(entry.isocenter)}</span>
+              <button
+                data-cy="rt-isocenter-goto"
+                className="text-highlight hover:underline"
+                title={t('plan_goto')}
+                onClick={() =>
+                  commandsManager.runCommand('navigateToIsocenter', {
+                    index,
+                    displaySetInstanceUID: selectedUID,
+                  })
+                }
+              >
+                {t('plan_goto')}
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="ohif-scrollbar min-h-0 flex-1 overflow-auto">
         <table className="w-full border-collapse text-xs">

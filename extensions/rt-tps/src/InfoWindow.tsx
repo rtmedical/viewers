@@ -45,7 +45,7 @@ interface InfoTab {
 }
 
 const INFO_TABS: InfoTab[] = [
-  { key: 'fields', labelKey: 'tab_fields', render: p => <PlanFieldsTable servicesManager={p.servicesManager} /> },
+  { key: 'fields', labelKey: 'tab_fields', render: p => <PlanFieldsTable servicesManager={p.servicesManager} commandsManager={p.commandsManager} /> },
   { key: 'dose', labelKey: 'tab_dose', render: p => <PlanDoseTab servicesManager={p.servicesManager} /> },
   { key: 'dvh', labelKey: 'tab_dvh', panelId: '@ohif/extension-rt-dvh.panelModule.dvh' },
   { key: 'isodose', labelKey: 'tab_isodoses', panelId: '@ohif/extension-rt-isodose.panelModule.isodose' },

@@ -4,20 +4,28 @@
  * Thin React layer over the tested, framework-free {@link ../rtPlanParser}. It
  * reads RTPLAN display sets from the DisplaySetService (the SopClassHandler has
  * already parsed them onto `displaySet.rtPlan`), renders the plan/prescriptions/
- * beams tables, and offers CSV export + print-to-PDF. RTV-114: depends only on
- * `@ohif/ui-next` (public UI) and this extension's own primitives.
+ * beams tables plus the isocenter list (RTV-145 — "Go to" runs the
+ * `navigateToIsocenter` command against the selected plan), and offers CSV
+ * export + print-to-PDF. RTV-114: depends only on `@ohif/ui-next` (public UI)
+ * and this extension's own primitives.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@ohif/ui-next';
 import { buildRtPlanCsv, RtPlan } from '../rtPlanParser';
+import { collectIsocenters, formatIsocenter } from '../isocenters';
 
 interface ServicesManagerLike {
   services: Record<string, any>;
 }
 
+interface CommandsManagerLike {
+  runCommand: (name: string, options?: Record<string, unknown>) => unknown;
+}
+
 export interface RTPlanPanelProps {
   servicesManager: ServicesManagerLike;
+  commandsManager?: CommandsManagerLike;
 }
 
 interface RtPlanDisplaySet {
@@ -50,7 +58,10 @@ function downloadCsv(plan: RtPlan, name: string): void {
 
 const num = (v?: number, digits = 1) => (v == null ? '—' : Number.isInteger(v) ? String(v) : v.toFixed(digits));
 
-export function RTPlanPanel({ servicesManager }: RTPlanPanelProps): React.ReactElement {
+export function RTPlanPanel({
+  servicesManager,
+  commandsManager,
+}: RTPlanPanelProps): React.ReactElement {
   const { t } = useTranslation('RTMedical');
   const displaySetService = servicesManager?.services?.displaySetService;
   const [displaySets, setDisplaySets] = useState<RtPlanDisplaySet[]>(() =>
@@ -84,6 +95,17 @@ export function RTPlanPanel({ servicesManager }: RTPlanPanelProps): React.ReactE
     [displaySets, selectedUID]
   );
   const plan = selected?.rtPlan;
+  const isocenters = useMemo(() => collectIsocenters(plan), [plan]);
+
+  const handleGoToIsocenter = useCallback(
+    (index: number) => {
+      commandsManager?.runCommand?.('navigateToIsocenter', {
+        index,
+        displaySetInstanceUID: selected?.displaySetInstanceUID,
+      });
+    },
+    [commandsManager, selected]
+  );
 
   const handleCsv = useCallback(() => {
     if (plan) {
@@ -193,6 +215,39 @@ export function RTPlanPanel({ servicesManager }: RTPlanPanelProps): React.ReactE
             ))}
           </tbody>
         </table>
+
+        {isocenters.length > 0 && (
+          <>
+            <div className="mt-3 mb-1 font-medium">{t('plan_isocenters')}</div>
+            <ul>
+              {isocenters.map((iso, i) => (
+                <li
+                  key={iso.key}
+                  data-cy="rt-isocenter-item"
+                  className="flex items-center justify-between gap-2 border-t border-white/10 py-1"
+                >
+                  <span className="min-w-0">
+                    <span className="text-muted-foreground mr-1">
+                      {iso.beamNumbers.length
+                        ? iso.beamNumbers.map(n => `#${n}`).join(', ')
+                        : '—'}
+                    </span>
+                    {iso.beamName ? <span className="mr-1">{iso.beamName}</span> : null}
+                    <span className="whitespace-nowrap">{formatIsocenter(iso.isocenter)}</span>
+                  </span>
+                  <Button
+                    data-cy="rt-isocenter-goto"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleGoToIsocenter(i)}
+                  >
+                    {t('plan_goto')}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
     </div>
   );

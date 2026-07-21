@@ -131,6 +131,12 @@ export const rtPtBR: Record<string, string> = {
   plan_name: 'Nome',
   plan_energy: 'Energia',
   plan_gantry: 'Gantry',
+  // --- Isocenters (rt-plan, RTV-145) ---
+  plan_isocenters: 'Isocentros',
+  plan_goto: 'Ir para',
+  iso_no_plan: 'Nenhum RTPLAN com isocentro carregado.',
+  iso_beam_not_found: 'Nenhum isocentro encontrado para o feixe solicitado.',
+  iso_no_viewport: 'Nenhum viewport de volume/MPR para navegar — carregue a TC de planejamento.',
   // --- DVH panel (rt-dvh) ---
   dvh_none_found: 'Nenhum DVH encontrado (carregue um RTDOSE contendo uma sequência DVH).',
   dvh_title: 'DVH ({{count}})',
@@ -386,6 +392,12 @@ export const rtEn: Record<string, string> = {
   plan_name: 'Name',
   plan_energy: 'Energy',
   plan_gantry: 'Gantry',
+  // --- Isocenters (rt-plan, RTV-145) ---
+  plan_isocenters: 'Isocenters',
+  plan_goto: 'Go to',
+  iso_no_plan: 'No RTPLAN with an isocenter loaded.',
+  iso_beam_not_found: 'No isocenter found for the requested beam.',
+  iso_no_viewport: 'No volume/MPR viewport to navigate — load the planning CT.',
   // --- DVH panel (rt-dvh) ---
   dvh_none_found: 'No DVH found (load an RTDOSE containing a DVH sequence).',
   dvh_title: 'DVH ({{count}})',
