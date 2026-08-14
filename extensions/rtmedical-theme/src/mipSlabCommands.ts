@@ -10,7 +10,8 @@ import {
 } from './mipSlab';
 
 /**
- * RTV-15 (MIP/MinIP/AvgIP) + RTV-19 (2D slab) — command glue for the toolbar.
+ * RTV-15 (MIP/MinIP/AvgIP) + RTV-19 (2D slab) + RTV-18 (DRR / X-ray projection)
+ * — command glue for the toolbar.
  *
  * Applies slab projections to the ACTIVE viewport through the public
  * Cornerstone3D VolumeViewport API (verified against the installed
@@ -39,6 +40,10 @@ const BLEND_MODE_VALUE_BY_NAME: Record<CsBlendModeName, number> = {
   MAXIMUM_INTENSITY_BLEND: 1,
   MINIMUM_INTENSITY_BLEND: 2,
   AVERAGE_INTENSITY_BLEND: 3,
+  // ADDITIVE_INTENSITY_BLEND is 4 and is intentionally not exposed.
+  // 5 = RADON_TRANSFORM_BLEND — the X-ray/DRR projection (RTV-18), verified in
+  // node_modules/@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants.js.
+  RADON_TRANSFORM_BLEND: 5,
 };
 
 /** Cornerstone3D Enums.ViewportType.VOLUME_3D — slab APIs are no-ops there. */
@@ -51,6 +56,7 @@ const MODE_LABEL: Record<SlabProjectionMode, string> = {
   mip: 'MIP',
   minip: 'MinIP',
   avg: 'AvgIP',
+  drr: 'DRR (X-ray)',
 };
 
 /** The subset of the Cornerstone3D VolumeViewport API this glue touches. */
@@ -160,10 +166,14 @@ export function createMipSlabActions({ servicesManager }: MipSlabParams) {
 
   return {
     /**
-     * Apply MIP/MinIP/AvgIP over a slab to the ACTIVE viewport.
-     * `mode`: 'mip' | 'minip' | 'avg' | 'none' (case-insensitive).
+     * Apply MIP/MinIP/AvgIP/DRR over a slab to the ACTIVE viewport.
+     * `mode`: 'mip' | 'minip' | 'avg' | 'drr' | 'none' (case-insensitive;
+     * 'rx' / 'xray' / 'x-ray' are accepted aliases for 'drr').
      * `slabMm`: optional thickness, clamped to 0.5–100 mm; omitted → keep the
      * current slab (or 10 mm), and re-requesting the active mode TOGGLES off.
+     * DRR is the exception: omitting `slabMm` opens at the FULL 100 mm slab
+     * rather than inheriting, because a radiograph integrates through the whole
+     * patient (see DRR_SLAB_MM_DEFAULT in ./mipSlab).
      */
     setSlabProjection: ({ mode, slabMm }: { mode?: string; slabMm?: number } = {}): boolean => {
       const requested = normalizeMode(mode);
