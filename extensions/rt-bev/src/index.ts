@@ -8,6 +8,8 @@
  * RTIMAGE) + `getPanelModule` (BEV panel: beam info + control-point slider).
  */
 
+export * from './drrGraticule';
+
 export const id = '@ohif/extension-rt-bev';
 
 // Pure re-exports (framework-free, jest-covered).

@@ -607,6 +607,7 @@ export const radiotherapyToolbarSections = {
     'rtBev',
     // RTV-139: MLC cine — reveal the BEV panel with the cine controls.
     'rtMlcCine',
+    'rtDrrGraticule',
     // Eclipse-style vector isodose lines over the MPR viewports.
     'rtIsodoseLines',
     // RTV-203: screenshot → DICOM Secondary Capture → PACS (STOW-RS).
@@ -733,6 +734,19 @@ const rtPanelButtons = [
       label: 'BEV',
       tooltip: "Beam's Eye View (MLC) on the RTIMAGE",
       commands: 'toggleBev',
+    },
+  },
+  {
+    // RTV-143: graticule de DRR -- crosshair no eixo do feixe + marcas a cada N mm
+    // NO PLANO DO ISOCENTRO, girando com o BeamLimitingDeviceAngle. Fica ao lado do
+    // BEV porque le a mesma geometria de RTIMAGE.
+    id: 'rtDrrGraticule',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-crosshair',
+      label: 'Graticule',
+      tooltip: 'Millimetre graticule on the RTIMAGE (DRR), rotated with the collimator',
+      commands: 'toggleDrrGraticule',
     },
   },
   {

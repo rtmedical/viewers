@@ -19,9 +19,19 @@
  * (no unbounded growth across studies, no stale beams after invalidation).
  */
 import { metaData } from '@cornerstonejs/core';
+
+import {
+  buildDrrGraticule,
+  buildGraticuleSvgDocument,
+  describeGraticule,
+  GRATICULE_SPACING_MM_DEFAULT,
+  mountGraticule,
+  unmountGraticule,
+} from './drrGraticule';
 import i18n from 'i18next';
 import parseRtPlanBev, {
   BevBeam,
+  parseRtImageBevGeometry,
   referencedBeamNumber,
 } from './rtBevParser';
 import {
@@ -248,7 +258,103 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
     }
   };
 
+  // RTV-143 -- estado do graticule de DRR. Vive no escopo do modulo de comandos,
+  // como o indice de control point do BEV, e nao num store: e preferencia de
+  // visualizacao por sessao, nao dado clinico.
+  const graticule = { visible: false, spacingMm: GRATICULE_SPACING_MM_DEFAULT };
+
+  /**
+   * Redesenha (ou remove) o graticule em todo viewport que mostra um RTIMAGE.
+   * Devolve quantos foram desenhados.
+   */
+  function renderGraticule(): number {
+    const targets = findRtImageStackViewports(servicesManager);
+    let drawn = 0;
+    for (const target of targets) {
+      const host = target.viewport?.element ?? null;
+      if (!graticule.visible) {
+        unmountGraticule(host);
+        continue;
+      }
+      const geom = parseRtImageBevGeometry(target.instance);
+      // Sem geometria utilizavel nao se desenha nada: um reticulo sobre geometria
+      // adivinhada poe rotulo de milimetro confiante no pixel errado.
+      const built = buildDrrGraticule(geom, {
+        spacingMm: graticule.spacingMm,
+        collimatorDeg: Number(target.instance?.BeamLimitingDeviceAngle) || 0,
+      });
+      const markup = buildGraticuleSvgDocument(
+        built,
+        Number(target.instance?.Columns) || 0,
+        Number(target.instance?.Rows) || 0
+      );
+      if (mountGraticule(host, markup)) {
+        drawn++;
+      }
+    }
+    return drawn;
+  }
+
   const actions = {
+    /** Liga/desliga o graticule de DRR (RTV-143). */
+    toggleDrrGraticule: () => {
+      graticule.visible = !graticule.visible;
+      const targets = findRtImageStackViewports(servicesManager);
+      if (!targets.length) {
+        graticule.visible = false;
+        notify(
+          'graticule_no_rtimage',
+          'Open an RTIMAGE (DRR) in a viewport to see the graticule.',
+          'warning'
+        );
+        return false;
+      }
+      const drawn = renderGraticule();
+      if (!graticule.visible) {
+        notify('graticule_off', 'Graticule off.', 'info');
+        return true;
+      }
+      if (!drawn) {
+        graticule.visible = false;
+        notify(
+          'graticule_no_geometry',
+          describeGraticule(null),
+          'warning'
+        );
+        return false;
+      }
+      const first = findRtImageStackViewports(servicesManager)[0]?.instance;
+      notify(
+        'graticule_on',
+        describeGraticule(
+          buildDrrGraticule(parseRtImageBevGeometry(first), {
+            spacingMm: graticule.spacingMm,
+            collimatorDeg: Number(first?.BeamLimitingDeviceAngle) || 0,
+          }),
+          Number(first?.GantryAngle)
+        ),
+        'info'
+      );
+      return true;
+    },
+
+    /** Espacamento das marcas, em mm no plano do isocentro. */
+    setDrrGraticuleSpacing: ({ spacingMm }: { spacingMm?: number } = {}) => {
+      const value = Number(spacingMm);
+      if (!Number.isFinite(value)) {
+        return false;
+      }
+      // O clamp real vive em buildDrrGraticule; aqui so guardamos o pedido.
+      graticule.spacingMm = value;
+      if (graticule.visible) {
+        renderGraticule();
+      }
+      return true;
+    },
+
+    /** Redesenha depois de trocar de imagem/CP. Silencioso. */
+    refreshDrrGraticule: () => renderGraticule(),
+
     /**
      * Attach the BEV overlay to every stack viewport currently showing an
      * RTIMAGE. Optional `{ controlPoint }` selects the CP to render.
@@ -346,6 +452,9 @@ function getCommandsModule({ servicesManager }: { servicesManager: any }) {
       toggleBev: { commandFn: actions.toggleBev },
       setBevControlPoint: { commandFn: actions.setBevControlPoint },
       showMlcCine: { commandFn: actions.showMlcCine },
+      toggleDrrGraticule: { commandFn: actions.toggleDrrGraticule },
+      setDrrGraticuleSpacing: { commandFn: actions.setDrrGraticuleSpacing },
+      refreshDrrGraticule: { commandFn: actions.refreshDrrGraticule },
     },
     defaultContext: 'DEFAULT',
   };
