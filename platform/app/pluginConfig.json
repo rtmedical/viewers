@@ -139,6 +139,9 @@
       "packageName": "@ohif/extension-rt-worklist"
     },
     {
+      "packageName": "@ohif/extension-rt-tabs"
+    },
+    {
       "packageName": "@ohif/extension-cardiology"
     }
   ],
