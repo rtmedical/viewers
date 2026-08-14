@@ -34,7 +34,7 @@
  * this route as the landing page, or leave both. The route deliberately does
  * not claim '/' so it never competes with the stock list by RRv6 specificity.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   WorklistSeries,
@@ -44,6 +44,13 @@ import {
   groupStudiesByPatient,
 } from './worklistModel';
 import { studyPath } from './iheInvoke';
+import {
+  emptyStateCopy,
+  headerAppearance,
+  rowAppearance,
+  rowsPerPage,
+} from './worklistLayout';
+import { flattenWorklistRows, resolveWorklistKey } from './worklistKeyboard';
 import { getActiveDataSource, initializeDataSourceOnce } from './dataSourceUtils';
 
 interface ManagersProps {
@@ -157,6 +164,11 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
   const [expandedStudies, setExpandedStudies] = useState<Record<string, boolean>>({});
   const [seriesByStudy, setSeriesByStudy] = useState<Record<string, SeriesState>>({});
 
+  // RTV-192 — navegacao por teclado (treegrid). O foco de teclado e distinto da
+  // selecao: e uma linha fina, nao um preenchimento.
+  const [focusedRowId, setFocusedRowId] = useState<string | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
   const refresh = useCallback(() => {
     setSeriesByStudy({});
     setReloadToken(token => token + 1);
@@ -237,6 +249,45 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
 
   const patientGroups = useMemo(() => groupStudiesByPatient(filteredStudies), [filteredStudies]);
 
+  /** Chave estavel da linha de paciente (mesma regra usada na renderizacao). */
+  const groupKeyOf = useCallback(
+    (group: { patientId?: string; patientName?: string }) =>
+      group.patientId || `name:${group.patientName || 'unknown'}`,
+    []
+  );
+
+  // Somente o que esta VISIVEL: colapsar um paciente remove seus estudos daqui,
+  // entao as setas nunca pousam numa linha escondida.
+  const visibleRows = useMemo(
+    () =>
+      flattenWorklistRows(
+        patientGroups.map(group => {
+          const key = groupKeyOf(group);
+          return {
+            id: key,
+            expanded: expandedPatients[key] ?? true,
+            studies: group.studies.map(study => ({
+              id: study.studyInstanceUid,
+              expandable: true,
+              expanded: Boolean(expandedStudies[study.studyInstanceUid]),
+            })),
+          };
+        })
+      ),
+    [patientGroups, expandedPatients, expandedStudies, groupKeyOf]
+  );
+
+  const studyByUid = useMemo(() => {
+    const map = new Map<string, WorklistStudy>();
+    for (const group of patientGroups) {
+      for (const study of group.studies) {
+        map.set(study.studyInstanceUid, study);
+      }
+    }
+    return map;
+  }, [patientGroups]);
+
+
   // Feed the viewer's next/prev-study queue with what the worklist currently
   // shows (best-effort — the service ships with the rtmedical-theme extension
   // and may be absent in stripped-down deployments).
@@ -288,6 +339,48 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
       }
     },
     [expandedStudies, seriesByStudy, loadSeries]
+  );
+
+  const onGridKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const action = resolveWorklistKey(event as unknown as { key?: string }, {
+        rows: visibleRows,
+        focusedId: focusedRowId,
+        pageSize: rowsPerPage(gridRef.current?.clientHeight),
+      });
+      if (!action) {
+        // Nao engolir a tecla: Tab tem de continuar saindo da grade.
+        return;
+      }
+      event.preventDefault();
+
+      if (action.type === 'focus') {
+        setFocusedRowId(action.rowId);
+        return;
+      }
+      if (action.type === 'clear') {
+        setFocusedRowId(null);
+        return;
+      }
+      if (action.type === 'toggle') {
+        const row = visibleRows.find(r => r.id === action.rowId);
+        if (row?.kind === 'patient') {
+          setExpandedPatients(prev => ({ ...prev, [action.rowId]: action.expanded }));
+        } else {
+          toggleStudy(action.rowId);
+        }
+        return;
+      }
+      // 'activate' — Enter numa linha de estudo abre no viewer de radioterapia,
+      // que e o destino desta worklist.
+      const study = studyByUid.get(action.rowId);
+      if (study) {
+        navigate(
+          studyPath('rtmedical-radiotherapy', study.studyInstanceUid, window.location.search)
+        );
+      }
+    },
+    [visibleRows, focusedRowId, studyByUid, navigate, toggleStudy]
   );
 
   const showInfoModal = useCallback(
@@ -449,14 +542,36 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
             </button>
           </div>
         ) : patientGroups.length === 0 ? (
-          <div className="text-muted-foreground p-6 text-center text-sm">
-            No studies match the current filters.
-          </div>
+          (() => {
+            // RTV-192 — copy contextual: uma lista vazia por filtro tem de dizer
+            // isso, e uma falha nunca deve se passar por vazio.
+            const copy = emptyStateCopy({
+              hasFilters: Boolean(
+                nameFilter || mrnFilter || dateFrom || dateTo || modalityFilter
+              ),
+            });
+            return (
+              <div className="text-muted-foreground p-10 text-center text-sm">
+                <p className="text-white/80">{copy.title}</p>
+                {copy.hint && <p className="mt-1 text-xs">{copy.hint}</p>}
+              </div>
+            );
+          })()
         ) : (
-          <div className="border-input overflow-x-auto rounded border">
+          <div
+            ref={gridRef}
+            role="treegrid"
+            aria-label="Study worklist"
+            tabIndex={0}
+            onKeyDown={onGridKeyDown}
+            className="border-input overflow-x-auto rounded border outline-none"
+          >
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="bg-popover text-muted-foreground text-left text-xs uppercase">
+                <tr
+                  className={`${headerAppearance().className} text-left`}
+                  style={headerAppearance().style as React.CSSProperties}
+                >
                   <th className="w-8 px-2 py-2"></th>
                   <th className="px-2 py-2">Patient</th>
                   <th className="px-2 py-2">MRN</th>
@@ -472,10 +587,26 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
                     <React.Fragment key={groupKey}>
                       <tr
                         data-cy="rt-worklist-patient-row"
-                        className="border-input bg-popover/50 hover:bg-popover cursor-pointer border-t"
-                        onClick={() =>
-                          setExpandedPatients(prev => ({ ...prev, [groupKey]: !patientExpanded }))
+                        aria-expanded={patientExpanded}
+                        className={`${
+                          rowAppearance({
+                            index: visibleRows.findIndex(r => r.id === groupKey),
+                            selected: false,
+                            focused: focusedRowId === groupKey,
+                            isGroupHeader: true,
+                          }).className
+                        } border-input border-t`}
+                        style={
+                          rowAppearance({
+                            index: visibleRows.findIndex(r => r.id === groupKey),
+                            focused: focusedRowId === groupKey,
+                            isGroupHeader: true,
+                          }).style as React.CSSProperties
                         }
+                        onClick={() => {
+                          setFocusedRowId(groupKey);
+                          setExpandedPatients(prev => ({ ...prev, [groupKey]: !patientExpanded }));
+                        }}
                       >
                         <td className="text-muted-foreground px-2 py-1.5">
                           {patientExpanded ? '▾' : '▸'}
@@ -498,7 +629,24 @@ export function RtWorklistPage(props: ManagersProps): React.ReactElement {
                             <React.Fragment key={study.studyInstanceUid}>
                               <tr
                                 data-cy="rt-worklist-study-row"
-                                className="border-input hover:bg-popover/40 border-t"
+                                aria-expanded={studyExpanded}
+                                className={`${
+                                  rowAppearance({
+                                    index: visibleRows.findIndex(
+                                      r => r.id === study.studyInstanceUid
+                                    ),
+                                    selected: focusedRowId === study.studyInstanceUid,
+                                  }).className
+                                } border-input border-t`}
+                                style={
+                                  rowAppearance({
+                                    index: visibleRows.findIndex(
+                                      r => r.id === study.studyInstanceUid
+                                    ),
+                                    selected: focusedRowId === study.studyInstanceUid,
+                                  }).style as React.CSSProperties
+                                }
+                                onClick={() => setFocusedRowId(study.studyInstanceUid)}
                               >
                                 <td className="px-2 py-1.5"></td>
                                 <td className="px-2 py-1.5" colSpan={3}>
