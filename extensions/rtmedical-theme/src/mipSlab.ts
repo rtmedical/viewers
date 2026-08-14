@@ -1,6 +1,6 @@
 /**
  * MIP/MinIP/AvgIP slab projection state model (RTV-15) + 2D slab thickness
- * rules (RTV-19). Pure module — no OHIF/cornerstone imports — so the command
+ * rules (RTV-19) + DRR / X-ray projection (RTV-18). Pure module — no OHIF/cornerstone imports — so the command
  * glue in ./mipSlabCommands stays thin and every decision is unit-testable.
  *
  * Cornerstone3D's BlendModes enum is referenced BY NAME here
@@ -9,15 +9,23 @@
  * numeric enum resolution lives in the glue.
  */
 
-/** User-facing projection modes ('none' = normal composite rendering). */
-export type SlabProjectionMode = 'none' | 'mip' | 'minip' | 'avg';
+/**
+ * User-facing projection modes ('none' = normal composite rendering).
+ *
+ * 'drr' (RTV-18) is the X-ray projection: vtk.js RADON_TRANSFORM_BLEND
+ * integrates attenuation along each ray, which is what a Digitally
+ * Reconstructed Radiograph is. It differs from the others in one important way
+ * — see DRR_SLAB_MM_DEFAULT.
+ */
+export type SlabProjectionMode = 'none' | 'mip' | 'minip' | 'avg' | 'drr';
 
 /** Names of the @cornerstonejs/core Enums.BlendModes members we map onto. */
 export type CsBlendModeName =
   | 'COMPOSITE'
   | 'MAXIMUM_INTENSITY_BLEND'
   | 'MINIMUM_INTENSITY_BLEND'
-  | 'AVERAGE_INTENSITY_BLEND';
+  | 'AVERAGE_INTENSITY_BLEND'
+  | 'RADON_TRANSFORM_BLEND';
 
 /** The whole feature state: which projection and how thick the slab is. */
 export interface SlabProjectionState {
@@ -32,11 +40,24 @@ export const SLAB_MM_DEFAULT = 10;
 /** Step applied by the toolbar Slab +/− buttons (and delta fallback). */
 export const SLAB_MM_STEP = 5;
 
+/**
+ * Default slab for DRR (RTV-18): the FULL thickness, not the 10 mm used by the
+ * other projections.
+ *
+ * A radiograph is the integral of attenuation through the whole patient. A 10 mm
+ * radon projection is not a DRR — it is a thick-slab X-ray-ish reformat, and it
+ * would look wrong against a real portal image. So DRR opens at the maximum slab
+ * and, unlike MIP/MinIP/AvgIP, does NOT inherit the slab left behind by a
+ * previous projection (see applyProjectionRequest).
+ */
+export const DRR_SLAB_MM_DEFAULT = SLAB_MM_MAX;
+
 const MODE_TO_BLEND_NAME: Record<SlabProjectionMode, CsBlendModeName> = {
   none: 'COMPOSITE',
   mip: 'MAXIMUM_INTENSITY_BLEND',
   minip: 'MINIMUM_INTENSITY_BLEND',
   avg: 'AVERAGE_INTENSITY_BLEND',
+  drr: 'RADON_TRANSFORM_BLEND',
 };
 
 const BLEND_NAME_TO_MODE: Record<CsBlendModeName, SlabProjectionMode> = {
@@ -44,6 +65,19 @@ const BLEND_NAME_TO_MODE: Record<CsBlendModeName, SlabProjectionMode> = {
   MAXIMUM_INTENSITY_BLEND: 'mip',
   MINIMUM_INTENSITY_BLEND: 'minip',
   AVERAGE_INTENSITY_BLEND: 'avg',
+  RADON_TRANSFORM_BLEND: 'drr',
+};
+
+/**
+ * Aliases accepted for a projection mode. 'rx' and 'xray' exist because the
+ * requirement is worded "projeção de RX" and a Portuguese-speaking caller will
+ * reach for that first.
+ */
+const MODE_ALIASES: Record<string, SlabProjectionMode> = {
+  drr: 'drr',
+  rx: 'drr',
+  xray: 'drr',
+  'x-ray': 'drr',
 };
 
 /** Round to 0.1 mm so ± stepping never accumulates float dust in toasts. */
@@ -66,9 +100,10 @@ export function normalizeMode(input: unknown): SlabProjectionMode | null {
     return null;
   }
   const value = input.trim().toLowerCase();
-  return value === 'none' || value === 'mip' || value === 'minip' || value === 'avg'
-    ? value
-    : null;
+  if (value === 'none' || value === 'mip' || value === 'minip' || value === 'avg') {
+    return value;
+  }
+  return MODE_ALIASES[value] ?? null;
 }
 
 /**
@@ -151,7 +186,23 @@ export function applyProjectionRequest(
   const mode =
     requestedSlabMm === undefined ? nextMode(current.mode, requestedMode) : requestedMode;
   if (mode === 'none') {
-    return { mode: 'none', slabMm: effectiveSlabMm(undefined, current.slabMm) };
+    // Leaving DRR must not hand a 100 mm slab to the next MIP — that would come
+    // as a surprise on the very next button press.
+    const remembered =
+      current.mode === 'drr' ? SLAB_MM_DEFAULT : effectiveSlabMm(undefined, current.slabMm);
+    return { mode: 'none', slabMm: remembered };
+  }
+  if (mode === 'drr') {
+    // Full thickness unless the caller asked for something specific: a DRR
+    // integrates through the whole patient, and inheriting a previous 10 mm slab
+    // would silently produce a thick-slab reformat instead of a radiograph.
+    return {
+      mode,
+      slabMm:
+        typeof requestedSlabMm === 'number' && Number.isFinite(requestedSlabMm)
+          ? clampSlab(requestedSlabMm)
+          : DRR_SLAB_MM_DEFAULT,
+    };
   }
   return { mode, slabMm: effectiveSlabMm(requestedSlabMm, current.slabMm) };
 }

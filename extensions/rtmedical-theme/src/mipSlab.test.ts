@@ -1,4 +1,5 @@
 import {
+  DRR_SLAB_MM_DEFAULT,
   SLAB_MM_DEFAULT,
   SLAB_MM_MAX,
   SLAB_MM_MIN,
@@ -178,5 +179,72 @@ describe('mipSlab (RTV-15 MIP/MinIP/AvgIP + RTV-19 2D slab)', () => {
         slabMm: 30,
       });
     });
+  });
+});
+
+/**
+ * RTV-18 — DRR / X-ray projection. Appended to the RTV-15/19 suite because DRR is
+ * a fifth mode of the same state model, not a separate feature.
+ */
+describe('DRR / X-ray projection (RTV-18)', () => {
+  it('maps drr onto the vtk.js radon-transform blend mode', () => {
+    expect(blendModeNameFor('drr')).toBe('RADON_TRANSFORM_BLEND');
+    expect(modeForBlendModeName('RADON_TRANSFORM_BLEND')).toBe('drr');
+  });
+
+  it('accepts drr and the RX / X-ray aliases', () => {
+    // "projeção de RX" is how the requirement is worded, so a caller will reach
+    // for 'rx' before 'drr'.
+    expect(normalizeMode('drr')).toBe('drr');
+    expect(normalizeMode('DRR')).toBe('drr');
+    expect(normalizeMode('  rx ')).toBe('drr');
+    expect(normalizeMode('xray')).toBe('drr');
+    expect(normalizeMode('x-ray')).toBe('drr');
+  });
+
+  it('still rejects unknown modes', () => {
+    expect(normalizeMode('radon')).toBeNull();
+    expect(normalizeMode('drrr')).toBeNull();
+  });
+
+  it('opens at the FULL slab, not the 10 mm default', () => {
+    // A radiograph integrates through the whole patient; a 10 mm radon projection
+    // is a thick-slab reformat, not a DRR.
+    const next = applyProjectionRequest({ mode: 'none', slabMm: SLAB_MM_DEFAULT }, 'drr');
+    expect(next).toEqual({ mode: 'drr', slabMm: DRR_SLAB_MM_DEFAULT });
+    expect(DRR_SLAB_MM_DEFAULT).toBe(SLAB_MM_MAX);
+  });
+
+  it('does not inherit the slab left behind by a previous projection', () => {
+    const next = applyProjectionRequest({ mode: 'mip', slabMm: 20 }, 'drr');
+    expect(next.slabMm).toBe(DRR_SLAB_MM_DEFAULT);
+  });
+
+  it('honours an explicit thickness', () => {
+    const next = applyProjectionRequest({ mode: 'none', slabMm: 10 }, 'drr', 40);
+    expect(next).toEqual({ mode: 'drr', slabMm: 40 });
+  });
+
+  it('clamps an explicit thickness', () => {
+    expect(applyProjectionRequest({ mode: 'none', slabMm: 10 }, 'drr', 9999).slabMm).toBe(
+      SLAB_MM_MAX
+    );
+  });
+
+  it('toggles off when re-requested with no thickness', () => {
+    expect(applyProjectionRequest({ mode: 'drr', slabMm: SLAB_MM_MAX }, 'drr').mode).toBe('none');
+  });
+
+  it('does not hand a 100 mm slab to the next projection when switched off', () => {
+    // Leaving DRR and pressing MIP must not silently give a 100 mm MIP.
+    const off = applyProjectionRequest({ mode: 'drr', slabMm: SLAB_MM_MAX }, 'drr');
+    expect(off.slabMm).toBe(SLAB_MM_DEFAULT);
+    expect(applyProjectionRequest(off, 'mip').slabMm).toBe(SLAB_MM_DEFAULT);
+  });
+
+  it('leaves inheritance for the other projections untouched', () => {
+    // Regression guard for RTV-15/19 behaviour.
+    expect(applyProjectionRequest({ mode: 'none', slabMm: 20 }, 'mip').slabMm).toBe(20);
+    expect(applyProjectionRequest({ mode: 'mip', slabMm: 20 }, 'mip').mode).toBe('none');
   });
 });

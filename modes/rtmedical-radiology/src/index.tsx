@@ -135,6 +135,7 @@ export const radiologyToolbarSections = {
     'rtMip',
     'rtMinIp',
     'rtAvgIp',
+    'rtDrr',
     'rtSlabInc',
     'rtSlabDec',
     'rtSlabOff',
@@ -260,6 +261,24 @@ const mipSlabToolbarButtons = [
       evaluate: {
         name: 'evaluate.displaySetIsReconstructable',
         disabledText: 'Slab projection requires a reconstructable (volume) series',
+      },
+    },
+  },
+  {
+    // RTV-18: X-ray / DRR projection. Same command as MIP/MinIP/AvgIP with
+    // mode 'drr' -> vtk.js RADON_TRANSFORM_BLEND. Opens at the FULL slab, since
+    // a radiograph integrates through the whole patient (DRR_SLAB_MM_DEFAULT).
+    id: 'rtDrr',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-window-level',
+      label: 'DRR',
+      tooltip:
+        'X-ray projection (DRR) through the full slab (MPR viewports; click again to turn off)',
+      commands: { commandName: 'setSlabProjection', commandOptions: { mode: 'drr' } },
+      evaluate: {
+        name: 'evaluate.displaySetIsReconstructable',
+        disabledText: 'DRR requires a reconstructable (volume) series',
       },
     },
   },
