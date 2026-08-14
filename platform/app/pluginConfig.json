@@ -145,6 +145,9 @@
       "packageName": "@ohif/extension-rt-4d"
     },
     {
+      "packageName": "@ohif/extension-rt-tabs"
+    },
+    {
       "packageName": "@ohif/extension-cardiology"
     }
   ],
