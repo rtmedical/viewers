@@ -46,6 +46,7 @@ export const rtmedical = {
 export const extensionDependencies = {
   ...basicDependencies,
   '@ohif/extension-rtmedical-theme': '^3.0.0',
+  '@ohif/extension-rt-grid': '^3.0.0',
   '@ohif/extension-rtmedical-key-images': '^3.0.0',
   '@ohif/extension-cardiology': '^3.0.0',
   // RTV-79/78: Mammography/Chest CAD SR support.
@@ -139,6 +140,10 @@ export const radiologyToolbarSections = {
     'rtSlabInc',
     'rtSlabDec',
     'rtSlabOff',
+    'rtGrid',
+    'rtGridInc',
+    'rtGridDec',
+    'rtGridReset',
   ],
 };
 
@@ -308,6 +313,49 @@ const mipSlabToolbarButtons = [
         name: 'evaluate.displaySetIsReconstructable',
         disabledText: 'Slab thickness requires a reconstructable (volume) series',
       },
+    },
+  },
+  {
+    // RTV-142: grid de referencia em MILIMETROS (nao pixels) sobre a imagem.
+    // Espaçamento em mm e o ponto: um grid em pixels muda de significado com o
+    // zoom e com o pixel spacing de cada serie.
+    id: 'rtGrid',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-layout',
+      label: 'Grid',
+      tooltip: 'Toggle the millimetre reference grid on the active viewport',
+      commands: 'rtGridToggle',
+    },
+  },
+  {
+    id: 'rtGridInc',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'Plus',
+      label: 'Grid +',
+      tooltip: 'Coarser grid (+5 mm, max 200 mm)',
+      commands: { commandName: 'rtGridAdjustSpacing', commandOptions: { deltaMm: 5 } },
+    },
+  },
+  {
+    id: 'rtGridDec',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'Minus',
+      label: 'Grid -',
+      tooltip: 'Finer grid (-5 mm, min 1 mm)',
+      commands: { commandName: 'rtGridAdjustSpacing', commandOptions: { deltaMm: -5 } },
+    },
+  },
+  {
+    id: 'rtGridReset',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'Close',
+      label: 'Grid origin',
+      tooltip: 'Put the grid origin back on the image origin',
+      commands: 'rtGridResetOffset',
     },
   },
   {
