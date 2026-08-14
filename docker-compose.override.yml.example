@@ -1,0 +1,32 @@
+# RTV-231 — exemplo de override local. Copie para `docker-compose.override.yml`
+# (que o git ignora) e ajuste. O compose carrega o override automaticamente,
+# sem precisar de `-f`.
+#
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#   docker compose up -d
+#
+# Por que isto existe: o docker-compose.yml (RTV-3) mapeia `3000:80`, que é o
+# default certo na maioria das máquinas. No DEV1 a 3000 já é do rt-workspace-1,
+# então o `up` falha com conflito de porta. Em vez de mudar o default do repo,
+# cada máquina declara seu desvio aqui.
+#
+# Portas já ocupadas no DEV1 (10.0.0.21), levantadas em 2026-08-14:
+#   3000-3001  rt-workspace-1 (rtmedical/workspace)
+#   4200       rt-workspace-1
+#   8080       rt-arc-1 (dcm4chee-arc)  <- é o PACS com dados; ver docker/README.md
+#   8081       hapi-fhir
+#   8082       ehrbase
+#   8443, 9990, 9993, 11112, 2575  rt-arc-1
+#   18080, 9000  keycloak (auth-ci-sso309)
+#   Livres na época: 3010, 8042
+
+services:
+  viewer:
+    ports:
+      - '3010:80'
+
+  # O Orthanc do RTV-3 usa 8042, que estava livre no DEV1. Se conflitar na sua
+  # máquina, descomente e troque a porta do host.
+  # orthanc:
+  #   ports:
+  #     - '8142:8042'
