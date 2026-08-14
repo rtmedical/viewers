@@ -79,3 +79,6 @@ auth.json
 /*.png
 /*.jpeg
 /*.jpg
+
+# RTV-231 — override local do compose (portas por maquina); o .example fica versionado
+docker-compose.override.yml
