@@ -6,6 +6,13 @@ import { WhiteLabelingService } from './whiteLabeling/WhiteLabelingRootProvider'
 import { CommonHeader } from './components/CommonHeader';
 import RtLoadingIndicator from './components/RtLoadingIndicator/RtLoadingIndicator';
 import { TASK_ACTIONS, buildTaskMenuItems, canRunAction, createAuditLogger } from './taskActions';
+import {
+  curateVrPresets,
+  curatedVrPresetList,
+  groupVrPresets,
+  VR_PRESET_GROUP_LABELS,
+  VR_PRESET_GROUP_ORDER,
+} from './vrPresets';
 
 /**
  * Registers RT Medical theme customizations with OHIF's CustomizationService.
@@ -53,6 +60,24 @@ export default function getCustomizationModule({
     canRunAction,
     createAuditLogger,
   };
+  const vrPresetsCustomization = {
+    // RTV-18 — RT-oriented ordering/grouping for the volume-rendering presets.
+    // The presets themselves are NOT redefined: @cornerstonejs/core already ships
+    // ~26 transfer functions, surfaced by extensions/cornerstone's
+    // 'cornerstone.3dVolumeRendering'. What is missing is order and grouping, so
+    // this exposes pure functions the preset picker applies to the stock list:
+    //   curatedVrPresetList(stockPresets)  -> same objects, RT order (drop-in for
+    //                                         `volumeRenderingPresets`)
+    //   groupVrPresets(stockPresets)       -> clinical buckets for a grouped picker
+    // Functions rather than data because rtmedical-theme must not import
+    // '@cornerstonejs/core' (nested dead copy — see touchGestures.ts), so the
+    // stock list has to be handed in by the consumer.
+    curateVrPresets,
+    curatedVrPresetList,
+    groupVrPresets,
+    VR_PRESET_GROUP_ORDER,
+    VR_PRESET_GROUP_LABELS,
+  };
   return [
     {
       // These extension-owned ids do not collide with OHIF defaults. About is
@@ -67,6 +92,7 @@ export default function getCustomizationModule({
         // namespace; the RT modes promote it to 'ui.loadingIndicatorProgress'
         // (mode scope) so the OHIF default stays untouched elsewhere.
         'rtmedical.loadingIndicatorProgress': RtLoadingIndicator,
+        'rtmedical.vrPresets': vrPresetsCustomization,
       },
     },
     {
@@ -84,6 +110,10 @@ export default function getCustomizationModule({
     {
       name: 'rtmedical.taskActions',
       value: taskActionsCustomization,
+    },
+    {
+      name: 'rtmedical.vrPresets',
+      value: vrPresetsCustomization,
     },
   ];
 }
