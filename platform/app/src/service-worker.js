@@ -17,7 +17,7 @@ workbox.routing.registerRoute(
   ({ url }) =>
     url.origin === self.location.origin &&
     !url.pathname.endsWith('/app-config.js') &&
-    /\.(?:js|css|json5)$/.test(url.pathname),
+    /\.(?:js|css|json5|jsonc)$/.test(url.pathname),
   new workbox.strategies.StaleWhileRevalidate({
     cacheName: `medical-viewer-static-resources-${scopeCacheSuffix}`,
   })
