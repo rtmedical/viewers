@@ -1,0 +1,38 @@
+# RTV-231 — viewer apontado para um dcm4chee-arc que JÁ existe no host.
+#
+# Diferença em relação ao docker-compose.yml (RTV-3): aqui NÃO subimos PACS.
+# O RTV-3 sobe um Orthanc novo, que nasce vazio; este perfil reaproveita um
+# dcm4chee-arc já populado — no DEV1, o container `rt-arc-1`, que publica
+# 8080 no host e responde em /dcm4chee-arc/aets/RTPACS/rs.
+#
+# Uso (a partir da raiz do repo):
+#   docker compose -f docker-compose.dcm4chee.yml up -d --build
+#
+# ⚠️  ATENÇÃO — custo de memória. O build passa por `pnpm install` + `rspack
+#     build` dentro do container. Numa máquina de 5.6 GiB (o DEV1) isso derruba
+#     o host: medimos ~190 MiB livres, swap 13/15 GiB e load average 74 em 10
+#     cores, com o sshd parando de aceitar conexão. Leia docker/README.md antes
+#     de rodar isto no DEV1 — existe um caminho sem build in-container.
+#
+# O nginx do viewer proxia /dicom-web e /wado-uri para o dcm4chee, então o
+# browser continua same-origin e não é preciso configurar CORS no dcm4chee.
+
+services:
+  viewer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_CONFIG: config/docker_compose_dcm4chee.js
+    container_name: rtv-viewer-dcm4chee
+    restart: unless-stopped
+    ports:
+      # 3000 costuma estar ocupada (no DEV1, pelo rt-workspace-1).
+      - '3010:80'
+    extra_hosts:
+      # O dcm4chee não está nesta compose network — ele roda no host. Este alias
+      # faz `dcm4chee-host` resolver para o gateway do host de dentro do
+      # container, que é o que o template nginx usa como upstream.
+      - 'dcm4chee-host:host-gateway'
+    volumes:
+      - ./docker/nginx-dcm4chee.conf.template:/usr/src/default.conf.template:ro

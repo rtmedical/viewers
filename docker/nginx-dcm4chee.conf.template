@@ -1,0 +1,63 @@
+# RTV-231 — nginx template para o serviço `viewer` do docker-compose.dcm4chee.yml.
+#
+# Igual ao docker/nginx-default.conf.template (RTV-3), trocando o upstream: em vez
+# de proxiar para o serviço `orthanc` da compose network, proxia para um
+# dcm4chee-arc que roda no HOST, alcançado pelo alias `dcm4chee-host` (definido
+# em extra_hosts: host-gateway). Mantém o browser same-origin — sem CORS no dcm4chee.
+#
+# Os dois roots do dcm4chee são diferentes, e é por isso que há dois locations:
+#   QIDO-RS / WADO-RS / STOW-RS  ->  /dcm4chee-arc/aets/RTPACS/rs
+#   WADO-URI                     ->  /dcm4chee-arc/aets/RTPACS/wado
+#
+# Para apontar para outro AET (RTPACS_ANCHIETA, AUTOSEG, QA, ...) troque `RTPACS`
+# nos dois proxy_pass abaixo E em platform/app/public/config/docker_compose_dcm4chee.js.
+server {
+  gzip_static  always;
+  gzip_proxied expired no-cache no-store private auth;
+  gunzip       on;
+  listen ${PORT} default_server;
+  listen [::]:${PORT} default_server;
+  absolute_redirect off;
+  location = ${PUBLIC_PATH}app-config.js {
+    root   /usr/share/nginx/html;
+    add_header Cache-Control "no-store";
+    add_header Cross-Origin-Resource-Policy same-origin;
+  }
+  location /dicom-web {
+    proxy_pass http://dcm4chee-host:8080/dcm4chee-arc/aets/RTPACS/rs;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    client_max_body_size 0;
+    proxy_read_timeout 300s;
+  }
+  location /wado-uri {
+    proxy_pass http://dcm4chee-host:8080/dcm4chee-arc/aets/RTPACS/wado;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    client_max_body_size 0;
+    proxy_read_timeout 300s;
+  }
+  ${PUBLIC_PATH_REDIRECT}
+  location ${PUBLIC_PATH} {
+    root   /usr/share/nginx/html;
+    index  index.html index.htm;
+    try_files $uri $uri/ ${PUBLIC_PATH}index.html;
+    add_header Cross-Origin-Resource-Policy same-origin;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+  }
+  location /dicom-microscopy-viewer/ {
+    root   /usr/share/nginx/html;
+    add_header Cross-Origin-Resource-Policy same-origin;
+  }
+  error_page   500 502 503 504  /50x.html;
+  location = /50x.html {
+    root   /usr/share/nginx/html;
+  }
+}
