@@ -11,6 +11,10 @@
  *   resampling, rotation-minimising frames, and the three Kanitsar modes.
  * - **Multi-station stitching** (RTV-60): frame-of-reference-checked composition of
  *   overlapping angio stations, with a linear blend across the overlap.
+ * - **VIP — Volume Intensity Projection** (RTV-16): the transmittance-weighted
+ *   maximum along the ray, which is MIP with the depth cue put back. Reduces
+ *   exactly to MIP as opacity goes to zero. Reference implementation for the
+ *   shader, plus the three clinical presets and the frame-budget pre-flight.
  *
  * What it does NOT contain: marching cubes and an STL writer. vtk.js ships
  * `vtkImageMarchingCubes` and `STLWriter`, both bundled. What was missing — and what
@@ -19,6 +23,7 @@
  *
  * Follows RTV-114 (extension-first, zero fork).
  */
+export * from './vip';
 export * from './ssdPresets';
 export * from './ssdBudget';
 export * from './dsa';

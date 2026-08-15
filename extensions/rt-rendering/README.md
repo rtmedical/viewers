@@ -234,3 +234,50 @@ has been run against a real multi-station run; the DEV1 PACS has no angio.
 ```bash
 node node_modules/.bin/jest --config extensions/rt-rendering/jest.config.js --ci
 ```
+
+## VIP — Volume Intensity Projection (RTV-16)
+
+`vip.ts` — modo composto entre MIP e volume rendering. Core puro, sem vtk e sem WebGL: é a
+implementação de referência com a qual o shader tem que concordar, e é o que dá para
+testar — string de GLSL não dá.
+
+**A definição, escrita, porque "entre MIP e VR" não é uma.** O MIP devolve `max(vᵢ)`: é
+imbatível para *achar* uma estrutura brilhante e inútil para dizer *onde* ela está — uma
+placa calcificada na frente da aorta e outra atrás produzem o mesmo pixel. O VR compõe tudo
+e preserva profundidade, mas uma estrutura pequena e brilhante dentro de tecido denso é
+diluída até sumir. VIP aqui é o **máximo ponderado pela transmitância**:
+
+```
+VIP = max sobre i de ( Tᵢ · vᵢ ),   Tᵢ = Π_{j<i} (1 − αⱼ)
+```
+
+`Tᵢ` é quanta luz ainda chega à amostra *i* atravessando tudo que está na frente. Estrutura
+brilhante atrás de tecido denso é atenuada na proporção do que ela se esconde atrás, então a
+profundidade volta; estrutura brilhante no vazio fica intocada, então a leitura do MIP
+sobrevive. E a definição tem uma propriedade que vale ter: **com opacidade tendendo a zero
+em todo lugar, VIP vira exatamente MIP** — é generalização estrita, não outra imagem. Tem
+teste do limite. O que não consegue enunciar sua relação com o MIP vai ser discutido para
+sempre na homologação.
+
+**Opacidade tem que ser corrigida pelo espaçamento de amostragem.** É o bug que faz volume
+rendering escurecer misteriosamente. O α de uma função de transferência é opacidade *por
+unidade de comprimento* — propriedade do tecido, não de quão fino você amostrou. Aplicar uma
+vez por amostra faz dobrar as multiplicações ao dividir o passo pela metade, então a mesma
+anatomia renderiza mais escura em qualidade maior; o leitor muda a espessura do slab, a
+imagem muda de brilho, e ele conclui que o dado mudou. `correctOpacity` aplica
+`1 − (1 − α)^(Δs/Δs_ref)`, e há teste que renderiza o mesmo raio em dois passos e exige a
+mesma resposta — mais um que demonstra o erro na versão sem correção, para o guarda não ser
+vazio.
+
+**Terminação antecipada é correção *e* orçamento de frame.** Quando `T` cai abaixo de 1/255,
+nada mais adiante pode contribuir além de arredondamento, e o laço para. É o que torna os
+≥20 fps alcançáveis num CT de tórax, e é também uma afirmação sobre o resultado: amostras
+atrás de um raio saturado **não podem** mudá-lo. Testado nos dois sentidos.
+
+`planVip` reporta o passo que cabe no orçamento em vez de aplicá-lo em silêncio: projeção
+renderizada caladamente a 3 mm quando o leitor pediu 0,5 parece outro dataset, e a única
+coisa pior que um render lento é um render rápido e errado sobre o qual ninguém foi avisado.
+
+Falta: o shader GLSL no vtk.js volume mapper e o registro do modo no viewport. O que
+existe aqui é a matemática, os três presets clínicos (osso, vascular, tecido) e o pré-voo
+de performance.
