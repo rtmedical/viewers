@@ -195,3 +195,49 @@ yarn jest --selectProjects rtmedical-theme
 
 Pure resolvers, cache, fetch, theme/document appliers and the React
 provider/hook are covered by unit tests (jest + jsdom + Testing Library).
+
+## Sync de hanging protocols com o Connect (RTV-149)
+
+`hpPersistence/hpSync.ts` — a orquestração em cima das peças do RTV-24 (store local com
+versão por registro, `resolveConflict` de dois registros, e o seam
+`IHangingProtocolSyncClient`). O que um sync completo faz, e quando um protocolo pode
+mexer no layout do leitor.
+
+**O critério de 2 segundos é "nunca esperar a rede", não "deixar a rede rápida".** Se
+aplicar protocolo significa aguardar a API do Connect, todo soluço de rede é viewport em
+branco — e um timeout é viewport em branco pelo tempo do timeout. O caminho de leitura é
+**só cache**: `resolveProtocolForStudy` é síncrona por construção, não há o que aguardar. O
+sync roda ao lado. O cache é a fonte de verdade para exibir; o servidor é como o cache
+melhora com o tempo.
+
+**Protocolo que chega atrasado não pode re-aplicar.** É a decisão que dá forma ao módulo.
+Se um sync termina trinta segundos depois de o leitor abrir o estudo e traz um protocolo
+mais novo, re-aplicar jogaria fora todo window/level, scroll e layout que ele ajustou — no
+meio da leitura, sem aviso, num exame que ele está interpretando. **Layout velho é muito
+menos danoso que layout que se mexe embaixo dele.** `shouldAutoApply` recusa depois que a
+sessão já aplicou um, recusa mais forte depois que o leitor mexeu, e protocolo recém
+sincronizado só vale no *próximo* estudo.
+
+**Push que falha não pode avançar o sync point.** `lastSyncedAt` é contra o que
+`resolveConflict` mede "mudou desde". Avance depois de um push que não chegou e a edição
+local passa a parecer *mais velha* que o ponto de sync: a próxima rodada classifica como
+não-alterada, o remoto ganha, e o protocolo do leitor é sobrescrito em silêncio pela versão
+da qual ele se afastou. `syncOnce` só avança quando a troca inteira deu certo, e há teste
+do retry provando que a edição continua sendo classificada como mudança local.
+
+**Conflito é exposto, nunca auto-mesclado.** Quando os dois lados mudaram, `resolveConflict`
+aponta um provável vencedor, mas o engine **não escreve**. Hanging protocol é o arranjo
+deliberado de leitura de alguém; escolher por ele e não dizer nada faz o perdedor descobrir
+percebendo que o layout está diferente. Os conflitos voltam em `SyncReport.conflicts` para a
+UI perguntar. Resolver carimba `updatedAt` novo, porque a escolha *é* uma edição — sem isso
+o mesmo conflito ressurge para sempre.
+
+**Tombstone agora propaga de verdade.** O RTV-24 escreveu o soft-delete "para o sync
+propagar a remoção", mas `list()` esconde tombstones — então uma exclusão local nunca
+chegava ao servidor e voltava no pull seguinte. `listAll()` e `saveRecord()` foram
+acrescentados ao store, e o sync lê por eles. `saveRecord` grava o registro do servidor
+**verbatim**: re-carimbar versão e autor faria todo pull parecer edição local e ser
+re-enviado para sempre.
+
+Falta: o cliente HTTP real contra o Connect (só existe o mock do RTV-24), o agendamento do
+sync em background e a UI de conflito.
