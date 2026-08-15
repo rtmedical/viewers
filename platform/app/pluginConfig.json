@@ -145,6 +145,9 @@
       "packageName": "@ohif/extension-rt-lesion-tracker"
     },
     {
+      "packageName": "@ohif/extension-thorax-abdomen"
+    },
+    {
       "packageName": "@ohif/extension-rt-rendering"
     },
     {
