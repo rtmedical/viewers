@@ -7,6 +7,8 @@
  *   out-of-phase reconstructions of a Dixon acquisition from ImageType and
  *   SeriesDescription, and hangs them 2x2 with slice and window/level
  *   synchronised.
+ * - **RTV-81 — DWI and ADC.** b-value detection across the standard and vendor
+ *   private tags, and a noise-floor-aware monoexponential ADC fit.
  * - **RTV-82 — parametric maps.** Perceptually-uniform colour LUTs (viridis,
  *   magma, inferno, plasma, grayscale), an adjustable display range with the
  *   window/level equivalence, a transparency threshold for overlaying anatomy,
@@ -26,6 +28,7 @@
 export * from './dixon';
 export * from './parametricLut';
 export * from './parametricRange';
+export * from './adc';
 export { dixonProtocol, dixonProtocols, DIXON_PROTOCOL_ID } from './hangingProtocols/dixonProtocol';
 export { ParametricMapPanel } from './getPanelModule/ParametricMapPanel';
 

@@ -97,6 +97,63 @@ self-contained and `@ohif/*`-free (see `extensions/rt-plan/README.md`), and
 `rt-fusion` sets the same precedent by mirroring the isodose colormap names rather
 than importing them.
 
+## RTV-81 — DWI and ADC
+
+ADC comes from the monoexponential model `S(b) = S0 · exp(-b · ADC)`, so taking logs
+turns it into a straight line and the fit is ordinary least squares on `ln S` against `b`.
+
+The arithmetic is three lines. Everything that makes an ADC map *right* is the guards
+around it.
+
+### The noise floor is what biases ADC
+
+At high b the diffusion signal decays toward the noise floor. Magnitude MR noise is
+**Rician**, not Gaussian, so it does not average to zero — it **raises** the measured
+signal wherever the true signal has decayed below it. The log of a floored signal
+flattens, the fitted slope goes shallow, and **ADC comes out too low exactly where
+restricted diffusion matters**: in the bright-on-high-b lesion the reader is looking at.
+
+`fitAdc` takes a `noiseFloor`, drops samples at or below it, and reports how many. There
+is a test that demonstrates the bias in the right direction (a floored b = 5000 sample
+pulls a true 800 ×10⁻⁶ ADC down to ~633) and a second showing it recovers once the sample
+is excluded.
+
+It deliberately does **not** attempt a Rician bias correction: that needs a noise-sigma
+estimate this module has no way to obtain, and a wrong correction is worse than a
+documented omission.
+
+### Two b-values is exact, three or more is a fit
+
+Both are supported, and the result says which — they are not equally trustworthy. A
+two-point ADC inherits the full noise of both points with **no residual to check it
+against**, so `r2` is `NaN` there rather than a misleading 1.0.
+
+### Where a b-value hides
+
+The standard attribute is `DiffusionBValue` (0018,9087), but plenty of installed scanners
+write only their private tag — Siemens (0019,100C), GE (0043,1039), Philips (2001,1003) —
+and a viewer that reads only the standard one silently treats a multi-b series as a single
+acquisition. GE's offset encoding (`1000000750` meaning b = 750) is decoded.
+
+A series with **no** readable b-value is excluded rather than assumed to be b = 0:
+treating an unknown as zero would make it the reference signal for every other point and
+skew the whole fit.
+
+### Guards
+
+A fitted ADC outside 0 – 0.01 mm²/s is rejected as non-physical (signal *rising* with b is
+not diffusion). `computeAdcMap` writes **0** where a voxel fails, not `NaN` — a NaN voxel
+makes every downstream statistic special-case it.
+
+Output is in **×10⁻⁶ mm²/s**, the same unit the parametric-map panel (RTV-82) displays,
+so the two halves of this extension line up.
+
+### Not delivered
+
+The map is computed from signal arrays the caller supplies; pulling the b-value frames out
+of a loaded display set and pushing the result back as a derived volume is the integration
+step. Nothing has been run against a real DWI series — the DEV1 PACS has no MR.
+
 ## Scope / follow-ups
 
 - **Layer compositing is not wired.** `rtApplyParametricMap` goes as far as the
@@ -106,8 +163,8 @@ than importing them.
   volume actor and is a cornerstone integration follow-up, the same boundary
   `rt-fusion` and `rt-isodose` draw. The pure colour/alpha function that layer
   will use (`mapValueToRgba`) is already here and unit-tested.
-- **ADC is not computed here.** This extension *displays* parametric maps.
-  Computing ADC from multi-b DWI is **RTV-81**.
+- **ADC computation landed** (RTV-81, see above). The remaining gap is wiring it
+  to a loaded display set rather than to caller-supplied arrays.
 - **Not validated against real data.** The DEV1 PACS has no MR Dixon and no
   parametric-map series (its 11 studies are CT/RTIMAGE/RTPLAN/RTSTRUCT — see
   `docker/README.md`), and the fork's CI is blocked by a GitHub billing lock, so
