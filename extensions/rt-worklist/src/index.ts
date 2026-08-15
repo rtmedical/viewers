@@ -20,8 +20,19 @@
  * QIDO and open the study set in the auto-selected mode (radiotherapy when
  * any study carries an RT modality, radiology otherwise). The pure request
  * parsing lives in iheInvoke.ts.
+ *
+ * RTV-191 adds the bulk-operation cores: worklistSelection.ts (id-based
+ * multi-select with shift+click ranges and a query-mode "select all
+ * matching"), worklistBatch.ts (chunked runs with progress, honest partial
+ * failure and a 5s undo that restores each study's own previous value) and
+ * worklistExport.ts (CSV of the visible columns, with formula-injection
+ * escaping). All pure; the batch endpoints do not exist yet and the row
+ * checkboxes are not wired into RtWorklistPage.
  */
 export * from './worklistModel';
+export * from './worklistSelection';
+export * from './worklistBatch';
+export * from './worklistExport';
 export * from './iheInvoke';
 export { RtWorklistPage } from './RtWorklistPage';
 export { IheInvokePage } from './IheInvokePage';
