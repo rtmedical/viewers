@@ -8,9 +8,18 @@
  * Scope: config/state + preview delivered. Compositing the moving layer onto the
  * fixed layer in the cornerstone viewport (with the rt-isodose colormap LUT) is
  * an integration follow-up.
+ *
+ * RTV-134 adds the Fusion modal cores: fusionRegistration.ts (isocenter
+ * alignment, rotation about a centre of rotation, rigid inverse) and
+ * fusionSession.ts (pair validation and step flow, including skipping the
+ * isocenter step when the two series already share a Frame of Reference, and
+ * the Spatial Registration draft to STOW back). The modal component itself,
+ * the composited preview and the STOW-RS call are integration follow-ups.
  */
 export * from './fusionConfig';
 export * from './fusionTools';
+export * from './fusionRegistration';
+export * from './fusionSession';
 
 import getPanelModule from './getPanelModule';
 
