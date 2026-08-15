@@ -184,6 +184,51 @@ come from the caller; automatic vessel tracking (Frangi vesselness) is **RTV-62*
 Stenosis analysis along the curve, which RTV-61 also asks for, is not here either.
 Nothing has been run against a real angio volume — the DEV1 PACS has no CTA.
 
+## Multi-station stitching (RTV-60)
+
+Whole-body angiography is acquired in stations (pelvis, thigh, calf) that overlap by
+design. Composing them into one volume is what makes a whole-body MIP possible.
+
+### The check that has to come first
+
+Stations can only be composed if they share a **`FrameOfReferenceUID`**. That UID is the
+DICOM statement that two series' coordinates mean the same thing; without it, their
+`ImagePositionPatient` values are numbers in unrelated spaces.
+
+Stitching across frames of reference **does not fail loudly** — it produces a composite
+that looks plausible and is geometrically wrong. That is the worst possible outcome for a
+study someone will measure a stenosis on, so `planStitch` refuses with a reason rather
+than composing. When no station declares one at all, it proceeds but says it is assuming.
+
+### The detail that makes it look right
+
+Concatenating at the overlap boundary leaves a visible seam: the two stations differ
+slightly in noise, contrast phase and detector response, and the eye finds a straight
+horizontal line instantly. `blendWeightAt` ramps **linearly** across the overlap so the
+transition is spread over centimetres.
+
+Linear rather than a smoothstep on purpose: a smooth curve keeps the two stations near
+50/50 across most of the overlap, which doubles the noise where the ramp is flattest.
+Linear spends the least distance at the noisiest mix.
+
+### Two more decisions
+
+**The output is resampled at the finest station's spacing, not the coarsest.**
+Downsampling to the coarse station throws away detail that was acquired — and a
+whole-body run is usually finest in the calf, where the vessels are smallest.
+
+**A gap between stations is a warning, not an error.** The composite simply has nothing
+there. But it must be said, because *a MIP across a gap looks like an occluded vessel* —
+and `contributionsAt` returns an empty list inside the gap rather than inventing a
+neighbour's data.
+
+### Not delivered
+
+The resampling and the actual voxel blending: this is the geometry, the plan and the
+weights. Also not here: any handling of stations that differ in x/y (mosaicing) — this
+composes along the patient axis only, which is what a stepping table produces. Nothing
+has been run against a real multi-station run; the DEV1 PACS has no angio.
+
 ## Tests
 
 ```bash
