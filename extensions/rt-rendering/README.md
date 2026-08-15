@@ -281,3 +281,39 @@ coisa pior que um render lento é um render rápido e errado sobre o qual ningu�
 Falta: o shader GLSL no vtk.js volume mapper e o registro do modo no viewport. O que
 existe aqui é a matemática, os três presets clínicos (osso, vascular, tecido) e o pré-voo
 de performance.
+
+## Frangi — realce de vasos (RTV-62)
+
+`frangi.ts` — estrutura tubular tem assinatura característica no Hessiano: um autovalor
+pequeno ao longo do vaso e dois grandes, de mesmo sinal, atravessando. A fórmula é curta e
+amplamente publicada. **Quatro coisas em volta dela decidem se a implementação acha vasos ou
+não acha nada**, e as quatro erram em silêncio — o filtro sempre produz *algum* número.
+
+**O sinal é a diferença inteira entre vasos e o complemento deles.** Para vaso **claro** em
+fundo escuro, os dois autovalores transversais são **negativos**. Sem a checagem de sinal o
+filtro responde a tubos escuros — vias aéreas em vez de artérias, e numa TC com contraste
+isso é um resultado confiante, liso e completamente errado. `vesselness` recebe a polaridade
+explicitamente, **sem default**, e devolve exatamente zero para a polaridade errada em vez de
+um positivo fraco (positivo fraco vira problema de limiar; zero é rejeição limpa).
+
+**Sem normalização por γ, a maior escala sempre vence.** Derivadas segundas de gaussiana
+mudam de magnitude com σ, então escalas cruas não são comparáveis e o máximo é decidido pela
+aritmética e não pela anatomia. Multiplicar por `σ²` torna comensuráveis — e é isso que
+permite o **argmax sobre escala ser uma estimativa de calibre**.
+
+**`c` depende dos dados e um valor fixo torna o filtro inútil.** O termo de estruturidade
+suprime fundo usando `c`, que precisa ser cerca de metade da norma máxima do Hessiano *neste
+volume*. Constante calibrada num dataset mata silenciosamente a resposta noutro com faixa de
+intensidade diferente — e a falha **parece "não há vasos aqui"**, não parece bug.
+
+**Uma escala acha um calibre.** Filtro de escala única não é filtro de vasos; é filtro de
+vasos de um tamanho. `multiscaleVesselness` maximiza sobre escalas **e devolve o σ vencedor**,
+então quem chama ganha o calibre de graça em vez de rodar três vezes e jogar essa informação
+fora. Há teste com cilindros sintéticos de raio 1 e 5 mostrando o σ vencedor acompanhando.
+
+Autovalores por solução analítica (Smith) e não iterativa: isso roda uma vez por voxel por
+escala, e um solver iterativo poria um laço de convergência na posição mais interna do filtro
+inteiro.
+
+Falta: a extração de centerline a partir do mapa de resposta (o `centerline.ts` do RTV-14 já
+consome pontos, então a costura existe), a ligação com um volume carregado, e a UI.
