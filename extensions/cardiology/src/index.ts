@@ -4,9 +4,18 @@
  * Cardiology tooling for OHIF v3 — AHA 17-segment bullseye polar map (RTV-48):
  * clickable segments with slice navigation, customizable perfusion color
  * scales and SVG/PNG export. Pure framework-free core (ahaBullseye.ts) + a
- * right panel. Follows RTV-114 (extension-first / zero fork).
+ * right panel.
+ *
+ * RTV-47 adds cardiacFunction.ts: ventricular volumes by summation of disks,
+ * ejection fraction and myocardial mass — with the slice gap required rather
+ * than defaulted, the papillary-muscle convention required rather than
+ * assumed, and a cross-study comparison that refuses when the two were traced
+ * under different conventions.
+ *
+ * Follows RTV-114 (extension-first / zero fork).
  */
 export * from './ahaBullseye';
+export * from './cardiacFunction';
 
 import getPanelModule from './getPanelModule';
 
