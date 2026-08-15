@@ -116,3 +116,41 @@ paciente para o exame que decide.
 
 A descrição da série derivada carrega o aviso junto com os pixels: quem abrir a série três
 meses depois não tem outro lugar de onde tirar isso.
+
+## Classificação de materiais (RTV-88)
+
+`materialClassification.ts` — a razão dual-energy (atenuação em kVp baixo sobre kVp alto)
+depende do número atômico efetivo e quase nada da densidade. Água e uma solução diluída de
+água têm a mesma razão; água e cálcio não. É isso que faz da razão uma **assinatura de
+material** em vez de uma medida de densidade.
+
+**A razão é sem sentido em material de baixa atenuação.** A razão é
+`(HU_baixo + 1000)/(HU_alto + 1000)`. Quando os dois se aproximam da água, numerador e
+denominador se aproximam de 1000 e **a razão tende a 1 seja qual for o material** — enquanto
+o ruído em cada um continua do mesmo tamanho. Uma estrutura de 20 HU tem razão inteiramente
+dominada por ruído, e vai classificar como alguma coisa, com confiança. Por isso há um piso
+duro de atenuação: sem ele, o overlay colorido cobre as partes moles inteiras e **todo voxel
+tem uma opinião**.
+
+**A dupla energia separa ácido úrico de todo o resto. Ela não separa o resto.** É a afirmação
+clinicamente estruturante. Ácido úrico (Z≈7) e cálculos cálcicos (Z≈15–20) estão longe e são
+distinguíveis de forma confiável. Oxalato de cálcio e fosfato de cálcio **não são**: as
+razões se sobrepõem em dose e tamanho clínicos.
+
+E a distinção que importa clinicamente é exatamente a que a dupla energia consegue fazer —
+cálculo de ácido úrico dissolve com alcalinização urinária, cálculo cálcico não. Então este
+módulo reporta `uricAcid` versus `nonUricAcid` e **se recusa a nomear o mineral**. Um viewer
+que imprime "oxalato de cálcio monoidratado" a partir de uma razão está inventando uma
+precisão que a física não tem, e um urologista vai agir em cima dela. Não existe banda de
+oxalato nem de fosfato no arquivo, e há teste garantindo isso.
+
+**Volume parcial puxa objeto pequeno na direção do meio.** Um cálculo de 2 mm num corte de
+3 mm é majoritariamente urina em volume. Abaixo do limite, recusa.
+
+Fora de faixa também é recusa, não a banda mais próxima: a banda mais próxima está sempre
+disponível e está sempre errada quando a entrada está fora, que é o que a torna o default
+perigoso. Metal é sinalizado como metal, porque ali a decomposição não vale.
+
+`bandsAreSeparable` existe para um serviço que adicione bandas próprias descobrir na hora
+que as duas que acabou de adicionar se sobrepõem — em vez de descobrir por um classificador
+que oscila entre elas voxel a voxel.
