@@ -181,3 +181,40 @@ and the panel id to its `rightPanels`.
 ```bash
 node node_modules/.bin/jest --config extensions/rt-mr-quant/jest.config.js --ci
 ```
+
+## Perfusão DSC — T2* (RTV-56)
+
+`dscPerfusion.ts` — bolus de gadolínio passa pelo voxel, o sinal T2* mergulha, e a forma
+desse mergulho carrega CBV, CBF, MTT e TTP. Três coisas nisso são rotineiramente erradas, e
+as três mudam os números do mapa que o neurorradiologista está olhando.
+
+**Sinal não é concentração.** O mergulho é exponencial na concentração, não linear:
+`C(t) = −k·ln(S(t)/S₀)/TE`. Integrar a queda bruta de sinal e chamar de CBV subpondera o
+pico e superpondera os ombros — e o erro é maior exatamente onde o bolus está concentrado,
+então **não cancela**. Há teste de que a razão concentração/queda difere entre o pico e o
+ombro por mais que um fator de escala.
+
+**Recirculação contamina a área sob a curva.** O traçador volta. Integrar a série inteira
+conta a segunda passagem como se fosse a primeira e infla o CBV. A correção padrão é ajustar
+uma gama-variada à primeira passagem e integrar o *ajuste*. O ajuste é log-linearizado
+(`ln C = ln k + α·ln(t−t₀) − (t−t₀)/β`), portanto mínimos quadrados de três parâmetros: sem
+otimizador iterativo, sem convergência para explicar, determinístico. Há teste de que uma
+curva com segunda passagem sintética recupera a área da primeira dentro de 10% — e outro
+mostrando que a integral ingênua da mesma curva infla mais de 30%.
+
+Área e primeiro momento saem da **forma fechada** (`k·β^(α+1)·Γ(α+1)` e `(α+1)·β`), não de
+somar amostras: é o que mantém dois scanners com TRs diferentes comparáveis. O resíduo em TR
+grosso é o `t₀` quantizado na grade de amostragem, não a quadratura — está dito no código.
+
+**CBF não é a altura do pico, e MTT não é a FWHM.** A curva tecidual é a entrada arterial
+convoluída com a função resíduo. Recuperar CBF exige **deconvolução** por uma AIF medida, e
+este módulo não faz isso: deconvolução por SVD circulante precisa de AIF, escolha de
+regularização e dado de validação, nenhum dos quais existe aqui.
+
+Então o que é calculado é declarado pelo que é. `requiresDeconvolution` é **sempre**
+verdadeiro e `caveats` sempre nomeia isso. Não é ruído defensivo: **um mapa de CBF que não
+diz que pulou a deconvolução parece o do console do scanner e discorda dele por um fator que
+varia com o bolus.**
+
+Falta: a deconvolução, a seleção automática de AIF, a correção de vazamento (Boxerman-Weisskoff)
+e qualquer ligação com um volume carregado.

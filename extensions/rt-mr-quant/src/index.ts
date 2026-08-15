@@ -29,6 +29,7 @@ export * from './dixon';
 export * from './parametricLut';
 export * from './parametricRange';
 export * from './adc';
+export * from './dscPerfusion';
 export { dixonProtocol, dixonProtocols, DIXON_PROTOCOL_ID } from './hangingProtocols/dixonProtocol';
 export { ParametricMapPanel } from './getPanelModule/ParametricMapPanel';
 
