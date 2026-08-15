@@ -148,6 +148,9 @@
       "packageName": "@ohif/extension-thorax-abdomen"
     },
     {
+      "packageName": "@ohif/extension-rt-report"
+    },
+    {
       "packageName": "@ohif/extension-rt-rendering"
     },
     {
