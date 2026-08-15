@@ -12,6 +12,9 @@
  *   communication to the referring physician, and the escalation clock that
  *   keeps asking until somebody acknowledges it. Pre-report, not part of
  *   distribution.
+ * - **Peer review** (RTV-108): the `awaitingReview` state that sits before the
+ *   signature and has no path through it, plus the agreement scale and the
+ *   discrepancy KPI that refuses to state a rate for a biased sample.
  *
  * This is the state layer the rest of the RTV-103 family sits on: the rich-text
  * editor (RTV-104), templates (RTV-105), macros (RTV-106), peer review
@@ -24,6 +27,7 @@
 export * from './reportWorkflow';
 export * from './macros';
 export * from './criticalFindings';
+export * from './peerReview';
 
 const id = '@ohif/extension-rt-report';
 

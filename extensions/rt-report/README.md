@@ -117,3 +117,46 @@ carrega a identidade que o destinatário se autentica para ver; a mensagem não 
 
 O relatório de gestão mantém linha para achado **nunca enviado**: relatório que só lista
 notificações bem-sucedidas é relatório que esconde as falhas.
+
+## Revisão por pares (RTV-108)
+
+O ticket é explícito: **A escreve, B revisa, *depois* assina.** Então `awaitingReview` fica
+entre rascunho e assinado e **não tem transição de assinatura nenhuma** — assinar por baixo de
+uma revisão pendente é precisamente o que o estado existe para impedir. Editar também é
+recusado enquanto ela está aberta: o revisor está lendo aquele texto, e ele não pode mudar
+debaixo dele.
+
+Duas regras carregam o peso:
+
+- **O revisor não pode ser o autor.** Auto-revisão anula o propósito inteiro e é o atalho mais
+  provável numa implementação. Recusa, não aviso.
+- **Qualquer edição limpa a aprovação.** O revisor aprovou *outro* texto; carregar a aprovação
+  adiante deixaria qualquer alteração passar por baixo da revisão.
+
+Rejeição exige motivo — o autor precisa saber o que mudar, e uma rejeição sem texto é uma
+marca no painel e nada mais. Toda transição fica no histórico.
+
+### O KPI é uma medição, e amostra enviesada não é uma
+
+"Taxa de discordância significativa" é o número que um programa de revisão reporta para cima,
+e ele vale quase nada a menos que os casos revisados tenham sido **escolhidos sem referência ao
+conteúdo**. Programa em que o revisor escolhe casos interessantes, ou em que o radiologista
+submete aqueles de que tem dúvida, **mede a seleção e não a leitura**.
+
+`discrepancyRate` recebe o método de amostragem como campo obrigatório e **se recusa a
+reportar taxa** para amostra selecionada — devolve as contagens, que continuam úteis para
+ensino, sem o denominador que as faria parecer métrica de qualidade. É a decisão deste módulo
+que vai ser discutida, e é a razão de ele existir.
+
+**Denominadores pequenos.** 3% em 30 casos tem intervalo de confiança de ~0,6% a 15%. Reportar
+o ponto ao lado dos 6% em 400 casos de outro radiologista convida a uma conclusão que o dado
+não sustenta. O intervalo é de Wilson (o normal desce abaixo de zero em 1/30, que é o tipo de
+saída que faz um comitê parar de confiar no relatório inteiro), e `compareRates` **recusa**
+chamar duas taxas de diferentes quando os intervalos se sobrepõem. A pessoa comparada é um
+colega.
+
+**Concordância é escala, não booleano.** Separar "eu teria dito o mesmo" de "discordo e isso
+muda a conduta" é a única distinção que o programa existe para encontrar: discordância que não
+mudaria a conduta é ponto de ensino; a que mudaria é incidente.
+
+Falta: o painel lado a lado, a notificação do revisor e a persistência no Connect.

@@ -34,6 +34,16 @@
  * has to be able to ask "is what I hold current?" and get a truthful answer, which is
  * impossible if version numbers are recycled or if an addendum edits in place.
  *
+ * ## Peer review happens before the signature, not after
+ *
+ * RTV-108 is explicit: A writes, B reviews, *then* it is signed. So `awaitingReview` sits
+ * between draft and signed and has **no `sign` transition at all** — signing out from
+ * under a pending review is precisely what the state exists to prevent.
+ *
+ * Two rules that carry the weight: the reviewer may not be the author (self-review defeats
+ * the purpose and is the single most likely shortcut in an implementation), and **any edit
+ * clears the approval**, because the reviewer approved a different text.
+ *
  * ## Who may sign is not the same question as what may be signed
  *
  * A resident can produce a preliminary and cannot sign a final; the workflow asks the host
@@ -45,6 +55,7 @@
 
 export type ReportState =
   | 'draft'
+  | 'awaitingReview'
   | 'preliminary'
   | 'signed'
   | 'addendumDraft'
@@ -53,6 +64,9 @@ export type ReportState =
 export type ReportEventType =
   | 'edit'
   | 'issuePreliminary'
+  | 'requestReview'
+  | 'approveReview'
+  | 'rejectReview'
   | 'sign'
   | 'startAddendum'
   | 'signAddendum'
@@ -62,6 +76,8 @@ export type ReportEventType =
 export const REPORT_CAPABILITIES = [
   'report.edit',
   'report.issuePreliminary',
+  'report.requestReview',
+  'report.review',
   'report.sign',
   'report.retract',
 ] as const;
@@ -100,6 +116,12 @@ export interface ReportDocument {
   /** Set while a preliminary is outstanding. */
   preliminaryIssuedAt?: number;
   preliminaryBy?: ReportAuthor;
+  /** Author who sent it for review — the person the reviewer may not be. */
+  reviewRequestedBy?: ReportAuthor;
+  reviewRequestedAt?: number;
+  /** Set once a reviewer approved; cleared on any further edit. */
+  reviewApprovedBy?: ReportAuthor;
+  reviewApprovedAt?: number;
   history: ReportHistoryEntry[];
 }
 
@@ -149,7 +171,10 @@ const text = (value: unknown): string => String(value ?? '').trim();
  * `retract`. There is deliberately no `signed → draft`.
  */
 const ALLOWED: Record<ReportState, ReportEventType[]> = {
-  draft: ['edit', 'issuePreliminary', 'sign'],
+  draft: ['edit', 'issuePreliminary', 'requestReview', 'sign'],
+  // No `sign` here. Review happens BEFORE the signature (RTV-108), so signing out from
+  // under a pending review is exactly the thing the state exists to prevent.
+  awaitingReview: ['approveReview', 'rejectReview'],
   preliminary: ['edit', 'sign'],
   signed: ['startAddendum', 'retract'],
   addendumDraft: ['edit', 'signAddendum', 'discardAddendum'],
@@ -159,6 +184,9 @@ const ALLOWED: Record<ReportState, ReportEventType[]> = {
 const CAPABILITY_OF: Record<ReportEventType, ReportCapability> = {
   edit: 'report.edit',
   issuePreliminary: 'report.issuePreliminary',
+  requestReview: 'report.requestReview',
+  approveReview: 'report.review',
+  rejectReview: 'report.review',
   sign: 'report.sign',
   startAddendum: 'report.edit',
   signAddendum: 'report.sign',
@@ -210,9 +238,13 @@ export function applyEvent(document: ReportDocument, event: ReportEvent): Transi
 
   switch (type) {
     case 'edit':
+      // Editing after an approval invalidates it: the reviewer approved a different text,
+      // and carrying the approval forward would let any change slip past review.
       return commit(current, event, current.state, {
         workingBody: String(event.body ?? ''),
         workingAuthor: author,
+        reviewApprovedBy: undefined,
+        reviewApprovedAt: undefined,
       });
 
     case 'issuePreliminary': {
@@ -223,6 +255,43 @@ export function applyEvent(document: ReportDocument, event: ReportEvent): Transi
         preliminaryIssuedAt: at,
         preliminaryBy: author,
       });
+    }
+
+    case 'requestReview': {
+      if (!text(current.workingBody)) {
+        return refuse(current, 'Não é possível enviar um laudo vazio para revisão.');
+      }
+      return commit(current, event, 'awaitingReview', {
+        reviewRequestedBy: author,
+        reviewRequestedAt: at,
+        reviewApprovedBy: undefined,
+        reviewApprovedAt: undefined,
+      });
+    }
+
+    case 'approveReview': {
+      // Self-review defeats the entire purpose and is the single most likely shortcut in
+      // an implementation. Refused, not warned.
+      if (current.reviewRequestedBy && sameAuthor(current.reviewRequestedBy, author)) {
+        return refuse(current, 'O revisor não pode ser o autor do laudo.');
+      }
+      return commit(current, event, 'draft', {
+        reviewApprovedBy: author,
+        reviewApprovedAt: at,
+      }, text(event.reason) || undefined);
+    }
+
+    case 'rejectReview': {
+      if (current.reviewRequestedBy && sameAuthor(current.reviewRequestedBy, author)) {
+        return refuse(current, 'O revisor não pode ser o autor do laudo.');
+      }
+      if (!text(event.reason)) {
+        return refuse(current, 'Rejeição exige um motivo — o autor precisa saber o que mudar.');
+      }
+      return commit(current, event, 'draft', {
+        reviewApprovedBy: undefined,
+        reviewApprovedAt: undefined,
+      }, text(event.reason));
     }
 
     case 'sign': {
@@ -325,10 +394,16 @@ function commit(
   };
 }
 
+const sameAuthor = (a?: ReportAuthor, b?: ReportAuthor): boolean =>
+  !!a?.id && !!b?.id && String(a.id).trim().toLowerCase() === String(b.id).trim().toLowerCase();
+
 function refusalFor(state: ReportState, type: ReportEventType): string {
   if ((state === 'signed' || state === 'amended') && (type === 'edit' || type === 'sign')) {
     // The message every radiologist will read at some point, so it says what to do.
     return 'Laudo assinado não pode ser editado. Escreva um adendo.';
+  }
+  if (state === 'awaitingReview' && (type === 'sign' || type === 'edit')) {
+    return 'Laudo aguardando revisão por pares — o revisor precisa aprovar ou rejeitar primeiro.';
   }
   if (state === 'addendumDraft' && type === 'sign') {
     return 'Há um adendo em edição — assine o adendo ou descarte-o.';
@@ -355,6 +430,7 @@ function previousSignedState(document: ReportDocument): ReportState {
 
 export const STATE_LABELS: Record<ReportState, string> = {
   draft: 'Rascunho',
+  awaitingReview: 'Aguardando revisão',
   preliminary: 'Preliminar',
   signed: 'Assinado',
   addendumDraft: 'Adendo em edição',
@@ -363,6 +439,8 @@ export const STATE_LABELS: Record<ReportState, string> = {
 
 /** Whether the body the reader is looking at may still be typed into. */
 export function isEditable(document: ReportDocument): boolean {
+  // Not `awaitingReview`: the reviewer is reading the text the author submitted, and it
+  // must not change under them.
   return ['draft', 'preliminary', 'addendumDraft'].includes(document?.state);
 }
 
