@@ -9,6 +9,8 @@
  *   with the window/level the signed result actually needs.
  * - **CPR — Curved Planar Reformation** (RTV-14, RTV-61): arc-length centerline
  *   resampling, rotation-minimising frames, and the three Kanitsar modes.
+ * - **Multi-station stitching** (RTV-60): frame-of-reference-checked composition of
+ *   overlapping angio stations, with a linear blend across the overlap.
  *
  * What it does NOT contain: marching cubes and an STL writer. vtk.js ships
  * `vtkImageMarchingCubes` and `STLWriter`, both bundled. What was missing — and what
@@ -22,6 +24,7 @@ export * from './ssdBudget';
 export * from './dsa';
 export * from './centerline';
 export * from './cpr';
+export * from './stitching';
 export { createSsdActions, SSD_ACTOR_UID } from './getCommandsModule';
 
 import getCommandsModule from './getCommandsModule';
