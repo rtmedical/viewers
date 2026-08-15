@@ -9,6 +9,9 @@
  * - **Iodine map and quantification** (RTV-85): mg/mL from the iodine basis
  *   density, a noise floor below which the answer is "no iodine" rather than a
  *   small number, and a refusal to call a calcium-suspect voxel enhancing.
+ * - **Virtual non-contrast** (RTV-86): the water basis as HU, with the
+ *   uncertainty that makes it usable and the two refusals that keep it safe —
+ *   no Agatston scoring, and no "absence excludes" for a small stone.
  *
  * The decomposition is an ill-conditioned inverse problem and the module treats
  * it as one: the condition number is computed, reported on every result, and a
@@ -21,6 +24,7 @@
  */
 export * from './dectDecomposition';
 export * from './iodineMap';
+export * from './virtualNonContrast';
 
 const id = '@ohif/extension-rt-dect';
 
