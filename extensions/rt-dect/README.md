@@ -182,3 +182,42 @@ carrega o aviso do RTV-86: ausência na VNC não exclui.
 A frase do laudo é montada só com as partes que passaram por suas próprias guardas: cálculo
 de composição indeterminada gera uma frase sobre tamanho e nada sobre química, em vez de uma
 frase com um buraco de aparência confiante.
+
+## Depósito de urato — gota (RTV-90)
+
+`urateDeposition.ts` — a dupla energia colore urato monossódico de verde e tudo calcificado
+de azul, e é genuinamente diagnóstica: tofo numa articulação de radiografia normal muda a
+terapia. **É também a aplicação de dupla energia com o problema de falso-positivo mais bem
+documentado**, e um módulo que só implementa a coloração implementa os falsos-positivos
+junto.
+
+**A gota mora exatamente onde a razão é menos confiável.** O classificador (RTV-88) recusa
+abaixo de 100 HU porque a razão degenera para 1 conforme a atenuação se aproxima da água.
+Tofos ficam em 130–170 HU — logo acima desse piso, em partes moles, que é precisamente o
+regime pior. Essa tensão não se resolve ajustando um limiar; é a razão de as regras de
+artefato existirem. A posição honesta é que uma chamada de urato nessa faixa é **candidata**
+até sobreviver a elas.
+
+**Os cinco falsos-positivos conhecidos, aplicados como regras e não como rodapé:**
+
+| fonte | assinatura | tratamento |
+|---|---|---|
+| leito ungueal / pele | queratina tem razão de urato | exclusão por localização |
+| pontilhado na cortical | endurecimento de feixe | exclusão por **tamanho E proximidade juntos** |
+| movimento | borrão que o módulo não vê | recusa de comparabilidade, marcada pelo chamador |
+| artrose avançada / subcondral | verde reconhecido na literatura | exclusão por localização |
+| calcificação vascular | atenuação acima da faixa de tofo | exclusão |
+
+Tamanho **e** proximidade juntos porque cada um sozinho joga fora tofo periarticular
+verdadeiro — há teste dos dois lados. E a ordem importa: exclusões por localização rodam
+**antes** da checagem de material, porque um leito ungueal *de fato* classifica como urato e
+o classificador não está errado — está sendo feita a pergunta errada a ele.
+
+**Volume é a medida de desfecho, então o que ele exclui precisa estar visível.** O volume de
+urato é o que o seguimento sob terapia hipouricemiante mede. Volume que inclui em silêncio
+artefato de leito ungueal **não encolhe quando o paciente melhora, e a terapia parece ter
+falhado**. Então o volume excluído e o motivo de cada exclusão viajam junto com o número.
+
+`compareUrateVolumes` recusa quando a **fração excluída** mudou muito entre os dois exames:
+um seguimento em que se jogou fora o dobro como artefato não está medindo a mesma coisa, e a
+diferença vai ser lida como resposta ao tratamento.
