@@ -154,3 +154,31 @@ perigoso. Metal é sinalizado como metal, porque ali a decomposição não vale.
 `bandsAreSeparable` existe para um serviço que adicione bandas próprias descobrir na hora
 que as duas que acabou de adicionar se sobrepõem — em vez de descobrir por um classificador
 que oscila entre elas voxel a voxel.
+
+## Caracterização de cálculos renais (RTV-89)
+
+`renalStones.ts` — compõe o que os módulos anteriores estabeleceram nas três coisas que um
+urologista de fato usa: **que tamanho**, **do que é feito**, e **a LECO vai funcionar**.
+
+**O tamanho decide o tratamento mais que a composição, e o tamanho depende da janela.**
+Passagem espontânea é essencialmente função do diâmetro: quase todo cálculo abaixo de 5 mm
+passa, quase nenhum acima de 10 mm passa. Então a medida que dirige a conduta é justamente a
+mais vulnerável a uma configuração de display — cálculo medido em janela de partes moles
+floresce e lê 1–2 mm maior que o mesmo cálculo em janela óssea, e **1 mm na fronteira de
+5 mm move o paciente entre "hidratar e esperar" e "encaminhar"**. Então a janela entra como
+parâmetro, é registrada, e a correção é aplicada — em vez de aceitar em silêncio um número
+cuja procedência ninguém anotou. Há teste de que a correção muda a faixa de conduta.
+
+**Atenuação prediz LECO.** Acima de ~1000 HU o cálculo resiste à litotripsia extracorpórea e
+a ureteroscopia serve melhor. Custa nada calcular e é útil no laudo — mas só faz sentido num
+cálculo grande o bastante para não estar sob volume parcial, então herda a mesma guarda de
+tamanho da composição. Cálculo pequeno demais recebe `null`, não um palpite.
+
+**Tudo o que a física não pode dizer, ele não diz.** A composição vem do RTV-88, que reporta
+ácido úrico versus não-ácido-úrico e se recusa a nomear o mineral — e essa recusa sobrevive
+até a frase do laudo. E cálculo visto só em série VNC abaixo do limite de visibilidade
+carrega o aviso do RTV-86: ausência na VNC não exclui.
+
+A frase do laudo é montada só com as partes que passaram por suas próprias guardas: cálculo
+de composição indeterminada gera uma frase sobre tamanho e nada sobre química, em vez de uma
+frase com um buraco de aparência confiante.

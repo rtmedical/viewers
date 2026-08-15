@@ -15,6 +15,9 @@
  * - **Material classification** (RTV-88): the dual-energy ratio as a material
  *   signature, with an attenuation floor below which it is noise, and a
  *   deliberate refusal to name the mineral of a calcium stone.
+ * - **Renal stones** (RTV-89): size (window-corrected), composition and
+ *   lithotripsy prediction, composed from the modules above so every caveat
+ *   they established survives into the report sentence.
  *
  * The decomposition is an ill-conditioned inverse problem and the module treats
  * it as one: the condition number is computed, reported on every result, and a
@@ -29,6 +32,7 @@ export * from './dectDecomposition';
 export * from './iodineMap';
 export * from './virtualNonContrast';
 export * from './materialClassification';
+export * from './renalStones';
 
 const id = '@ohif/extension-rt-dect';
 
