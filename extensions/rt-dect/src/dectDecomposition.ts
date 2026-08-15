@@ -111,6 +111,16 @@ export interface DecompositionResult {
    * that a 5 HU uncertainty is a 200 HU uncertainty in the answer.
    */
   conditionNumber: number;
+  /**
+   * Exact amplification from µ-noise to each basis density: the row norms of A⁻¹.
+   *
+   * The condition number says how badly the problem is posed; these say what a given
+   * input noise actually costs in the output, which is the number a noise floor has to be
+   * built from. Reported separately because they differ between the two bases — the
+   * water density is far better determined than the iodine density from the same data.
+   */
+  noiseGainA: number;
+  noiseGainB: number;
   failure?: DecompositionFailure;
   reason?: string;
 }
@@ -134,7 +144,8 @@ export function decompose(input: DecompositionInput): DecompositionResult {
     reason: string,
     conditionNumber = Infinity
   ): DecompositionResult => ({
-    ok: false, densityA: 0, densityB: 0, conditionNumber, failure, reason,
+    ok: false, densityA: 0, densityB: 0, conditionNumber, noiseGainA: Infinity,
+    noiseGainB: Infinity, failure, reason,
   });
 
   if (
@@ -185,6 +196,8 @@ export function decompose(input: DecompositionInput): DecompositionResult {
     densityA: (muLow * m[1][1] - muHigh * m[0][1]) / det,
     densityB: (m[0][0] * muHigh - m[1][0] * muLow) / det,
     conditionNumber,
+    noiseGainA: Math.hypot(m[1][1], m[0][1]) / Math.abs(det),
+    noiseGainB: Math.hypot(m[1][0], m[0][0]) / Math.abs(det),
   };
 }
 

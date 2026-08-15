@@ -46,3 +46,36 @@ Mapa de iodo (RTV-85), VNC/VUE (RTV-86), classificação de materiais (RTV-88), 
 de cálculos (RTV-89) e redução de artefato metálico (RTV-91) — todos leituras adicionais das
 mesmas duas densidades de base. E nada está ligado: não há par de séries dual-energy sendo
 detectado, nem slider de keV, nem mapa por voxel.
+
+## Mapa e quantificação de iodo (RTV-85)
+
+`iodineMap.ts` — lê a densidade de base de iodo como concentração em mg/mL e responde a
+pergunta que um mapa de iodo de fato recebe: **essa lesão realça?**
+
+**Tudo o que está fora da base é projetado sobre ela.** É a ressalva que importa, e é
+propriedade da decomposição de dois materiais, não bug a corrigir. A base é água e iodo. Um
+voxel de cálcio não é nenhum dos dois — mas o solve só tem duas direções para expressá-lo, e
+o cálcio aterrissa como *um pouco de água mais um pouco de iodo*. Cálcio denso reporta vários
+mg/mL de iodo que não estão lá. A consequência é concreta: **cisto renal calcificado lê como
+realçante, e realce é a diferença entre "seguimento" e "ressecção".** `iodineConcentration`
+marca o voxel cuja atenuação está na faixa do cálcio, e `assessEnhancement` **se recusa** a
+chamá-lo de realçante só com o mapa de iodo. Há teste que decompõe cálcio puro pela base
+água/iodo e mostra o iodo fantasma aparecendo.
+
+**Abaixo do piso de ruído não há iodo, há ruído.** A decomposição devolve alegremente
+0,3 mg/mL para um voxel de água pura, porque o HU de entrada tinha ruído. Renderizar isso
+como um blush suave num colormap cria realce onde não existe, exatamente nas lesões de baixo
+contraste que se usa mapa de iodo para resolver. Então há um piso, derivado do ruído de
+entrada e do **ganho de ruído exato** da decomposição (a norma da linha da inversa, não o
+número de condição), e valores abaixo dele voltam como `none` — não como quantidade pequena.
+O piso é devolvido para o leitor ver o que o exame conseguia resolver: **com 10 HU de ruído
+por voxel num par 80/140 ele fica em torno de 10 mg/mL**, que é o custo honesto da
+quantificação voxel a voxel e a razão de ROIs existirem.
+
+**`indeterminate` é uma resposta de verdade**: concentração entre o piso e o limiar significa
+que este exame não decide, e dizer isso manda o paciente para uma aquisição sem contraste em
+vez de para a cirurgia.
+
+Em ROI, voxels suspeitos de cálcio são **excluídos da média e contados à parte**. Diluí-los
+na média é como uma borda de calcificação arrasta um cisto não realçante acima do limiar — e
+a média é o número que o radiologista cita.

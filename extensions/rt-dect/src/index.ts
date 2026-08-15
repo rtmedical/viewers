@@ -6,6 +6,9 @@
  * - **Two-material decomposition and VMI** (RTV-87): the 2×2 solve that every
  *   other dual-energy product is a reading of, plus virtual monochromatic
  *   image synthesis with its noise cost stated.
+ * - **Iodine map and quantification** (RTV-85): mg/mL from the iodine basis
+ *   density, a noise floor below which the answer is "no iodine" rather than a
+ *   small number, and a refusal to call a calcium-suspect voxel enhancing.
  *
  * The decomposition is an ill-conditioned inverse problem and the module treats
  * it as one: the condition number is computed, reported on every result, and a
@@ -17,6 +20,7 @@
  * Follows RTV-114 (extension-first, zero fork).
  */
 export * from './dectDecomposition';
+export * from './iodineMap';
 
 const id = '@ohif/extension-rt-dect';
 
