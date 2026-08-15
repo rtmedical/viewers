@@ -1,9 +1,12 @@
 /**
  * @ohif/extension-rt-rendering
  *
- * Advanced rendering for OHIF v3. First feature: **SSD — Surface Shaded Display**
- * (RTV-17), the isosurface at a density threshold that RT uses for skeletal and
- * skin-envelope views.
+ * Advanced rendering for OHIF v3.
+ *
+ * - **SSD — Surface Shaded Display** (RTV-17): the isosurface at a density threshold
+ *   that RT uses for skeletal and skin-envelope views.
+ * - **DSA — Digital Subtraction Angiography** (RTV-65): pre-contrast mask subtraction,
+ *   with the window/level the signed result actually needs.
  *
  * What it does NOT contain: marching cubes and an STL writer. vtk.js ships
  * `vtkImageMarchingCubes` and `STLWriter`, both bundled. What was missing — and what
@@ -14,6 +17,7 @@
  */
 export * from './ssdPresets';
 export * from './ssdBudget';
+export * from './dsa';
 export { createSsdActions, SSD_ACTOR_UID } from './getCommandsModule';
 
 import getCommandsModule from './getCommandsModule';

@@ -72,6 +72,51 @@ threshold change to keep the estimate live.
   serve the viewer (see `docker/README.md`). The evidence is the unit tests: presets,
   colour parsing, budget arithmetic and the pre-flight rules.
 
+## DSA — Digital Subtraction Angiography (RTV-65)
+
+Subtracts a pre-contrast **mask** frame from every later frame, so what remains is what
+changed: the contrast column in the vessels, on a flat grey background.
+
+| Function | Purpose |
+| --- | --- |
+| `subtractFrame` | Element-wise difference, with gain, offset and inversion |
+| `frameStats` / `subtractionWindow` | The window/level the *result* needs |
+| `detectMaskFrame` | Picks a pre-contrast frame from the intensity curve |
+
+### Two things that make a naive DSA look broken
+
+**1. The result is signed and centred on zero.** Subtracting two similar images gives
+values around 0, mostly negative where contrast darkens the pixel. Keeping the source
+window/level renders a uniformly black frame, and the usual reaction is "the subtraction
+did not work".
+
+`subtractionWindow` centres on the **background** value, not on the data's midpoint:
+after subtraction the vast majority of pixels *are* background, so a naive `(min+max)/2`
+centre is dragged around by a handful of extreme pixels and the vessels wash out.
+
+**2. The mask must be a pre-contrast frame.** Subtracting a frame that already contains
+contrast erases the vessels instead of revealing them. `detectMaskFrame` reads the
+per-frame mean intensity and takes the last frame **before** it drops — contrast is
+radio-opaque, so it lowers mean intensity as it fills the field. Not simply frame 0:
+runs routinely start a beat or two early, and the opening frames are the noisiest.
+
+The drop has to clear a threshold (2% of baseline by default) to count, so ordinary
+frame-to-frame noise is not mistaken for contrast arrival. When nothing clears it, frame
+0 is used and the result says `reason: 'firstFrame'` so the panel can tell the reader
+the mask was a guess.
+
+### Inverted by default
+
+Contrast *lowers* pixel values in X-ray, so the raw difference is negative in the
+vessels. `invert: true` is the default because bright vessels on grey is what
+angiographers expect to see.
+
+### Not delivered
+
+The per-frame hook into a Cornerstone3D XA/stack viewport — this is the arithmetic and
+the mask logic, applied to plain typed arrays. Nothing here has been run against a real
+XA run: the DEV1 PACS has no angiography.
+
 ## Tests
 
 ```bash
