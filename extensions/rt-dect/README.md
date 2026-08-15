@@ -221,3 +221,39 @@ falhado**. Então o volume excluído e o motivo de cada exclusão viajam junto c
 `compareUrateVolumes` recusa quando a **fração excluída** mudou muito entre os dois exames:
 um seguimento em que se jogou fora o dobro como artefato não está medindo a mesma coisa, e a
 diferença vai ser lida como resposta ao tratamento.
+
+## Redução de artefato metálico por dupla energia (RTV-91)
+
+`metalArtifact.ts` — VMI de alta energia reduz o estriamento em torno de uma prótese, e é uma
+das coisas mais visivelmente impressionantes que a dupla energia faz. O que importa para usar
+com segurança é saber **qual metade do artefato ela conserta**.
+
+**Endurecimento de feixe é espectral. Falta de fótons é dado que não existe.** Os dois
+produzem estrias escuras entre objetos densos e os dois são chamados de "artefato metálico",
+mas não têm nada em comum por baixo:
+
+- **Endurecimento de feixe** é efeito espectral — os fótons de baixa energia são absorvidos
+  preferencialmente, o espectro efetivo desloca, e a hipótese de linearidade da reconstrução
+  quebra. Sintetizar uma imagem *monocromática* é exatamente a correção certa, porque feixe
+  monocromático não endurece.
+- **Falta de fótons** é problema de contagem: pelo eixo longo de uma prótese de quadril quase
+  nada chega ao detector. **Nenhum truque espectral recupera informação que nunca foi
+  medida.** Uma VMI de alta energia deixa aquelas estrias mais lisas sem acrescentar nada — o
+  que é discutivelmente pior que deixá-las visíveis.
+
+`classifyArtefact` separa os dois pela assinatura (endurecimento depende da energia, falta de
+fótons não) e `expectedImprovement` fica **limitado pela fração espectral**: um artefato que é
+80% falta de fótons não pode melhorar mais que 20%, por mais alta que seja a energia. Prometer
+mais é como um leitor conclui que a prótese está boa.
+
+**O keV de MAR não é o keV diagnóstico.** A supressão continua melhorando até 130–140 keV, e a
+essa altura o contraste de iodo praticamente sumiu. Então a reconstrução MAR é **série
+separada ao lado** da diagnóstica, não substituta — e a recomendação devolve o custo em
+contraste junto com a energia, sempre, para ninguém ler em silêncio um exame com contraste a
+140 keV. O custo do MAR é **contraste, não ruído**: VMI de alta energia é mais silenciosa que
+a de baixa, o inverso do caso de 40 keV, e isso está fixado em teste porque alguém vai supor
+que a troca corre igual nas duas pontas.
+
+**Não substitui MAR de projeção.** iMAR/O-MAR atuam no sinograma e atacam exatamente o dado
+faltante que a VMI não alcança. São complementares e usados juntos rotineiramente.
+`needsProjectionMar` diz isso em vez de deixar implícito que a dupla energia basta.
