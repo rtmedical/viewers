@@ -31,3 +31,35 @@ auditado. Contagem de cortes diferente entre as fases também vira aviso.
 Massa é medida em diástole por convenção, com densidade miocárdica 1,05 g/mL. Limite inferior
 da normalidade da FE é específico por sexo, e por isso sexo é argumento e não constante
 escondida num limiar.
+
+## Estenose coronariana e CAD-RADS 2.0 (RTV-50)
+
+`cadRads.ts` — a medida é uma razão de dois diâmetros; a categoria é uma tabela. Três coisas
+entre as duas decidem se a resposta está certa.
+
+**Estenose de diâmetro e de área diferem por um quadrado.** 50% de **diâmetro** é 75% de
+**área**. O CAD-RADS é definido em diâmetro, e jogar uma redução de área numa tabela de
+diâmetro sobe o paciente **duas categorias** — de "leve, sem investigação adicional" para
+"grave, considerar angiografia invasiva". As duas estão a uma linha de distância no código e
+são indistinguíveis depois que viram um número pelado, então a medida **carrega qual é** e a
+conversão acontece aqui. Há teste mostrando as duas leituras da mesma medida caindo em
+categorias diferentes.
+
+**O diâmetro de referência é uma escolha, e ela muda a resposta.** Percentual é
+`1 − mínimo/referência`, e "referência" pode ser o segmento proximal, o distal ou uma
+interpolação. Em vaso difusamente doente a referência proximal está ela mesma estreitada, e
+usá-la **subestima** a estenose — exatamente nos pacientes com mais doença. A escolha é
+registrada, e proximal em vaso difuso é sinalizado.
+
+**Florescimento de cálcio infla a estenose, e a resposta honesta muitas vezes é "não dá para
+dizer".** Cálcio denso floresce na TC e faz o lúmen parecer mais estreito. Passada certa
+carga, o segmento simplesmente não é avaliável, e o CAD-RADS tem uma letra para isso: **N**.
+Reportar um 70% confiante através de um segmento muito calcificado é o erro característico da
+angio-TC, **e manda paciente para cateterismo**. `assessSegment` devolve `N` em vez de
+percentual quando a calcificação diz isso — uma recusa que é ela mesma a saída clinicamente
+correta.
+
+A categoria do estudo é o segmento mais grave, e **N vence tudo**: "não consegui avaliar um
+segmento" é uma afirmação mais forte que qualquer coisa que eu tenha conseguido avaliar,
+porque o segmento não avaliado pode ser o pior. Estudo limpo com um DA proximal não avaliável
+não é um estudo normal.

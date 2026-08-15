@@ -12,10 +12,15 @@
  * assumed, and a cross-study comparison that refuses when the two were traced
  * under different conventions.
  *
+ * RTV-50 adds cadRads.ts: percent diameter stenosis (converting from area
+ * rather than assuming), the CAD-RADS 2.0 bands and modifiers, and a refusal
+ * to state a stenosis through a severely calcified segment.
+ *
  * Follows RTV-114 (extension-first / zero fork).
  */
 export * from './ahaBullseye';
 export * from './cardiacFunction';
+export * from './cadRads';
 
 import getPanelModule from './getPanelModule';
 
