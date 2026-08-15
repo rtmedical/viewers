@@ -71,3 +71,50 @@ change to any logic. RTV-187 is blocked on backend only for *sharing*, not for w
 
 No UI. These are the model and the rules; the filter panel, the chip bar and the views
 dropdown are components on top. Nothing here has been seen in a browser.
+
+## Operações em lote (RTV-191)
+
+`worklistSelection.ts` + `worklistBatch.ts` + `worklistExport.ts` — cores puros, sem React
+e sem `@ohif/*`, para o supervisor que chega de manhã e distribui 80 exames entre cinco
+radiologistas.
+
+**Seleção é por id, nunca por índice de linha.** A lista é virtual-scrolled e re-ordenável;
+índice 4 é outro paciente depois de um sort. Guardar ids é o que faz a seleção sobreviver
+ao scroll (critério de aceite) e é a única forma de a ação em lote ter certeza de que age
+sobre os estudos que o usuário clicou.
+
+**A âncora se move no clique simples, nunca no shift+click.** Se `extendTo` movesse a
+âncora, um segundo shift+click mais abaixo começaria um intervalo novo em vez de estender o
+original — estender a seleção derrubaria a cabeça dela. Toda tabela que erra isso parece
+sutilmente quebrada e ninguém sabe dizer por quê.
+
+**"Selecionar todos" não pode ser uma lista de ids.** Ctrl+A sobre uma worklist filtrada
+significa "os 3.200 estudos que casam", e o cliente só buscou a página atual. Mandar os 100
+ids que ele tem como se fossem todos é pior que impossível: é errado e silencioso. Por isso
+o estado tem dois modos — `explicit` (ids concretos) e `matching` ("tudo que a query casa,
+menos estas exclusões") — e `resolveTargets` devolve a *query*, não ids, no segundo caso.
+`canResolveAsIds` diz na cara se o endpoint só aceita ids, para a UI desabilitar a ação em
+vez de aplicá-la pela metade. Mudança de filtro descarta uma seleção `matching` e preserva
+uma `explicit`: "todos que casam" passou a denotar outro conjunto.
+
+**Sucesso parcial é o caso normal.** De 23 estudos, 18 atribuem e 5 voltam 409 porque outro
+supervisor pegou. O toast "23 estudos atribuídos" é o desfecho perigoso: o supervisor segue
+achando que o plantão está distribuído e cinco exames ficam sem dono com SLA correndo.
+`describeReport` se recusa a redigir execução parcial como sucesso.
+
+**Undo é escrita compensatória e precisa do valor ANTERIOR por estudo.** O servidor já
+mudou; "Desfazer" tem que reescrever o valor antigo, e ele é *diferente para cada estudo* —
+alguns estavam sem radiologista, outros com outro. Um undo que grava um valor só em todos
+não restaura o estado anterior: inventa um novo, errado, sob um botão escrito "Desfazer".
+`createUndoEntry` exige valor prévio de todo id e devolve `null` se faltar algum — nenhum
+botão é melhor que um que corrompe.
+
+**CSV: célula que começa com `=`, `+`, `-` ou `@` é fórmula.** Excel avalia na abertura.
+É CSV injection, e é um caminho real de "campo de nome no RIS" até "código roda no notebook
+do supervisor". Aspas sozinhas não resolvem — `"=1+1"` ainda avalia; o prefixo de escape
+tem que ficar *dentro* do campo aspado.
+
+Backend: `POST /api/studies/batch-assign`, `PATCH /api/studies/batch-priority`. Não existem
+ainda; o runner recebe o applier por parâmetro, então o dia em que existirem é uma função
+de transporte, não uma mudança aqui. **Nada disso está ligado na `RtWorklistPage` ainda** —
+checkbox de linha, toolbar de lote e toast são o passo de UI que falta.
