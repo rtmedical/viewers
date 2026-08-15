@@ -86,3 +86,44 @@ load-bearing part; the names are convention.
 ```bash
 node node_modules/.bin/jest --config extensions/rt-lesion-tracker/jest.config.js --ci
 ```
+
+## Volume doubling time (RTV-69)
+
+`vdt.ts` — `VDT = (t₂ − t₁)·ln2 / ln(V₂/V₁)`. Três linhas de aritmética que decidem se um
+paciente faz TC de controle ou biópsia. Tudo o que importa está em **recusar produzir um
+número quando as medidas não sustentam um.**
+
+**VDT é extremamente sensível a erro de medida, e nódulo pequeno é quase só erro.** Volume
+a partir de um diâmetro é `V = π/6·d³`, então erro *relativo* no diâmetro vira três vezes
+isso no volume. Num nódulo de 5 mm, o ±1 mm em que dois radiologistas rotineiramente
+discordam é ±60% de volume — e como o VDT depende de `ln(V₂/V₁)`, essa oscilação é
+*dividida dentro* do intervalo. Duas medidas que de fato são 6,0 e 6,5 mm produzem VDT de
+~150 a ~2000 dias dependendo de onde o cursor caiu.
+
+Uma tela mostrando "VDT = 287 dias" a partir de duas medidas de cursor é falsa precisão — e
+é falsa precisão grudada numa decisão de conduta. `computeVdt` devolve um envelope derivado
+de uma incerteza declarada (1 mm por padrão, deliberadamente não menor) e `describeVdt`
+imprime o intervalo, nunca só o ponto. **Quando o intervalo cruza o limiar de suspeição, o
+resultado diz que estas medidas não respondem à pergunta** — que é a saída honesta, e a que
+leva a "repetir em 3 meses" em vez de a um número confiante e errado.
+
+Quando o extremo lento do envelope é compatível com crescimento nenhum, o limite superior é
+**infinito**, e isso é escrito por extenso em vez de virar número: "as medidas também são
+compatíveis com ausência de crescimento" é clinicamente diferente de "o VDT é grande".
+
+**Nódulo que encolheu não tem tempo de duplicação.** `V₂ < V₁` deixa o logaritmo negativo e
+o VDT negativo. Tempo de duplicação negativo não é "crescimento muito lento", é regressão, e
+imprimir −412 ao lado de um limiar de 400 convida exatamente à leitura errada. Encolhimento
+e estabilidade voltam como *desfechos*, com `days: null`.
+
+**Parear o nódulo com o prior é de onde vem VDT errado.** Um VDT calculado entre dois
+nódulos *diferentes* é um número sem significado e sem aviso. Sem registro deformável, o
+melhor disponível é vizinho mais próximo em coordenadas de paciente — então
+`matchPriorNodules` **recusa pareamento ambíguo**: se dois priors caem dentro da tolerância
+do mesmo nódulo atual, nenhum é escolhido. Deixar sem par custa um clique ao leitor; parear
+errado custa o diagnóstico. O relatório longitudinal mantém uma linha para cada nódulo
+atual, pareado ou não — nódulo que some em silêncio de um laudo de seguimento é a falha que
+essa feature existe para evitar.
+
+Falta: o painel e a ligação com as medições reais do Lesion Tracker; o export do relatório
+longitudinal (o modelo de linhas está pronto, a serialização não).
