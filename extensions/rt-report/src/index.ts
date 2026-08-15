@@ -8,6 +8,10 @@
  *   and the only way to change one is to write an addendum.
  * - **Macros** (RTV-106): shortcut-triggered phrases with fill-in fields, and
  *   the pre-sign guard that refuses a report still containing them.
+ * - **Critical findings** (RTV-202): the append-only record of an urgent
+ *   communication to the referring physician, and the escalation clock that
+ *   keeps asking until somebody acknowledges it. Pre-report, not part of
+ *   distribution.
  *
  * This is the state layer the rest of the RTV-103 family sits on: the rich-text
  * editor (RTV-104), templates (RTV-105), macros (RTV-106), peer review
@@ -19,6 +23,7 @@
  */
 export * from './reportWorkflow';
 export * from './macros';
+export * from './criticalFindings';
 
 const id = '@ohif/extension-rt-report';
 
