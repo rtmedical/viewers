@@ -253,3 +253,41 @@ um `ve` de 3 não é "um tumor incomum", é um solve irrestrito ajustando ruído
 esses dentro tem pontos brilhantes exatamente onde o leitor olha.
 
 Falta: mapa T1 por flip angle variável, detecção automática de AIF, o mapa por voxel e a UI.
+
+## Espectroscopia de prótons (RTV-58)
+
+`spectroscopy.ts` — um espectro de voxel único é um punhado de picos em deslocamentos
+químicos conhecidos. Lê-lo é integrar janelas e dividir. **Decidir se ele *pode* ser lido é a
+parte que muda a resposta**, e vem primeiro.
+
+**Espectro mal shimado não é espectro.** Largura de linha é o jogo inteiro. Passados ~0,1 ppm
+de FWHM os picos se fundem, as janelas de integração invadem os vizinhos, e toda razão sai
+errada numa direção que depende de qual pico vazou em qual. **E o espectro continua
+*parecendo* um espectro** — é liso e tem calombos mais ou menos nos lugares certos. Por isso a
+checagem roda antes de tudo e a análise **recusa** em vez de reportar razões dali. O ruído é
+estimado além de 8 ppm, onde um espectro de cérebro é vazio: estimar sobre o espectro inteiro
+dobraria os picos dentro dele e faria todo SNR parecer bom.
+
+**Cr é o denominador, e Cr não é constante.** Quantificação absoluta exige referência de água
+e calibração de bobina, então espectroscopia clínica reporta razões à creatina. Isso funciona
+até a própria creatina se mover — e **ela cai em tumor de alto grau e em necrose**, que são
+exatamente os casos sobre os quais se está perguntando. **Uma Cho/Cr subindo pode ser uma Cr
+caindo.** A razão não distingue, e nenhuma dose de cuidado na leitura distingue. Então as
+áreas cruas voltam ao lado das razões, e uma creatina abaixo da referência contralateral vira
+aviso explícito.
+
+**Lactato inverte em TE 144, lipídio não.** O dupleto em 1,33 ppm aponta **para baixo** em
+144 ms e **para cima** em 35 ms; lipídio fica embaixo e sempre aponta para cima. Em TE curto
+os dois são indistinguíveis, e **chamar um pico de lipídio de lactato é chamar necrose de
+isquemia**. O TE é argumento obrigatório, e a função diz o que dá para concluir no TE que foi
+de fato usado em vez de adivinhar — inclusive dizendo "repita em TE 144 se a distinção
+importar".
+
+**O eixo de deslocamento químico precisa ser referenciado.** As janelas são estreitas: eixo
+0,1 ppm fora e a janela da colina está amostrando creatina. NAA em 2,02 ppm é a âncora, e uma
+correção grande demais é ela mesma sinal de que algo está errado — então ela é reportada, não
+aplicada em silêncio.
+
+A área de pico subtrai uma linha de base linear pelos extremos da janela: sem isso um fundo
+inclinado é contado como sinal, **e contado diferente em cada janela**, porque elas têm
+larguras diferentes.
