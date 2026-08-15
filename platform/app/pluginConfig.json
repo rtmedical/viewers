@@ -154,6 +154,9 @@
       "packageName": "@ohif/extension-rt-dect"
     },
     {
+      "packageName": "@ohif/extension-rt-pet"
+    },
+    {
       "packageName": "@ohif/extension-rt-rendering"
     },
     {
