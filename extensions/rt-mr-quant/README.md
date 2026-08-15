@@ -218,3 +218,38 @@ varia com o bolus.**
 
 Falta: a deconvolução, a seleção automática de AIF, a correção de vazamento (Boxerman-Weisskoff)
 e qualquer ligação com um volume carregado.
+
+## Perfusão DCE — T1, Tofts estendido (RTV-57)
+
+`dcePerfusion.ts` — `Ct(t) = vp·Cp(t) + Ktrans·∫Cp(τ)e^(−kep(t−τ))dτ`, com `kep = Ktrans/ve`.
+
+**O ajuste é linear, e isso importa mais do que parece.** Integrando o modelo (Murase 2004)
+ele vira `Ct = (Ktrans + kep·vp)·∫Cp − kep·∫Ct + vp·Cp`, linear nos três coeficientes assim
+que as integrais cumulativas estão formadas. Uma solução de mínimos quadrados por voxel: sem
+chute inicial, sem critério de convergência, sem otimizador que cai noutro mínimo local na
+terça. Ajuste não linear sobre um cérebro inteiro é também onde o tempo vai, e mapa que leva
+quatro minutos é mapa que ninguém gera.
+
+**Repare no primeiro coeficiente: é `Ktrans + kep·vp`, não `Ktrans`.** Ler direto como Ktrans
+superestima em `kep·vp` — ~12% para um `Ktrans 0.25 / ve 0.4 / vp 0.05` típico, e mais em
+tumor vascularizado onde vp é maior, que é exatamente onde o número está sendo olhado. E o
+ajuste continua reportando **R² = 1 enquanto está errado**, porque o modelo *linear* descreve
+os dados perfeitamente; só a extração é que estava torta. Foi um round-trip sintético pelo
+modelo direto que pegou isso, e ele está na suíte.
+
+**Realce relativo não é concentração, e Ktrans a partir dele não é Ktrans.** Obter `Ct` exige
+o **T1 nativo** do tecido e o ângulo de flip — a equação SPGR invertida voxel a voxel, com
+mapa T1 de flip angle variável. A maioria dos viewers pula isso e ajusta o modelo sobre
+`(S−S₀)/S₀`. O resultado é um número com unidade de Ktrans, que correlaciona com Ktrans, e
+que **não é Ktrans**: varia com scanner, bobina, ângulo de flip e T1 basal do paciente. Não
+compara entre visitas — que é o ponto inteiro de medir Ktrans em seguimento oncológico. O
+método usado viaja dentro do resultado, com caveat explícito.
+
+**A AIF é a outra metade de todo número aqui.** AIF populacional (Parker) e medida discordam
+em dezenas de porcento no mesmo dado. Qual foi usada fica registrada no resultado.
+
+Ajuste fora da fisiologia (`ve > 1`, `vp > 1`, Ktrans absurdo) é **rejeitado**, não devolvido:
+um `ve` de 3 não é "um tumor incomum", é um solve irrestrito ajustando ruído — e um mapa com
+esses dentro tem pontos brilhantes exatamente onde o leitor olha.
+
+Falta: mapa T1 por flip angle variável, detecção automática de AIF, o mapa por voxel e a UI.
