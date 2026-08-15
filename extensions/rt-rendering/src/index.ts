@@ -11,6 +11,10 @@
  *   resampling, rotation-minimising frames, and the three Kanitsar modes.
  * - **Multi-station stitching** (RTV-60): frame-of-reference-checked composition of
  *   overlapping angio stations, with a linear blend across the overlap.
+ * - **Virtual bone removal** (RTV-63): seeded region growing rather than a
+ *   global threshold, and — because a vessel that touches bone is absorbed by
+ *   the grower — at-risk voxels identified by attenuation rather than by
+ *   geometry.
  * - **Frangi vesselness** (RTV-62): multiscale Hessian vessel enhancement,
  *   with the polarity required rather than assumed, gamma normalisation so the
  *   scales are comparable, a data-derived structureness constant, and the
@@ -29,6 +33,7 @@
  */
 export * from './vip';
 export * from './frangi';
+export * from './boneRemoval';
 export * from './ssdPresets';
 export * from './ssdBudget';
 export * from './dsa';

@@ -317,3 +317,35 @@ inteiro.
 
 Falta: a extração de centerline a partir do mapa de resposta (o `centerline.ts` do RTV-14 já
 consome pontos, então a costura existe), a ligação com um volume carregado, e a UI.
+
+## Eliminação virtual de osso (RTV-63)
+
+`boneRemoval.ts` — tirar o esqueleto de uma angio-TC para os vasos aparecerem. A versão
+ingênua é uma linha — limiar e apagar — e é errada de um jeito que produz uma imagem limpa e
+confiante **de uma artéria que não está lá**.
+
+**Artéria realçada e osso cortical ocupam a mesma faixa de Hounsfield.** No pico arterial uma
+carótida tem 350–500 HU; osso cortical tem 400+. **Não existe limiar que separe os dois**, e
+o que se escolhe remove as partes mais brilhantes do vaso junto com o osso. A consequência não
+é sutil e é invisível no resultado: um segmento da carótida interna some na base do crânio e a
+imagem mostra uma oclusão. A sifão carotídeo é **ao mesmo tempo onde o limiar falha pior e
+onde o achado mais importa**, porque ali o vaso corre dentro do osso.
+
+**Conectividade é o que torna o limiar tolerável.** Osso é uma estrutura grande e conectada;
+um voxel brilhante dentro do lúmen não está conectado ao esqueleto, então crescer a máscara a
+partir de sementes ósseas deixa o vaso em paz — *exceto onde eles se tocam*.
+
+**E onde se tocam, o crescedor não para na fronteira: ele desce pelo vaso e o absorve.** Então
+procurar "máscara ao lado de tecido brilhante fora da máscara" **não acha nada justamente no
+caso que importa**, porque a essa altura o vaso já está dentro da máscara. É uma armadilha
+real, e a primeira versão deste arquivo caiu nela — os testes pegaram.
+
+O que identifica o risco é a **atenuação dos voxels mascarados**. Osso cortical inequívoco
+está acima de 600 HU; tudo o que a máscara engoliu entre 300 e 600 está na faixa em que
+artéria realçada e osso são indistinguíveis, e pode ser vaso. `findAtRiskVoxels` reporta isso
+e também o caso de encostar sem fundir, que continua acontecendo.
+
+**Quando há dupla energia, esta abordagem inteira é a errada.** Iodo e cálcio têm assinaturas
+espectrais diferentes, e os módulos do `rt-dect` separam os dois de verdade — sem limiar, sem
+conectividade, sem ponto cego na base do crânio. `recommendApproach` diz isso, em vez de
+deixar uma heurística de energia única ser usada sobre dado que suporta coisa melhor.
