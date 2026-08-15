@@ -10,6 +10,7 @@
  * an integration follow-up.
  */
 export * from './fusionConfig';
+export * from './fusionTools';
 
 import getPanelModule from './getPanelModule';
 
