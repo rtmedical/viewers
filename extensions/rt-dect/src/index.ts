@@ -21,6 +21,9 @@
  * - **Urate deposition** (RTV-90): the gout study, with the five documented
  *   false positives applied as rules rather than as a footnote, and a volume
  *   that reports what it excluded.
+ * - **Metal artefact reduction** (RTV-91): separating beam hardening (which a
+ *   high-keV VMI fixes) from photon starvation (which it cannot), and saying
+ *   which one is in front of the reader.
  *
  * The decomposition is an ill-conditioned inverse problem and the module treats
  * it as one: the condition number is computed, reported on every result, and a
@@ -37,6 +40,7 @@ export * from './virtualNonContrast';
 export * from './materialClassification';
 export * from './renalStones';
 export * from './urateDeposition';
+export * from './metalArtifact';
 
 const id = '@ohif/extension-rt-dect';
 
