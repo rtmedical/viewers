@@ -157,6 +157,9 @@
       "packageName": "@ohif/extension-rt-pet"
     },
     {
+      "packageName": "@ohif/extension-rt-igrt"
+    },
+    {
       "packageName": "@ohif/extension-rt-rendering"
     },
     {
