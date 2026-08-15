@@ -151,6 +151,9 @@
       "packageName": "@ohif/extension-rt-report"
     },
     {
+      "packageName": "@ohif/extension-rt-dect"
+    },
+    {
       "packageName": "@ohif/extension-rt-rendering"
     },
     {
