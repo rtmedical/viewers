@@ -79,3 +79,40 @@ vez de para a cirurgia.
 Em ROI, voxels suspeitos de cálcio são **excluídos da média e contados à parte**. Diluí-los
 na média é como uma borda de calcificação arrasta um cisto não realçante acima do limiar — e
 a média é o número que o radiologista cita.
+
+## VNC / VUE — sem contraste virtual (RTV-86)
+
+`virtualNonContrast.ts` — remove a contribuição de iodo e renderiza o que sobra. Vale uma
+aquisição inteira de dose: protocolo só em fase portal que ainda produz uma série
+"pré-contraste" poupa o paciente do exame sem contraste de verdade. **E esse valor é
+inteiramente condicionado a o leitor saber onde a VNC não equivale.**
+
+**VNC perde cálcio sistematicamente.** Cálcio não está na base água/iodo, então o solve o
+expressa como água mais *iodo espúrio* — e a VNC subtrai esse iodo espúrio de volta.
+Estruturas calcificadas voltam **mais escuras na VNC do que realmente são**, e calcificações
+pequenas ou pouco densas somem. Duas consequências, ambas **recusadas** aqui em vez de
+deixadas para o leitor:
+
+- **Escore de cálcio (Agatston) na VNC é inválido.** O escore é definido sobre aquisição sem
+  contraste verdadeira com limiar de 130 HU; na VNC a mesma placa cai abaixo do limiar ou
+  pontua numa faixa menor — e sai **na mesma unidade** de um escore real, que é o que o torna
+  perigoso e não apenas errado. `isValidForCalciumScoring()` responde não, sempre, com o
+  motivo.
+- **Cálculo pequeno pode sumir.** `stoneVisibilityWarning` marca o tamanho abaixo do qual
+  ausência na VNC não exclui. O modo de falha é: o cálculo está lá, a VNC não mostra, e o
+  leitor conclui que não há cálculo.
+
+**O resíduo não é zero e não é aleatório.** Mesmo em partes moles a VNC não reproduz o HU
+sem contraste exatamente — é enviesada alguns HU, e o viés depende do tecido. `vncHu` devolve
+uma incerteza junto com o valor, somando em quadratura o viés sistemático (±10 HU de
+referência) com o ruído propagado. E o ganho de ruído da base de água é ~2×, que é o
+"VNC é mais ruidosa que sem contraste verdadeira" num número.
+
+A consequência incômoda de ser honesto sobre ±10 HU: **na incerteza de referência, a VNC não
+consegue fazer a chamada de cisto simples em 20 HU** a menos que o valor esteja abaixo de 0
+ou acima de 40. Isso é um achado sobre a VNC, não um defeito da comparação — e é por isso que
+`compareToThreshold` compara a 2σ e devolve `inconclusive`, que é a resposta que manda o
+paciente para o exame que decide.
+
+A descrição da série derivada carrega o aviso junto com os pixels: quem abrir a série três
+meses depois não tem outro lugar de onde tirar isso.
