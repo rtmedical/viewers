@@ -127,3 +127,33 @@ leitor a jusante abre e descarta.
 Falta: o componente do modal (UIModalService), o preview compositado no cornerstone e o
 STOW-RS. Tudo isso é integração; a decisão de o que é fusável, quais passos aparecem e qual
 é a matriz está aqui e testada.
+
+## Registro de seguimento oncológico CT+CT (RTV-205)
+
+`followUpRegistration.ts` — comparar uma TC com a prévia. Rígido põe o paciente no mesmo
+referencial; deformável faz a anatomia de fato se sobrepor. **Os dois são úteis e só um pode
+ser medido através**, e inverter isso produz uma avaliação de resposta que é artefato do
+algoritmo.
+
+**Um campo deformável flexível o bastante para alinhar a anatomia é flexível o bastante para
+comprimir o tumor.** É a tensão inteira. Entre dois exames o paciente perde peso, uma
+atelectasia resolve, gás intestinal se move. Rígido não acompanha nada disso e as imagens não
+sobrepõem. Deformável acompanha tudo — **e não sabe que o tumor é a única estrutura que ele
+não pode seguir**. Registrada deformavelmente, uma lesão em crescimento é parcialmente
+*comprimida de volta* na direção da forma prévia. Propague o contorno basal por esse campo e
+meça, e você mediu a força de regularização, não a doença.
+
+Então: **rígido para medir, deformável para olhar.** `isMeasurable` impõe isso, e
+`propagateContour` devolve o contorno deformado marcado `visualOnly` — a marcação está no
+*valor* e não num comentário, porque comentário não sobrevive a ser passado para uma função de
+volume.
+
+**O jacobiano diz onde a transformação fez exatamente aquilo que se estava medindo.** O
+determinante é a variação local de volume que a transformação aplicou: 1,0 preserva, 0,8 é
+20% de compressão. Na região do tumor esse número é a grandeza sob investigação, aplicada
+pelo algoritmo. **Uma "resposta" de 30% dentro de um campo que comprimiu 25% não é resposta.**
+
+**Uma boa similaridade global pode esconder um alinhamento local péssimo.** Informação mútua
+sobre o tórax é dominada por pulmão e parede torácica; um registro que acerta esses e erra o
+linfonodo mediastinal por um centímetro pontua lindamente. Global e local são reportados
+**separados, nunca a média** — a média é o número que esconde o problema.

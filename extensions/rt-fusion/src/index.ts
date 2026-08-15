@@ -15,11 +15,18 @@
  * isocenter step when the two series already share a Frame of Reference, and
  * the Spatial Registration draft to STOW back). The modal component itself,
  * the composited preview and the STOW-RS call are integration follow-ups.
+ *
+ * RTV-205 adds followUpRegistration.ts for oncological follow-up: which
+ * transform may be measured through (rigid yes, deformable never), the
+ * Jacobian check that says where the transform did the volume work being
+ * measured, and global-versus-local similarity reported separately rather than
+ * averaged.
  */
 export * from './fusionConfig';
 export * from './fusionTools';
 export * from './fusionRegistration';
 export * from './fusionSession';
+export * from './followUpRegistration';
 
 import getPanelModule from './getPanelModule';
 
