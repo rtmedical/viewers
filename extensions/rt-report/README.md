@@ -160,3 +160,33 @@ muda a conduta" é a única distinção que o programa existe para encontrar: di
 mudaria a conduta é ponto de ensino; a que mudaria é incidente.
 
 Falta: o painel lado a lado, a notificação do revisor e a persistência no Connect.
+
+## Controle de prazo do laudo (RTV-109)
+
+`turnaround.ts` — o worklist já tem SLA por estudo (RTV-188). Esta é a outra metade: o relógio
+do **laudo**, que é sobre o que o prazo de fato trata, e que se comporta diferente em três
+pontos.
+
+**O endpoint clinicamente significativo é o primeiro laudo acionável, não a assinatura.** Uma
+leitura preliminar aos 20 minutos e um laudo assinado às quatro horas é um protocolo de AVC
+funcionando *corretamente*. Medir só até a assinatura chama isso de quatro horas de
+turnaround e esconde justamente o que importou. Os dois tempos são acompanhados, e o prazo é
+conferido contra o primeiro.
+
+**O relógio precisa parar enquanto o radiologista não pode agir.** Tempo aguardando revisão
+por pares é do revisor. Tempo esperando um exame prévio chegar é do sistema. Cobrar qualquer
+um dos dois do radiologista torna a métrica mentirosa — e pior, **faz as pessoas evitarem
+pedir revisão**, que é o oposto do que o programa de revisão existe para conseguir. Então o
+tempo ativo sai de uma lista de pausas removidas, não de `agora − criado`. Pausas que se
+sobrepõem são **mescladas** e não somadas: dois motivos ao mesmo tempo são um período de não
+poder agir, e somar creditaria o radiologista duas vezes pela mesma espera.
+
+**Escalonamento acontece antes do estouro, não depois.** Notificação no prazo é notificação de
+que o prazo foi perdido. O limiar de aviso é uma **fração** do tempo permitido, e é fração de
+propósito: 15 minutos de antecedência é generoso num laudo de rotina de 24 h e inútil num
+emergente de 60 min.
+
+Nas estatísticas, mediana e p90 em vez de média — distribuições de turnaround têm cauda longa,
+e a média fica entre o caso típico e a cauda descrevendo nenhum dos dois. E **laudos em aberto
+são excluídos dos percentis** e contados à parte: incluí-los no tempo decorrido atual faz uma
+fila represada parecer serviço rápido, porque os mais demorados ainda não terminaram.
