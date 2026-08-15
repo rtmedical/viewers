@@ -18,6 +18,9 @@
  * - **Renal stones** (RTV-89): size (window-corrected), composition and
  *   lithotripsy prediction, composed from the modules above so every caveat
  *   they established survives into the report sentence.
+ * - **Urate deposition** (RTV-90): the gout study, with the five documented
+ *   false positives applied as rules rather than as a footnote, and a volume
+ *   that reports what it excluded.
  *
  * The decomposition is an ill-conditioned inverse problem and the module treats
  * it as one: the condition number is computed, reported on every result, and a
@@ -33,6 +36,7 @@ export * from './iodineMap';
 export * from './virtualNonContrast';
 export * from './materialClassification';
 export * from './renalStones';
+export * from './urateDeposition';
 
 const id = '@ohif/extension-rt-dect';
 
