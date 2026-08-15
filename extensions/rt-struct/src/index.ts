@@ -10,8 +10,16 @@
  * SopClassHandler for RTSTRUCT, so registering another here would duplicate the
  * display set. The contour *editor* (drawing/editing) is a separate viewport
  * integration (follow-up); this delivers the verifiable summary slice of RTV-146.
+ *
+ * RTV-214 adds drawingTools.ts: the Eclipse-shaped Drawing Tools catalogue, the
+ * active-tool/active-structure state (kept as independent axes, which is the
+ * ticket's stated principle) and the operational right-click menu. Tools that
+ * are not implemented yet are listed and disabled rather than hidden or
+ * silently no-op. The geometry operations themselves, and the cornerstone
+ * annotation tools that make a stroke happen, are RTV-141.
  */
 export * from './rtStructParser';
+export * from './drawingTools';
 
 import getPanelModule from './getPanelModule';
 import getCommandsModule from './getCommandsModule';
