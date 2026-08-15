@@ -28,9 +28,16 @@
  * worklistExport.ts (CSV of the visible columns, with formula-injection
  * escaping). All pure; the batch endpoints do not exist yet and the row
  * checkboxes are not wired into RtWorklistPage.
+ *
+ * RTV-190 adds worklistActions.ts: the per-study action resolver for the
+ * hover row, the overflow and the right-click menu. Permissions arrive as an
+ * injected predicate rather than an import from rt-governance, hidden and
+ * disabled are distinct answers, and destructive actions are kept off the
+ * hover row. Also pure, also not wired into the page yet.
  */
 export * from './worklistModel';
 export * from './worklistSelection';
+export * from './worklistActions';
 export * from './worklistBatch';
 export * from './worklistExport';
 export * from './iheInvoke';

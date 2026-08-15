@@ -118,3 +118,46 @@ Backend: `POST /api/studies/batch-assign`, `PATCH /api/studies/batch-priority`. 
 ainda; o runner recebe o applier por parâmetro, então o dia em que existirem é uma função
 de transporte, não uma mudança aqui. **Nada disso está ligado na `RtWorklistPage` ainda** —
 checkbox de linha, toolbar de lote e toast são o passo de UI que falta.
+
+## Ações por estudo: hover, overflow e menu de contexto (RTV-190)
+
+`worklistActions.ts` — resolver puro para o que aparece na linha, no `⋯` e no clique
+direito. Fica num resolver e não em condicional de JSX porque *qual ação é oferecida,
+onde, e se está oculta ou desabilitada* é a substância do ticket.
+
+**Oculto e desabilitado são respostas diferentes.** Oculto = este usuário nunca pode
+fazer isso; "Cancelar estudo" para não-admin não é botão cinza, não existe — controle
+permanentemente proibido não ensina nada e gera chamado perguntando por que não funciona.
+Desabilitado = normalmente disponível, impossível *agora*; C-MOVE sem peer configurado
+fica cinza e **diz por quê**, porque esconder faria o supervisor caçar uma funcionalidade
+que ele sabe que existe. Todo item desabilitado carrega `disabledReason` — controle cinza
+sem explicação é o pior dos três estados, e há teste que varre e falha se algum aparecer
+sem motivo.
+
+**Ação destrutiva nunca entra no hover.** Botão de hover fica sob um ponteiro em
+movimento, numa tabela densa, em linhas que se deslocam quando a lista atualiza.
+"Cancelar estudo" a um pixel de "Abrir no viewer" é mis-click esperando acontecer — e a
+consequência é exame cancelado, que o supervisor depois tem que explicar. Destrutivas só
+pelo overflow e pelo menu de contexto, ambos exigindo um segundo clique deliberado, e
+declaram `confirm: true`. No menu de contexto o grupo de perigo é o último e sozinho, para
+o ponteiro nunca passar por cima dele a caminho de algo benigno.
+
+**Permissão entra por predicado, não por import.** As regras de acesso são do
+`@ohif/extension-rt-governance` (RTV-193); importar aqui seria dependência
+cross-extension, que as regras da casa proíbem e que tornaria este pacote inutilizável sem
+aquele. O chamador passa um `CapabilityCheck`; os *nomes* das capabilities são o contrato
+e estão exportados em `ACTION_CAPABILITIES` para a costura poder ser testada. Sem checker,
+falha fechado.
+
+**Copiar Patient ID é PHI saindo da tela** (`isAuditableCopy`), e o que vai para a área de
+transferência é o valor **cru**, nunca o texto truncado da célula: `12345…` colado na
+busca do RIS não acha nada e o leitor culpa o RIS. Campo vazio devolve `null` em vez de
+string vazia — não se sobrescreve a área de transferência do usuário com nada.
+
+**Rebaixar prioridade pede justificativa; escalar não.** Baixar um estudo escalado é
+decisão clínica que alguém tem que assumir.
+
+Backend: `PUT /api/studies/{id}/assign`, `PATCH /api/studies/{id}/priority`,
+`POST /api/dicom/send`, presença por WebSocket e peers do RTVW-16 — nada disso existe
+ainda. **Não está ligado na `RtWorklistPage`**: os botões de hover, o menu de contexto e os
+toasts são o passo de UI que falta.
