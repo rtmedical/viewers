@@ -52,3 +52,30 @@ RTV-190. Sem checker, falha fechado.
 O editor rich text (RTV-104), templates (RTV-105), macros (RTV-106), peer review (RTV-108),
 distribuição (RTV-110), o modelo canônico CDE-first (RTV-216) e a persistência no Connect.
 Nada aqui é renderizado ainda.
+
+## Macros / frases prontas (RTV-106)
+
+`macros.ts` — atalho dispara frase, com campos a preencher. Ganho grande de produtividade e
+superfície grande de segurança, pelo mesmo mecanismo.
+
+**Campo não preenchido não pode chegar num laudo assinado.** É a falha em torno da qual o
+módulo foi construído. Uma macro `Nódulo em [LOBO] medindo [N] mm` expande na hora, o
+radiologista continua digitando *no fim dela*, e o laudo sai dizendo "Nódulo em [LOBO]
+medindo [N] mm" — ou pior, com um default que por acaso está errado para este paciente.
+Então: `expandMacro` reporta onde cada campo caiu, **o cursor vai para o primeiro campo e
+não para o fim da inserção**, e `guardBeforeSigning` **recusa** a assinatura nomeando os
+campos que sobraram. Recusa, não avisa: aviso em diálogo de assinatura é dispensado por
+memória muscular, e o custo de errar aqui cai no paciente.
+
+**A expansão tem que ser visível.** `expandMacro` devolve o intervalo inserido, não só o
+texto novo. Macro que despeja um parágrafo de afirmações clínicas sem deixar rastro visual é
+texto que o radiologista assina sem ter lido — o editor seleciona o intervalo (ou o primeiro
+campo) para ele ser olhado uma vez.
+
+**Gatilho: token inteiro, nunca dentro de palavra.** Com `;n` e `;nod` registrados, digitar
+`;nod` não pode disparar `;n` e deixar `od` sobrando. E registro **rejeita atalho
+duplicado** em vez de deixar o último sombrear o primeiro: duas macros no mesmo atalho
+significa que uma nunca dispara, e quem a escreveu só descobre quando um laudo sai errado.
+Atalho com espaço também é rejeitado — nunca dispararia.
+
+Campos são `[MAIÚSCULAS]` só, para prosa entre colchetes (`[ver figura 3]`) não virar campo.
