@@ -7,6 +7,8 @@
  *   that RT uses for skeletal and skin-envelope views.
  * - **DSA — Digital Subtraction Angiography** (RTV-65): pre-contrast mask subtraction,
  *   with the window/level the signed result actually needs.
+ * - **CPR — Curved Planar Reformation** (RTV-14, RTV-61): arc-length centerline
+ *   resampling, rotation-minimising frames, and the three Kanitsar modes.
  *
  * What it does NOT contain: marching cubes and an STL writer. vtk.js ships
  * `vtkImageMarchingCubes` and `STLWriter`, both bundled. What was missing — and what
@@ -18,6 +20,8 @@
 export * from './ssdPresets';
 export * from './ssdBudget';
 export * from './dsa';
+export * from './centerline';
+export * from './cpr';
 export { createSsdActions, SSD_ACTOR_UID } from './getCommandsModule';
 
 import getCommandsModule from './getCommandsModule';

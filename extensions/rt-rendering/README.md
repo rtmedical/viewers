@@ -117,6 +117,73 @@ The per-frame hook into a Cornerstone3D XA/stack viewport — this is the arithm
 the mask logic, applied to plain typed arrays. Nothing here has been run against a real
 XA run: the DEV1 PACS has no angiography.
 
+## CPR — Curved Planar Reformation (RTV-14, RTV-61)
+
+Produces the 3D sample positions a renderer reads voxels at, for the three CPR modes
+from Kanitsar et al., *Curved Planar Reformation of CT Angiographies* (IEEE Vis 2002).
+It does **not** read voxels: keeping the geometry separate from the sampling is what
+lets the whole thing be tested without a volume.
+
+| Module | Purpose |
+| --- | --- |
+| `centerline` | Arc-length resampling and rotation-minimising frames |
+| `cpr` | The three modes, and mapping a reformation pixel back to patient space |
+
+### Why not Frenet frames
+
+The textbook answer for "a frame along a curve" is Frenet-Serret. It is the wrong tool
+here, and using it is the classic way a CPR ends up looking broken:
+
+- The Frenet normal is defined by the **curvature vector**. Through a straight segment
+  curvature goes to zero and the normal is undefined — it spins on noise, and the
+  reformation twists like a corkscrew.
+- At an **inflection point** the curvature vector flips 180°, so the reformatted image
+  mirrors itself mid-vessel.
+
+Vessels are full of near-straight runs and inflections, so both happen constantly.
+`rotationMinimisingFrames` uses the double-reflection method (Wang et al., *ACM TOG*
+2008): each frame is transported from the previous one with the least possible rotation.
+There are tests for both failure modes — no twist along a straight run, no flip through
+an S-curve.
+
+### Uniform arc length, not spline parameter
+
+`resampleCenterline` walks the densely-sampled spline at fixed distance. Sampling the
+spline in its own parameter instead gives points that bunch on tight curves and spread
+on straight runs, and a CPR built on those is stretched and squashed along its length —
+so a lesion length measured on it would be wrong.
+
+### The three modes are not cosmetic variants
+
+| Mode | What is true | What is not |
+| --- | --- | --- |
+| **Straightened** | Cross-sections — measure diameters here | The vessel course is destroyed |
+| **Stretched** | Distance along the vessel | Cross-sections are cut obliquely, so diameters read **wide** |
+| **Projected** | Spatial context | Foreshortened out of plane; neither diameters nor lengths |
+
+Reading a diameter off a *stretched* CPR is the classic error, which is why
+`CPR_MODE_CAVEATS` exists and the panel should show it next to the mode picker.
+
+Mechanically: straightened uses each frame's own normal, so rows are perpendicular to
+the vessel. Stretched and projected use a **constant** row direction — that constancy is
+exactly what makes distance along the vessel meaningful and cross-sections oblique. The
+modes then differ in `rowOffsetsMm`: uniform arc length for stretched, the centerline's
+projection onto `up` for projected.
+
+### Measurements can come back
+
+`cprPixelToPatient` maps a reformation pixel to a patient-space position, which is what
+an annotation on the CPR needs to be worth anything. Outside the image it returns `null`
+rather than extrapolating — a point off the reformation has no defined position, and
+inventing one would put an annotation somewhere plausible and wrong.
+
+### Not delivered
+
+The voxel sampling itself, the viewport, and centerline *extraction*. Control points
+come from the caller; automatic vessel tracking (Frangi vesselness) is **RTV-62**.
+Stenosis analysis along the curve, which RTV-61 also asks for, is not here either.
+Nothing has been run against a real angio volume — the DEV1 PACS has no CTA.
+
 ## Tests
 
 ```bash
