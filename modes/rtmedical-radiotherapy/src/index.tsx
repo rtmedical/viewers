@@ -65,6 +65,7 @@ export const extensionDependencies = {
   '@ohif/extension-rt-dvh': '^3.0.0',
   '@ohif/extension-rt-isodose': '^3.0.0',
   '@ohif/extension-rt-grid': '^3.0.0',
+  '@ohif/extension-rt-rendering': '^3.0.0',
   '@ohif/extension-rt-fusion-timeline': '^3.0.0',
   '@ohif/extension-rt-print': '^3.0.0',
   '@ohif/extension-rt-record': '^3.0.0',
@@ -632,6 +633,8 @@ export const radiotherapyToolbarSections = {
     'rtGridInc',
     'rtGridDec',
     'rtGridReset',
+    'rtSsd',
+    'rtSsdClear',
   ],
   // FERRAMENTAS + ANOTAÇÕES: contour-friendly ROI/annotation tools for RT.
   MeasurementTools: [
@@ -1001,6 +1004,29 @@ const mipSlabToolbarButtons = [
       label: 'Grid -',
       tooltip: 'Finer grid (-5 mm, min 1 mm)',
       commands: { commandName: 'rtGridAdjustSpacing', commandOptions: { deltaMm: -5 } },
+    },
+  },
+  {
+    // RTV-17: SSD -- isosuperficie por limiar de densidade. O marching cubes e do
+    // vtk.js; o que esta do nosso lado e o limiar clinico e o pre-voo que impede
+    // um CT de 105 M de voxels de travar a aba.
+    id: 'rtSsd',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'tool-3d-rotate',
+      label: 'SSD',
+      tooltip: 'Surface Shaded Display — isosurface at a density threshold',
+      commands: 'rtSsdExtract',
+    },
+  },
+  {
+    id: 'rtSsdClear',
+    uiType: 'ohif.toolButton',
+    props: {
+      icon: 'Close',
+      label: 'SSD off',
+      tooltip: 'Remove the shaded surface from the viewport',
+      commands: 'rtSsdClear',
     },
   },
   {
