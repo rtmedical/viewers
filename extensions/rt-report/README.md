@@ -79,3 +79,41 @@ significa que uma nunca dispara, e quem a escreveu só descobre quando um laudo 
 Atalho com espaço também é rejeitado — nunca dispararia.
 
 Campos são `[MAIÚSCULAS]` só, para prosa entre colchetes (`[ver figura 3]`) não virar campo.
+
+## Achados críticos (RTV-202)
+
+`criticalFindings.ts` — CFM 1.974/2011 e o ACR Practice Parameter dizem a mesma coisa: achado
+que põe o paciente em risco imediato tem que chegar ao médico assistente **agora**, e a
+comunicação tem que ficar registrada. Este módulo é o registro e o relógio.
+
+**O registro é append-only, porque é prova.** "Registro imutável, não editável após envio" é
+critério de aceite, e é o ponto inteiro. Um log de achados críticos editável não prova nada —
+o caso em que ele importa é aquele em que um paciente foi lesado e alguém está estabelecendo
+o que se sabia, quando, e quem foi avisado. Corrigir a descrição não reescreve: **anexa uma
+emenda, e os dois textos sobrevivem.**
+
+**Ligação sem atestação não é notificação.** O canal preferido da norma é contato verbal
+direto. Telefonema não deixa rastro de máquina, então o único registro é o radiologista
+afirmar que ligou — que é exatamente por que `dispatch` **recusa** um envio por telefone sem
+`verballyConfirmed`. Registrar "notificado por telefone às 14:32" sem nada por trás produz um
+log que *parece* completo.
+
+**Escalonamento é derivado do relógio, nunca armazenado.** Dez minutos sem confirmação
+significa que o radiologista tem que ligar. Esse estado é calculado de `sentAt` e do agora a
+cada pergunta, em vez de ser gravado por um timer. Flag armazenada vale o que vale o timer
+que a grava: aba fechada, worker morto, notebook suspenso — e o modo de falha é um achado
+crítico que **para de incomodar em silêncio.**
+
+**O achado não enviado é o perigoso.** Digitado e nunca despachado — rede caiu, aba fechou —
+é pior que achado nenhum, porque o radiologista acredita que comunicou. `pendingDispatch`
+existe para a UI não deixar isso passar, e envio que falhou é registrado tão alto quanto
+envio que deu certo.
+
+**Sobre o template da mensagem:** o especificado no ticket leva nome do paciente e MRN por
+WhatsApp — PHI em canal de terceiros. `buildMessage` implementa o que foi pedido, mas recebe
+`includePatientName` como argumento explícito em vez de assumir, para a decisão ficar visível
+no ponto de chamada e poder ser desligada por instituição sem tocar neste arquivo. O link
+carrega a identidade que o destinatário se autentica para ver; a mensagem não precisa.
+
+O relatório de gestão mantém linha para achado **nunca enviado**: relatório que só lista
+notificações bem-sucedidas é relatório que esconde as falhas.
