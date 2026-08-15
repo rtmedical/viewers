@@ -13,6 +13,10 @@
  *     (backend not local). Zero-fork (RTV-114).
  *
  * The clock and storage are injectable so the logic is deterministic in tests.
+ *
+ * RTV-149 adds `listAll` and `saveRecord` here and the sync orchestration in
+ * hpSync.ts — see that file for why a failed push must not advance the sync
+ * point and why a late-arriving protocol is not allowed to re-apply.
  */
 export interface StorageLike {
   getItem(key: string): string | null;
@@ -89,6 +93,35 @@ export class HangingProtocolStore {
   /** Active (non-deleted) records. */
   list(): StoredProtocolRecord[] {
     return Object.values(this.readAll()).filter(r => !r.deleted);
+  }
+
+  /**
+   * Every record, tombstones included.
+   *
+   * {@link list} hides deletions, which is right for anything that renders protocols and
+   * wrong for sync: a locally deleted protocol that never reached the server comes
+   * straight back on the next pull. The tombstone exists so the removal can propagate
+   * (RTV-149), so the sync engine reads through this.
+   */
+  listAll(): StoredProtocolRecord[] {
+    return Object.values(this.readAll());
+  }
+
+  /**
+   * Writes a record exactly as given, without bumping the version or auditing a local
+   * edit.
+   *
+   * Used by sync to install what the server sent: the version and `updatedBy` on a
+   * pulled record belong to whoever made the change upstream, and re-stamping them here
+   * would make every pull look like a local edit and re-push it forever.
+   */
+  saveRecord(record: StoredProtocolRecord): void {
+    if (!record?.id) {
+      return;
+    }
+    const records = this.readAll();
+    records[record.id] = { ...record };
+    this.writeAll(records);
   }
 
   get(id: string): StoredProtocolRecord | undefined {
