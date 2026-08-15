@@ -11,6 +11,10 @@
  *   resampling, rotation-minimising frames, and the three Kanitsar modes.
  * - **Multi-station stitching** (RTV-60): frame-of-reference-checked composition of
  *   overlapping angio stations, with a linear blend across the overlap.
+ * - **Frangi vesselness** (RTV-62): multiscale Hessian vessel enhancement,
+ *   with the polarity required rather than assumed, gamma normalisation so the
+ *   scales are comparable, a data-derived structureness constant, and the
+ *   winning sigma returned as a caliber estimate.
  * - **VIP — Volume Intensity Projection** (RTV-16): the transmittance-weighted
  *   maximum along the ray, which is MIP with the depth cue put back. Reduces
  *   exactly to MIP as opacity goes to zero. Reference implementation for the
@@ -24,6 +28,7 @@
  * Follows RTV-114 (extension-first, zero fork).
  */
 export * from './vip';
+export * from './frangi';
 export * from './ssdPresets';
 export * from './ssdBudget';
 export * from './dsa';
