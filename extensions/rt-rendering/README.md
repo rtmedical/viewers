@@ -378,3 +378,45 @@ por ela.
 nada sob carga. Tratá-lo como presente porque dá para ver é como um laudo diz que a colateral
 existe quando ela não existe. A palavra usada no texto continua distinguindo os dois, porque
 não são a mesma anatomia.
+
+## Roadmap dinâmico: máscara mantida sobre fluoroscopia ao vivo (RTV-64)
+
+`roadmap.ts` — o `dsa.ts` (RTV-65) subtrai **dentro de uma corrida gravada**, que o operador
+depois revisa. Roadmap é o caso intervencionista e é outro problema: a máscara é adquirida uma
+vez, de uma injeção de contraste, e depois **mantida por minutos** enquanto o operador avança
+um fio-guia contra ela sob fluoro ao vivo.
+
+### Um roadmap velho não parece quebrado — parece um roadmap
+
+É a razão inteira do módulo existir. Numa corrida de DSA revisada, o desalinhamento aparece
+como bordas duplas óbvias e o leitor desconta. No roadmap, o mapa vascular é um overlay liso
+sem nada com que comparar, então quando o paciente escorrega na mesa, ou a mesa panoramiza, ou
+o arco-C gira, o overlay continua desenhando vasos **onde os vasos não estão mais** — e o
+operador está guiando um fio por ele.
+
+Por isso qualquer mudança de geometria além da tolerância **invalida a máscara
+automaticamente**. Não é um banner de aviso sobre um overlay ainda renderizado: `applyRoadmap`
+**se recusa a produzir imagem**. Um aviso ao lado de um roadmap plausível é um aviso lido
+depois que o fio já foi para algum lugar.
+
+### Invalidar custa, então o motivo tem que ser específico
+
+Máscara nova significa outra injeção de contraste e mais dose num paciente que já está na mesa
+sob fluoro. Descartar o roadmap por algo que um deslocamento de pixels resolveria não é de
+graça. `geometryChange` separa os dois casos:
+
+| mudança | consequência |
+|---|---|
+| translação da mesa no plano | **corrigível por deslocamento** — sem contraste, sem dose |
+| rotação, altura, DFD, campo de visão | **máscara nova** — a projeção mudou |
+
+`shiftMask` **recusa** no segundo caso. Um deslocamento escolhido porque "ficou melhor" sobre
+uma rotação alinha uma região e desalinha o resto: convincente localmente, errado globalmente,
+o que é pior que um overlay obviamente velho.
+
+### Deriva por imagem é sinal fraco, e está rotulada como tal
+
+`maskDrift` correlaciona o quadro ao vivo com a máscara, mas um fio-guia cruzando o campo
+também derruba a correlação, e movimento lento do paciente quase não a derruba. É checagem
+secundária. **A comparação de geometria é a que decide** — e a máscara antiga demais gera um
+aviso justamente porque movimento lento nunca aparece na geometria da mesa.
