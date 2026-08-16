@@ -420,3 +420,43 @@ o que é pior que um overlay obviamente velho.
 também derruba a correlação, e movimento lento do paciente quase não a derruba. É checagem
 secundária. **A comparação de geometria é a que decide** — e a máscara antiga demais gera um
 aviso justamente porque movimento lento nunca aparece na geometria da mesa.
+
+## Bolus tracking: a decisão de disparo (RTV-66)
+
+`bolusTracking.ts` — fica ao lado do `dsa.ts` e do `roadmap.ts` porque pertence à mesma
+família: o que o contraste está fazendo, e o que o equipamento deve fazer a respeito. Os
+quadros de monitoramento e o handshake com o scanner não estão aqui.
+
+### A ROI de disparo é posicionada uma vez, antes de haver contraste para ver
+
+Tudo depois depende dela e nada depois consegue conferi-la — por isso `validateRoiBaseline`
+roda primeiro. Uma ROI que pega a parede aórtica, uma placa calcificada ou um stent tem linha de
+base alta e heterogênea: se o protocolo dispara por valor absoluto, ela dispara **antes** de o
+contraste chegar; se dispara por realce acima da base, o realce é medido a partir do chão
+errado. Uma ROI com um canto no pulmão tem o problema oposto e dispara tarde.
+
+**Nenhuma das duas falhas se anuncia.** O exame roda, as imagens saem, e o único sinal é a
+artéria mal opacificada — o que se lê como injeção ruim.
+
+### Disparo e varredura não são o mesmo instante
+
+Entre o disparo e o primeiro corte diagnóstico há movimento de mesa e a instrução de apneia:
+vários segundos em que o contraste continua subindo ou, numa circulação rápida, já passou do
+pico. Reportar o realce **no disparo** responde à pergunta errada. O módulo extrapola a
+inclinação através do atraso e diz como a aorta vai estar quando a varredura de fato começar.
+
+### Um quadro acima da linha não é uma chegada
+
+Quadros de monitoramento são de baixa dose e ruidosos. Um único acima do limiar pode ser ruído,
+e disparar nele começa a aquisição antes de o contraste estar lá: exame não diagnóstico,
+repetido com outra carga de contraste e outra dose. A subida precisa ser sustentada.
+
+### Não disparar também custa
+
+Abortar é a direção segura e **não é de graça**: disparo perdido significa repetir o exame, com
+mais contraste e mais dose, num paciente cuja função renal costuma ser o motivo de o protocolo
+ser cuidadoso. Por isso o aborto diz qual dos dois foi — o bolus não chegou, ou o monitoramento
+acabou enquanto ele ainda subia.
+
+`delta` e `absolute` coexistem em protocolos reais e **dão respostas diferentes no mesmo
+paciente**, então a escolha é explícita e não tem default implícito.
