@@ -21,6 +21,9 @@
  * - **FHIR export** (RTV-219): DiagnosticReport + Observation, with a status
  *   mapping that never lets an unsigned report claim `final`, and references
  *   that have to resolve outside the database that made them.
+ * - **Canonical model** (RTV-216): the persisted contract — immutable
+ *   content-addressed versions, structured observations that are the record
+ *   rather than a parse of the prose, and provenance on every clinical claim.
  *
  * This is the state layer the rest of the RTV-103 family sits on: the rich-text
  * editor (RTV-104), templates (RTV-105), macros (RTV-106), peer review
@@ -35,6 +38,7 @@ export * from './macros';
 export * from './criticalFindings';
 export * from './peerReview';
 export * from './turnaround';
+export * from './canonicalReport';
 export * from './fhirExport';
 
 const id = '@ohif/extension-rt-report';

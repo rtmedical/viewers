@@ -224,3 +224,32 @@ Achado com código vira `Observation` referenciado de `DiagnosticReport.result`;
 `conclusion` e `presentedForm`. Achado **sem** código é reportado como tal, com aviso de que
 contraria a decisão CDE-first — em vez de ser achatado em prosa em silêncio. Evidência DICOM
 vai como `derivedFrom` com o UID no namespace `urn:dicom:uid`.
+
+## Modelo canônico versionado do laudo (RTV-216)
+
+`canonicalReport.ts` — o contrato persistido. Tudo o mais na família lê ou escreve isto: o
+editor (RTV-104), os campos CDE (RTV-217), os packs RADS (RTV-220), as evidências (RTV-221),
+o adaptador FHIR (RTV-219) e o artefato PDF/A.
+
+**O valor estruturado não é derivado do texto.** O desenho tentador é um corpo rich-text mais
+um parser. Ele falha no instante em que alguém edita a prosa: "nódulo de 8 mm" vira "nódulo de
+6 mm" e o campo estruturado continua dizendo 8 — ou o parser relê e **muda em silêncio um
+valor que ninguém remediu**. Aqui a observação estruturada *é* o registro e o narrativo é
+renderizado ao lado. A validação avisa quando há medida na prosa que nenhuma observação
+sustenta: prosa não é proibida, mas **número no texto que não está no dado não pode ser
+exportado, comparado nem confiado** depois que alguém edita a frase em volta.
+
+**Versões seladas são imutáveis e endereçadas por conteúdo.** Mesma regra do
+`reportWorkflow`, imposta também na camada de armazenamento — duas camadas que ambas acham
+que são donas da imutabilidade é como uma delas para de impor. Cada versão selada carrega um
+hash de conteúdo, então "o que eu tenho é o mesmo que o seu?" se responde sem comparar campo
+a campo. O hash é FNV-1a e **não é criptográfico de propósito**: ele responde
+"é o mesmo?", não "alguém adulterou?" — a segunda pergunta é da assinatura PAdES, e fingir
+que um hash faz as duas é ficar sem nenhuma. Reordenar observações não muda o hash; mudar um
+valor muda.
+
+**Toda afirmação clínica carrega procedência.** Uma observação registra quem afirmou e se um
+humano confirmou. Isso importa hoje para revisão por pares e importa muito mais no instante
+em que um assistente de IA (RTV-224) propuser achados: **afirmação de máquina não confirmada
+que parece idêntica à de um radiologista é a falha que desacredita a feature inteira.** Por
+isso ela é *erro* de validação, não aviso.
