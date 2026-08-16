@@ -21,6 +21,7 @@
 export * from './ahaBullseye';
 export * from './cardiacFunction';
 export * from './cadRads';
+export * from './coronaryTree';
 
 import getPanelModule from './getPanelModule';
 
