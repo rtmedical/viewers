@@ -198,3 +198,47 @@ exatamente a direção que perde uma progressão. `propagatedMeasurement` recusa
 Um contorno propagado é revisado por um humano antes de ser tratado; uma dose acumulada
 normalmente não é — ela vira um número numa comparação de planos. Por isso dobra reprova dose
 imediatamente, e ausência de landmarks também.
+
+## Correção portal no registro de fusão (RTV-144)
+
+`portalCorrection.ts` — uma imagem portal ou CBCT é casada contra a referência de planejamento;
+o casamento produz um deslocamento; alguém decide o que fazer a respeito. **São três fatos
+separados**, e o registro precisa mantê-los separados.
+
+### O deslocamento da fusão e o da mesa apontam em direções opostas
+
+O registro responde "como a imagem adquirida precisa se mover para cair sobre a referência". A
+mesa responde "como o paciente precisa se mover para cair sobre o plano". São a mesma magnitude
+com sinais opostos, e guardar um onde se espera o outro não produz um erro pequeno: **dobra** o
+deslocamento, porque a mesa move o paciente para o lado errado exatamente pela quantidade com
+que deveria tê-lo movido para o lado certo.
+
+Nada no número resultante parece errado — ele tem o tamanho certo. Por isso a conversão é uma
+função nomeada e única, explícita sobre qual direção recebe e qual devolve, e `couchShiftMm` e
+`fusionShiftMm` são **campos diferentes** no registro em vez de um campo com uma convenção num
+comentário. Mesma família de falha do `couchShifts.ts` (RTV-208), uma camada antes.
+
+### Registrado não é aplicado
+
+O casamento produz uma sugestão. Se a mesa de fato se moveu é outro fato, estabelecido por outra
+pessoa em outro momento. Um registro que guarda só o deslocamento lê-se, meses depois, como se o
+paciente tivesse sido corrigido — e se o terapeuta decidiu não mover, o resumo do curso está
+**silenciosamente errado sobre cada fração em que isso aconteceu**. A decisão é obrigatória, e
+recusa sem motivo é indistinguível de esquecimento no registro.
+
+### Corrigir dentro do ruído piora o tratamento
+
+Um desvio de 1 mm medido num sistema com 1,5 mm de reprodutibilidade é majoritariamente erro de
+medida. Aplicá-lo move o paciente por uma quantidade aleatória a cada dia: **não faz nada com a
+componente sistemática**, que é a que a receita de margem pesa três vezes e meia mais, e
+**soma** à aleatória.
+
+### A referência decide o que o número significa
+
+Casamento contra a portal de ontem mede a deriva desde ontem. Contra o DRR mede o deslocamento
+em relação ao plano. Os dois são úteis, e **só um deles entra numa análise de erro sistemático**.
+
+### Só a decisão é editável
+
+O deslocamento é o que o casamento produziu; editá-lo transforma uma medida numa opinião sem
+registro de qual das duas era. Um casamento diferente é uma correção nova.
