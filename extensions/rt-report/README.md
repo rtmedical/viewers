@@ -381,3 +381,47 @@ Os limiares de escalonamento contam **do fim da tolerância**, não da data prev
 data prevista deixa a tolerância sem sentido para a urgência cuja tolerância coincide com o
 primeiro limiar — em `routine` as duas eram 30 dias, e o estado `overdue` simples ficava
 inalcançável. Os testes acharam exatamente isso.
+
+## Importador RadReport/MRRT e o modelo canônico de template (RTV-218)
+
+`reportTemplate.ts` (modelo) + `mrrtImport.ts` (parser). O RadReport publica templates como
+HTML MRRT. **Esse HTML é transporte, não armazenamento** — no momento em que os dois existem,
+uma edição no modelo canônico e uma edição no HTML divergem, e ninguém consegue dizer de qual
+delas um laudo assinado foi escrito. A reexportação é regerada a partir do modelo.
+
+### Um template editado não é o template de onde veio
+
+É a regra de identidade que o módulo impõe, e é questão de conformidade, não preferência de
+modelagem. Se uma cópia editada localmente mantém `RPT144` como identificador, então **dois
+documentos diferentes afirmam ser o RadReport RPT144 versão 3**, e um laudo assinado afirma ter
+seguido um template publicado que não seguiu.
+
+O identificador de origem vira **procedência** — de onde isto foi derivado — e o template ganha
+identificador próprio. `forkTemplate` é o único caminho para uma cópia editável, e
+`assertEditable` recusa o resto. O fork exige motivo registrado: quem revisar o template daqui
+a um ano precisa saber por que ele diverge do publicado.
+
+**Tradução conta como edição.** Os códigos sobrevivem — um conceito RadLex não depende de
+idioma — mas o identificador não, porque o texto que o radiologista assina não é mais o texto
+publicado.
+
+### Códigos são lidos, nunca inferidos
+
+Uma opção sem código na origem permanece sem código. Casar "Presente" com um CDE porque a
+string parece certa atribui significado estruturado que o autor do template nunca declarou, e
+produz um laudo **legível por máquina e errado** — o que é pior que não ser legível por máquina.
+`linkCodes` recebe um resolvedor injetado e só lhe pergunta sobre códigos explícitos.
+
+### O que não consegue interpretar, ele reporta
+
+Campo descartado em silêncio é a falha característica de todo importador de HTML: o template
+abre, parece completo, e está faltando justamente o controle que o autor se importava. As
+construções não reconhecidas voltam em `unsupported`.
+
+### Scripts são removidos
+
+Um template é um documento. Um que traz script executável é um que **roda código dentro do
+workspace de laudo** — só o bloco `text/xml` de atributos sobrevive, e a remoção é reportada.
+
+O parser não usa DOM: é um scanner de tags sobre o subconjunto que o MRRT de fato usa, então
+roda igual num worker, no Node e num teste.
