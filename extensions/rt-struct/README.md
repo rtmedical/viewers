@@ -81,3 +81,51 @@ Falta: a geometria de verdade. Boolean, Margin/PRV, Interpolate, Crop, Deform, T
 família de segmentação estão catalogadas e desabilitadas, não implementadas. E nada está
 ligado a um viewport do cornerstone — o RTV-141 (as duas AnnotationTool subclasses) é o
 ticket que faz o traço acontecer.
+
+## Validade de contorno e volume de estrutura (RTV-141)
+
+`contourGeometry.ts` — o `drawingTools.ts` (RTV-214) cuida do estado da ferramenta e do painel.
+Este é a **geometria**: o que faz um contorno ser bem formado, e o que faz um volume calculado a
+partir deles bater com o número que o sistema de planejamento vai calcular do mesmo arquivo.
+
+### Um contorno que se autointersecta não tem interior definido
+
+Um oito pode ser preenchido de dois jeitos. **Par-ímpar** chama o lobo cruzado de vazio;
+**non-zero** chama de cheio. As duas regras são legítimas e softwares diferentes escolhem
+diferente — então **o mesmo RTSTRUCT** dá um volume no TPS e outro no viewer, e não há como
+saber qual está certo porque o arquivo não diz.
+
+Por isso a recusa é **no momento do traço**, não na exportação: exportado, o contorno já foi
+aprovado, e o desacordo aparece como "dois sistemas discordando do volume" em vez de como um
+contorno que nunca foi válido.
+
+### Um buraco não são duas regiões
+
+Contorno dentro de contorno, mesmo corte, mesma estrutura, é um keyhole: o de dentro é
+subtraído. Tratar o par como duas regiões **soma** o buraco em vez de removê-lo — para uma
+estrutura desenhada em volta de um órgão oco, um erro grande que ainda parece um volume
+plausível.
+
+### As pontas são uma convenção, e as duas diferem em 20% numa estrutura pequena
+
+O sistema de planejamento trata cada contorno como uma **fatia** de uma espessura de corte: seis
+contornos a 2 mm cobrem 12 mm de tecido. Um viewer que integra entre o primeiro e o último
+contorno cobre 10 mm e reporta um sexto a menos. **As duas são defensáveis; nenhuma está escrita
+no arquivo.**
+
+A diferença é uma espessura de corte espalhada nas pontas — desprezível num fígado de sessenta
+cortes e **vinte por cento num linfonodo de seis**. Estruturas pequenas são justamente onde o
+desacordo importa, então a convenção é parâmetro nomeado que viaja com o resultado, não uma
+escolha enterrada num laço.
+
+### Um corte pulado é onde os dois sistemas se separam
+
+Contornar corte sim, corte não e deixar o TPS interpolar é prática normal. Quem soma
+área × espaçamento sobre os cortes que existem reporta cerca de metade da verdade; quem assume
+espaçamento uniforme a partir da primeira lacuna reporta outra coisa. O módulo **recusa** em vez
+de escolher uma interpolação que o arquivo nunca especificou.
+
+O espaçamento de referência é o **menor** intervalo entre cortes contornados, não a mediana:
+contornos são traçados sobre cortes de aquisição, então nada pode estar mais perto que a grade —
+e com a mediana uma pilha com mais lacunas que cortes adota a lacuna como espaçamento, e aí
+nenhuma lacuna é detectada.
