@@ -15,6 +15,7 @@
  */
 export * from './rtPlanParser';
 export * from './isocenters';
+export * from './beamGeometry';
 export { getSopClassHandlerModule } from './getSopClassHandlerModule';
 
 import getSopClassHandlerModule from './getSopClassHandlerModule';
