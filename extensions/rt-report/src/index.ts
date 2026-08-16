@@ -30,6 +30,9 @@
  * - **Image evidence** (RTV-221): the link back to the pixels, in DICOM SR
  *   shape, with the coordinate space recorded rather than inferred — because a
  *   2D coordinate does not survive a re-reconstruction and a 3D one does.
+ * - **RADS packs** (RTV-220): TI-RADS, PI-RADS, BI-RADS and LI-RADS — computed
+ *   where the rules are deterministic, with the size that decides the action
+ *   required rather than optional.
  *
  * This is the state layer the rest of the RTV-103 family sits on: the rich-text
  * editor (RTV-104), templates (RTV-105), macros (RTV-106), peer review
@@ -47,6 +50,7 @@ export * from './turnaround';
 export * from './canonicalReport';
 export * from './cdeCatalog';
 export * from './imageEvidence';
+export * from './radsPacks';
 export * from './fhirExport';
 
 const id = '@ohif/extension-rt-report';
