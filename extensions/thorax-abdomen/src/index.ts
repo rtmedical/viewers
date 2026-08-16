@@ -17,6 +17,7 @@
  * Follows RTV-114 (extension-first, zero fork).
  */
 export * from './lungRads';
+export * from './virtualEndoscopy';
 
 const id = '@ohif/extension-thorax-abdomen';
 

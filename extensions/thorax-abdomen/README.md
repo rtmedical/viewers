@@ -45,3 +45,51 @@ tenha visto.
 
 Detecção (sidecar MONAI/LIDC-IDRI), o painel do formulário Lung-RADS, o overlay de
 segmentação e o export DICOM SR.
+
+## Endoscopia virtual: centerline, trajeto de câmera e cobertura (RTV-71)
+
+`virtualEndoscopy.ts` — o fly-through em si é uma câmera perspectiva vtk.js e pertence ao
+viewport. O que pertence aqui é a parte que decide **por onde a câmera passa** e, mais
+importante, **o que ela nunca viu**.
+
+### Uma passagem não vê a superfície inteira, e esse é o achado
+
+A falha característica da colonoscopia virtual não é uma imagem ruim, é um **ponto cego**: o
+lado de trás de uma prega haustral fica oculto para uma câmera voando anterógrado, e uma lesão
+ali não é sutil nas imagens — ela está **ausente** delas. Um leitor que completou o fly-through
+viu o cólon inteiro no sentido de que a câmera o percorreu de ponta a ponta, e é exatamente por
+isso que a lacuna é perigosa.
+
+Daí `surfaceCoverage`, que mede a fração da parede que esteve de fato em campo, e
+`bidirectionalCoverage`, que mostra o que a segunda passagem acrescenta *nesta anatomia* em vez
+de citar a literatura. **É o único número do módulo capaz de contradizer a impressão de
+completude do leitor.**
+
+### A centerline não é o caminho mais curto
+
+O caminho mais curto entre dois pontos num lúmen curvo abraça a face interna de cada curva e
+põe a câmera na mucosa — onde a vista é inútil e, pior, onde a parede oclui o segmento adiante,
+e o leitor passa voando por um trecho de cólon que não viu. O Dijkstra aqui é ponderado por
+distância-à-parede: um passo perto do eixo é barato, um passo perto da mucosa é caro. O
+resultado é mais longo e fica dentro. Há teste comparando com o caminho não ponderado.
+
+### Um fly-through contínuo não prova um lúmen contínuo
+
+Onde o cólon está colabado, ou onde uma alça encosta em delgado adjacente, a busca de caminho
+atravessa alegremente. A câmera então sai do cólon e entra em outro órgão sem nada no vídeo
+parecer errado. `validatePath` reporta o perfil de raio e marca as cinturas, porque um raio
+subitamente próximo de zero é a assinatura das duas falhas.
+
+### Nada pode ser medido na vista endoluminal
+
+Tamanho aparente sob câmera perspectiva é função da distância, e FOV largo ainda acrescenta
+distorção de barril: um pólipo de 6 mm perto e um de 12 mm ao dobro da distância ocupam o mesmo
+ângulo. O tamanho do pólipo decide polipectomia versus intervalo de três anos, então o número
+tem que vir das imagens de origem. `measureFromEndoluminalView` recusa e diz onde medir.
+
+### Detalhe de digitalização que vale saber
+
+O voxel exterior mais próximo de um disco digitalizado é **diagonal**, não axial: para um disco
+de raio 5 é (5,1) a 5,10 mm, não (6,0) a 6 mm. O raio de lúmen reportado corre um pouco abaixo
+do nominal, e um limiar de cintura fixado no raio nominal dispara num tubo exatamente daquele
+calibre.
