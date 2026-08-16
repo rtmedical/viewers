@@ -121,3 +121,34 @@ whichever dimension group is *currently* selected. So reading phase N means
 ```bash
 node node_modules/.bin/jest --config extensions/rt-4d/jest.config.js --ci
 ```
+
+## Binagem respiratória, e a irregularidade que a quebra (RTV-92)
+
+`respiratoryBinning.ts` — o RTV-93 nomeia as fases de um 4D-CT **já binado**. Este é o passo
+anterior: pegar o traçado do surrogate e decidir qual aquisição vai em qual bin. Dois métodos,
+e eles **não produzem as mesmas imagens**.
+
+**Binagem por fase** divide cada respiração em frações iguais *dela mesma*; todo bin enche,
+sempre. **Binagem por amplitude** bina por onde o surrogate realmente está.
+
+Com respiração perfeitamente regular os dois concordam. Com respiração irregular — que é o que
+o paciente faz — a binagem por fase põe posições anatomicamente *diferentes* no mesmo bin,
+porque 30% de uma respiração profunda é uma posição de diafragma diferente de 30% de uma rasa.
+**É daí que vêm o artefato de degrau e o diafragma duplicado.** A binagem por amplitude não tem
+esse problema e tem o outro: um bin que o paciente nunca alcançou fica **vazio**, e bin vazio é
+um buraco no dataset, não uma imagem borrada.
+
+**A irregularidade é o achado, não um incômodo.** O número mais útil aqui não são os bins, é
+quanto a respiração variou — porque ele prevê o artefato *antes* da reconstrução e, em
+radioterapia, prevê um **ITV que subestima a excursão**: ele cobre o que o paciente fez naqueles
+trinta segundos, não o que vai fazer ao longo de trinta frações.
+
+**O piso de ruído do detector decide o número principal.** Ruído do sensor perto do fim da
+expiração é um máximo local, porque ali o traçado é quase plano. Contar isso como respiração
+divide um período pela metade, infla a variação de período, e **reporta como irregular um
+paciente perfeitamente regular** — mandando-o para binagem por amplitude e seus bins vazios sem
+motivo. Daí a exigência de proeminência, medida contra o vale anterior e não contra uma altura
+fixa, porque traçado real deriva.
+
+0% e 100% são a mesma fase. Um off-by-one que produz onze bins para dez fases aparece como um
+cine que engasga uma vez por ciclo — sutil o bastante para ser culpa do display.
