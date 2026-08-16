@@ -53,6 +53,7 @@ export * from './turnaround';
 export * from './canonicalReport';
 export * from './reportTemplate';
 export * from './mrrtImport';
+export * from './templateLibrary';
 export * from './cdeCatalog';
 export * from './imageEvidence';
 export * from './radsPacks';

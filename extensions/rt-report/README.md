@@ -425,3 +425,43 @@ workspace de laudo** — só o bloco `text/xml` de atributos sobrevive, e a remo
 
 O parser não usa DOM: é um scanner de tags sobre o subconjunto que o MRRT de fato usa, então
 roda igual num worker, no Node e num teste.
+
+## Biblioteca de templates por modalidade (RTV-105)
+
+`templateLibrary.ts` — 37 templates prontos em pt-BR sobre o modelo canônico do RTV-218, então
+um template da casa e um importado do RadReport são o mesmo tipo de objeto e o editor só aprende
+um. Cobertura: **CT** (crânio, AVC, tórax, angio-TC de artérias pulmonares, abdome total, abdome
+agudo, seios da face, coluna lombar, pescoço, uro-TC), **MR** (crânio, coluna lombar, joelho,
+ombro, abdome superior, próstata multiparamétrica, pelve feminina, mamas), **MG** (rastreamento,
+diagnóstica), **US** (abdome total, tireoide, mamas, obstétrico 1º e 2º/3º trimestres, rins e
+vias urinárias, pélvico transvaginal, doppler de carótidas, doppler venoso de MMII), **RX**
+(tórax, tórax pediátrico, abdome agudo, coluna lombar, joelho, punho e mão, tornozelo e pé,
+seios da face).
+
+### Um texto de normalidade pré-preenchido é a coisa mais perigosa de um sistema de laudo
+
+É a razão de o módulo ser escrito assim. "TC de crânio normal" carregado como texto significa
+que o laudo **começa** como um exame inteiramente negativo. Toda seção que o radiologista não
+sobrescrever passa a ser uma **afirmação negativa que ninguém fez** — assinada, no prontuário,
+indistinguível de um achado que foi de fato procurado e excluído. Copy-forward e auto-texto
+estão entre as fontes mais comuns de erro em laudos justamente porque o texto errado é fluente,
+plausível e já está lá.
+
+Por isso a prosa negativa é marcada como `assertive`, e `unconfirmedAssertions` lista todo campo
+assertivo que o leitor nunca tocou. **O laudo não está completo enquanto essa lista não estiver
+vazia.** O objetivo não é tornar o template menos útil — é tornar *não lê-lo* impossível de
+fazer em silêncio. A técnica também é assertiva: afirmar uma técnica que não foi executada
+descreve errado o exame.
+
+### Sugerir não é aplicar
+
+`suggestTemplates` devolve uma lista ranqueada e **nunca** uma decisão — `autoApply` é
+literalmente `false` no tipo. Aplicar automaticamente por modalidade e parte do corpo faz um
+estudo mal codificado carregar em silêncio um template cuja prosa é sobre outro órgão, e o
+radiologista edita os achados sem notar que o parágrafo de técnica descreve um exame que não foi
+realizado.
+
+`BodyPartExamined` não ganha confiança aqui: é texto livre, frequentemente ausente, e as
+convenções dos fabricantes divergem. Ele contribui **um ponto**; o sinal útil costuma estar na
+descrição do estudo. A confiança devolvida diz quais sinais de fato dispararam, e um casamento
+só por modalidade é rotulado como fraco.

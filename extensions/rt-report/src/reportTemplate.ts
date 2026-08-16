@@ -47,6 +47,12 @@ export interface TemplateField {
   options?: TemplateOption[];
   code?: CodedConcept;
   defaultValue?: string;
+  /**
+   * True when `defaultValue` is prose that would be SIGNED as an assertion if nobody edited
+   * it -- a negative finding, a technique paragraph. Marked separately from an ordinary
+   * default because an untouched assertive field is a statement nobody made (RTV-105).
+   */
+  assertive?: boolean;
 }
 
 export interface TemplateSection {
