@@ -49,6 +49,7 @@ export * from './storageCommitment';
 export * from './acquisitionProgress';
 export * from './modalityWorklist';
 export * from './performedProcedureStep';
+export * from './queryRetrieve';
 export * from './worklistBatch';
 export * from './worklistExport';
 export * from './iheInvoke';

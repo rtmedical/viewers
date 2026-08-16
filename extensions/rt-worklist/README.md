@@ -431,3 +431,38 @@ O MPPS final diz quantas séries e instâncias a modalidade produziu. Comparar c
 recebeu é **a detecção mais barata de uma transferência que perdeu alguma coisa**, e está
 disponível antes de alguém abrir o estudo — quando o leitor percebe uma série curta, ele já está
 lendo.
+
+## Consulta e recuperação remotas (RTV-98)
+
+`queryRetrieve.ts` — as associações são adaptadores. O que está aqui decide se uma consulta é
+segura de rodar, se uma recuperação foi para onde devia, e se ela terminou.
+
+### C-MOVE não manda as imagens para você
+
+Ele manda para um **AE title**, que o arquivo resolve pela **configuração dele**. Peça um estudo
+com um destino que o arquivo mapeia para o host errado — uma entrada velha, um título que
+pertence ao nó de outro setor — e as imagens são transferidas, **com sucesso**, para outro lugar.
+A resposta diz sucesso, porque do ponto de vista do arquivo foi.
+
+**O solicitante não consegue detectar isso pela resposta.** A única evidência é a imagem chegar,
+então o desfecho é decidido pelo que o nó local de fato armazenou, nunca pela palavra do arquivo.
+
+E segue uma consequência de privacidade: mandar o estudo de um paciente para o AE errado é
+divulgação, e acontece numa operação bem-sucedida **sem erro nenhum**.
+
+Por isso a recomendação de método: C-GET e WADO devolvem para quem pediu e **eliminam a classe
+inteira de falha de destino errado**. C-MOVE continua necessário contra arquivos que não os
+suportam, e aí o destino precisa ser verificado antes.
+
+### Resultado truncado parece resultado pequeno
+
+Arquivos limitam o conjunto de resultados. Uma consulta que bate no teto volta **como lista, não
+como erro** — e quem procurou um paciente e recebeu vinte estudos não tem como saber que havia
+duzentos. Uma contagem exatamente no limite configurado é o único sinal disponível.
+
+### Escolher de um resultado com curinga é o risco de paciente errado de novo
+
+`SILVA*` devolve centenas de linhas de pessoas diferentes. Escolher dessa lista tem a mesma forma
+de escolher a entrada errada na lista de trabalho (RTV-99) — e a mesma ausência de qualquer
+contradição depois que a errada é aberta. Curinga com radical curto demais é **recusado**: casa
+com boa parte do arquivo e devolve uma lista de pacientes que ninguém pediu para ver.
