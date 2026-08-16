@@ -269,3 +269,41 @@ deva facilitar.
 O Orthanc local tem senha. O descritor carrega um **handle opaco** que o host resolve; não
 existe campo para usuário nem senha, então não há onde uma credencial ser posta por acidente — e
 uma URL com credencial embutida é recusada.
+
+## Storage Commitment: de quem é a responsabilidade pelas imagens (RTV-101)
+
+`storageCommitment.ts` — a associação DIMSE é um adaptador. O que está aqui é a máquina de
+estados, e ela existe para responder **exatamente uma pergunta: a cópia local pode ser
+apagada?**
+
+O `localDatasource.ts` (RTV-194) já se recusa a oferecer a exclusão até o PACS ter o estudo.
+Este módulo é a parte que estabelece **o que "ter" significa**.
+
+### Um envio bem-sucedido não é um commitment
+
+Um C-STORE que retorna sucesso significa que os bytes foram aceitos pela aplicação receptora.
+**Não** significa que foram gravados em armazenamento durável, que sobreviveram à ingestão do
+receptor, ou que alguém vai conseguir recuperá-los amanhã. Storage commitment existe
+precisamente porque essas são afirmações diferentes, e apagar com base no envio é a rota padrão
+para perder um estudo.
+
+### Não responder não é uma resposta
+
+O N-EVENT-REPORT volta numa **associação separada**, possivelmente horas depois. Uma solicitação
+sem resposta é `pendente` — não falhou, e definitivamente não está comprometida. Transformar
+tempo decorrido em falha faz o estudo ser reenviado para sempre; transformá-lo em sucesso faz a
+cópia local ser apagada cedo.
+
+### Uma resposta não é um sim geral
+
+O relatório traz uma lista de sucesso e uma de falha. O estudo está comprometido quando **cada
+uma de suas instâncias** está na lista de sucesso. Tratar a chegada da resposta como commitment
+do estudo abandona em silêncio o que está na lista de falha — **e é ali que vai parar a
+instância que não sobreviveu ao transcode**. Por isso o veredito de exclusão devolve uma lista
+parcial em vez de um sim ou não geral.
+
+### O Transaction UID é a única coisa que liga a resposta à pergunta
+
+Relatórios chegam fora de banda. Casar um com "a solicitação pendente mais recente" é um atalho
+de aparência plausível que, sob carga, **marca o estudo errado como comprometido** — e parece
+robustez.
