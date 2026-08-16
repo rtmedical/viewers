@@ -28,6 +28,7 @@ export * from './fusionRegistration';
 export * from './fusionSession';
 export * from './followUpRegistration';
 export * from './deformableQa';
+export * from './portalCorrection';
 
 import getPanelModule from './getPanelModule';
 
