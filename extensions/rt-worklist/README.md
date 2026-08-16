@@ -228,3 +228,44 @@ duplicada numa worklist de urgência se lê como um segundo paciente**.
 Uma linha aparecendo acima daquela que alguém está prestes a clicar **move o alvo**, e o clique
 cai em outro paciente. `autoScroll` é `false` no tipo. O badge diz quantos chegaram; o leitor
 decide quando olhar.
+
+## Orthanc local como terceira fonte (RTV-194)
+
+`localDatasource.ts` — o `multiDatasource.ts` (RTV-183) funde PACS e RIS campo a campo. O
+desktop acrescenta uma fonte com uma propriedade que nenhuma das outras tem: **o estudo só está
+aqui**.
+
+### Um estudo local existe num lugar só
+
+Ele não foi enviado ao PACS, então **não está em backup, nenhum colega o enxerga, e amanhã não
+estará no histórico do paciente**. Uma worklist que o desenha igual a um estudo do PACS convida
+alguém a emitir laudo sobre imagens que somem junto com o notebook.
+
+Por isso a origem é **estrutural** e não um badge: ela fica na linha, a consequência é dita em
+texto, e um filtro pode esconder o chip mas não o fato.
+
+### Um estudo recebido por C-STORE não tem pedido
+
+Ninguém o solicitou no RIS. Não dá para atribuir, priorizar nem faturar, e **um laudo escrito
+aqui não tem pedido a que se prender**. É um estado legítimo — é assim que chega um estudo de
+CD de outra clínica — e precisa aparecer como estado, não como coluna vazia.
+
+A reconciliação casa por accession **mais** identificador do paciente. Nome sozinho não: estudo
+importado de mídia pode estar anonimizado, grafado diferente ou vir de outra instituição. Dois
+candidatos e **nenhum é usado** — juntar o par errado produz uma linha com as imagens de um
+paciente e o pedido de outro, e nada nela parece errado.
+
+### O mesmo estudo pode estar em dois lugares
+
+Depois de um envio, a cópia local e a remota têm o mesmo StudyInstanceUID. **Duas linhas são
+dois pacientes** para um olho cansado às 3 da manhã, então viram uma linha com as duas origens —
+e só então apagar a cópia local passa a ser oferecido.
+
+**"Eu enviei" não é o mesmo fato que "está lá".** Apagar a única cópia não é ação que a lista
+deva facilitar.
+
+### Credencial nunca chega na página
+
+O Orthanc local tem senha. O descritor carrega um **handle opaco** que o host resolve; não
+existe campo para usuário nem senha, então não há onde uma credencial ser posta por acidente — e
+uma URL com credencial embutida é recusada.
