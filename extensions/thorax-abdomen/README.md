@@ -131,3 +131,50 @@ Uma segmentação que escorre do fígado para o baço infla um e deflaciona o ou
 **O total é preservado**, então uma conferência de "está tudo somando" passa. A borda
 compartilhada é a única pista disponível a partir das máscaras — pista, não prova: órgãos se
 tocam mesmo.
+
+## Diâmetro aórtico e índice muscular (RTV-74)
+
+`aorticDiameter.ts` + `muscleIndex.ts`. A segmentação é um sidecar; estas são as **medidas**, e
+é na medida que mora o erro que chega no paciente.
+
+### Uma medida axial superestima uma aorta angulada, e o limiar de encaminhamento não sabe disso
+
+A aorta raramente é perpendicular ao plano axial. Onde ela corre inclinada, a secção axial é uma
+elipse cujo eixo maior é o diâmetro verdadeiro **dividido pelo cosseno** do ângulo. A trinta
+graus isso é quinze por cento: um aneurisma real de 4,8 cm mede 5,5 cm — que é o número no qual
+um paciente é encaminhado para correção.
+
+A medida **não é ruidosa**: é consistente e previsivelmente grande demais, e parece uma medida
+cuidadosa **porque é uma** — da grandeza errada. O módulo mede no plano normal à linha central e
+diz quanto a medida axial teria somado, para que a diferença possa ser mostrada em vez de
+discutida.
+
+### Parede externa ou luz não é detalhe
+
+Um saco aneurismático forrado de trombo tem uma luz muito mais estreita que o aneurisma. Medir a
+luz produz **um número tranquilizador para uma aorta perigosa**. A convenção é campo
+obrigatório, e a comparação com o exame anterior é recusada entre convenções diferentes — a
+mudança relatada seria a convenção, não a aorta.
+
+### Taxa de crescimento em intervalo curto é quase toda ruído
+
+A variabilidade entre observadores num diâmetro aórtico é de uns dois milímetros. Dois
+milímetros em três meses anualizam para oito milímetros por ano, bem acima do limiar de
+encaminhamento urgente — **e o paciente não cresceu um aneurisma**: o segundo radiologista pôs o
+paquímetro num lugar ligeiramente diferente. **O intervalo pesa mais que a diferença.**
+
+O limiar difere por sexo, e usar o masculino numa mulher deixa um aneurisma de 5,2 cm abaixo da
+linha quando está acima da dela.
+
+### O corte e a janela fazem parte da definição do índice muscular
+
+Os pontos de corte de sarcopenia vêm de coortes medidas num **único corte de L3**, porque a área
+muscular ali correlaciona com a massa muscular corporal. Em L2 ou no disco L3–L4 a área é outra e
+o corte não se aplica — o número ainda é uma área de músculo, só não é a que o limiar descreve.
+
+A janela de −29 a +150 HU também é definição, não preferência de exibição: é o que separa
+músculo da gordura intramuscular abaixo e do contraste e osso acima. **Alargá-la para "ficar bom"
+inclui gordura em silêncio, e um paciente sarcopênico deixa de ser sarcopênico.**
+
+Sem altura não há índice — um índice calculado a partir de uma altura presumida é **um número com
+cara de medida**.
