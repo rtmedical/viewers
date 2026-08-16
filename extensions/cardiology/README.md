@@ -63,3 +63,42 @@ A categoria do estudo é o segmento mais grave, e **N vence tudo**: "não conseg
 segmento" é uma afirmação mais forte que qualquer coisa que eu tenha conseguido avaliar,
 porque o segmento não avaliado pode ser o pior. Estudo limpo com um DA proximal não avaliável
 não é um estudo normal.
+
+## O modelo de segmentos coronarianos (RTV-49)
+
+`coronaryTree.ts` — o `cadRads.ts` (RTV-50) gradua uma estenose. Este é o **mapa contra o qual
+ela é graduada**: quais segmentos existem, de qual artéria cada um vem, qual miocárdio cada um
+irriga, e onde uma medida deixa de significar alguma coisa.
+
+### Um número de segmento sem o modelo é ambíguo
+
+"Segmento 4" é a descendente posterior direita no modelo SCCT de 18 segmentos e a coronária
+direita distal no AHA de 15. **Duas artérias diferentes, um rótulo** — e nada num laudo que
+carregue só o número diz qual foi. Uma comparação entre dois exames laudados sob modelos
+diferentes compara duas artérias em silêncio.
+
+### A dominância decide de quem é a descendente posterior
+
+Na dominância direita ela vem da coronária direita; na esquerda, da circunflexa. **O território
+que ela irriga — a parede inferior — é o mesmo nos dois casos**, e é exatamente por isso que o
+erro é fácil: o laudo lê plausível e atribui a lesão ao vaso errado. Quando um teste de estresse
+depois mostra isquemia inferior, os dois exames parecem discordar.
+
+### Uma estenose distal a uma oclusão não é uma estenose
+
+Além de uma oclusão total o vaso enche por colaterais, a baixa pressão, e colaba. Medir
+porcentagem ali compara uma luz estreita com **uma referência que encolheu junto** — é a mesma
+falha da quase-oclusão carotídea (`carotidStenosis.ts`, RTV-54), e produz o mesmo número
+tranquilizadoramente moderado para o pior vaso do exame.
+
+### Abaixo de um calibre, uma porcentagem é ruído que gera exame
+
+Uma estenose grave num ramo de um milímetro não é revascularizável e está no limite do que a TC
+resolve. Reportá-la **não é conservador** — gera uma investigação a jusante para um achado que
+não podia ser medido.
+
+### Segmento omitido não é segmento normal
+
+O `cadRads.ts` já tem o modificador N para o segmento que foi olhado e não pôde ser lido. Este é
+o outro caso: aquele sobre o qual **ninguém disse nada**, e que quem lê depois não consegue
+distinguir de "sem lesão".
