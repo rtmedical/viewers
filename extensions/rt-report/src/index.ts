@@ -24,6 +24,9 @@
  * - **Canonical model** (RTV-216): the persisted contract — immutable
  *   content-addressed versions, structured observations that are the record
  *   rather than a parse of the prose, and provenance on every clinical claim.
+ * - **CDE catalogue** (RTV-217): validating an observation against its element
+ *   definition — unit mismatch as an error rather than a silent conversion,
+ *   versioned value sets, and cardinality.
  *
  * This is the state layer the rest of the RTV-103 family sits on: the rich-text
  * editor (RTV-104), templates (RTV-105), macros (RTV-106), peer review
@@ -39,6 +42,7 @@ export * from './criticalFindings';
 export * from './peerReview';
 export * from './turnaround';
 export * from './canonicalReport';
+export * from './cdeCatalog';
 export * from './fhirExport';
 
 const id = '@ohif/extension-rt-report';
