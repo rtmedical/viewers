@@ -344,3 +344,40 @@ aceitar em silêncio.
 justifica tratamento **sem biópsia**. A combinação que chega lá é tabela e não julgamento, e a
 dependência de tamanho é fácil de inverter: com 10–19 mm e hiperrealce arterial são precisas
 **duas** características adicionais, com ≥ 20 mm basta **uma**.
+
+## Rede de proteção de seguimento (RTV-229)
+
+`safetyNet.ts` — o RTV-202 trata do achado que precisa chegar a alguém nos próximos dez
+minutos. Este trata da outra falha, mais silenciosa e muito mais comum:
+
+> "Recomenda-se TC de controle em 6 meses."
+
+Escrito no laudo, assinado, distribuído — e nunca feito. **Ninguém percebe, porque nada no
+sistema está olhando.** O nódulo que tinha 6 mm tem 19 mm quando o paciente volta por outro
+motivo, dois anos depois.
+
+**Recomendação que ninguém acompanha é uma frase, não um plano.** O valor inteiro está em ela
+virar um objeto com prazo e estado de encerramento, em vez de uma expressão dentro de um PDF.
+
+**Encerrar exige evidência, não a passagem do tempo.** A implementação tentadora expira a
+recomendação quando a janela passa. Isso transforma a rede de proteção numa fila que se
+esvazia sozinha, o que é **pior que fila nenhuma** — os números ficam saudáveis exatamente
+porque as recomendações em que ninguém agiu sumiram. Não existe motivo `expired`, e encerrar
+por "seguimento realizado" **exige o estudo que o realizou**: afirmação sem o estudo é
+afirmação, não registro.
+
+**Casamento automático fecha alças que não foram fechadas.** Uma TC de tórax posterior
+*provavelmente* satisfaz "repetir TC de tórax em 6 meses". Provavelmente. Pode ser uma
+angiotomografia para outra pergunta, reconstruída diferente, lida por quem não sabia o que
+procurar. Fechar automaticamente por modalidade-e-região produz uma taxa de fechamento que
+mede **agendamento e não cuidado**. Então o módulo **propõe e nunca fecha**, e devolve tanto as
+razões quanto as ressalvas — inclusive uma que aparece sempre, porque é sempre verdadeira.
+
+**A taxa de fechamento precisa de denominador honesto.** Recomendações ainda dentro do prazo
+não são sucesso nem fracasso; contá-las de qualquer um dos dois lados é errado. Elas ficam
+fora da conta e são reportadas à parte.
+
+Os limiares de escalonamento contam **do fim da tolerância**, não da data prevista. Contar da
+data prevista deixa a tolerância sem sentido para a urgência cuja tolerância coincide com o
+primeiro limiar — em `routine` as duas eram 30 dias, e o estado `overdue` simples ficava
+inalcançável. Os testes acharam exatamente isso.

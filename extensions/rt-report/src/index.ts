@@ -33,6 +33,9 @@
  * - **RADS packs** (RTV-220): TI-RADS, PI-RADS, BI-RADS and LI-RADS — computed
  *   where the rules are deterministic, with the size that decides the action
  *   required rather than optional.
+ * - **Safety net** (RTV-229): follow-up recommendations tracked to closure,
+ *   where closure needs evidence rather than the passage of time and a
+ *   matching study is proposed rather than auto-closed.
  *
  * This is the state layer the rest of the RTV-103 family sits on: the rich-text
  * editor (RTV-104), templates (RTV-105), macros (RTV-106), peer review
@@ -51,6 +54,7 @@ export * from './canonicalReport';
 export * from './cdeCatalog';
 export * from './imageEvidence';
 export * from './radsPacks';
+export * from './safetyNet';
 export * from './fhirExport';
 
 const id = '@ohif/extension-rt-report';
