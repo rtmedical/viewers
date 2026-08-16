@@ -10,6 +10,7 @@
  * zones is a cornerstone-viewport integration follow-up.
  */
 export * from './printLayout';
+export * from './printScu';
 export { getCommandsModule } from './getCommandsModule';
 
 import getCommandsModule from './getCommandsModule';
