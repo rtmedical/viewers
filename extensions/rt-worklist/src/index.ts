@@ -44,6 +44,7 @@ export * from './worklistSelection';
 export * from './worklistActions';
 export * from './multiDatasource';
 export * from './realtimeSync';
+export * from './localDatasource';
 export * from './worklistBatch';
 export * from './worklistExport';
 export * from './iheInvoke';
