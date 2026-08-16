@@ -41,6 +41,7 @@ export * from './ssdPresets';
 export * from './ssdBudget';
 export * from './dsa';
 export * from './roadmap';
+export * from './bolusTracking';
 export * from './centerline';
 export * from './cpr';
 export * from './stitching';
