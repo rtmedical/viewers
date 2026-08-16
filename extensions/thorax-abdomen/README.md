@@ -178,3 +178,45 @@ inclui gordura em silêncio, e um paciente sarcopênico deixa de ser sarcopênic
 
 Sem altura não há índice — um índice calculado a partir de uma altura presumida é **um número com
 cara de medida**.
+
+## Métricas de via aérea e densitometria pulmonar (RTV-70)
+
+`airwayMetrics.ts` — a segmentação é um sidecar. Esta é a medida, e medida de via aérea tem uma
+propriedade que a torna especialmente fácil de publicar errado: **o número depende da
+reconstrução tanto quanto do paciente**.
+
+### Espessura de parede é propriedade do kernel tanto quanto do brônquio
+
+Kernel duro realça a borda, então a parede parece **mais fina** e melhor definida. Kernel suave
+borra, então parece **mais grossa**. Mesmo paciente, mesma aquisição, duas séries reconstruídas
+do mesmo dado bruto — e a porcentagem de área de parede difere mais do que a maioria das doenças
+a move.
+
+**Nada na imagem diz qual você está olhando.** Por isso o kernel viaja junto com a medida, e a
+comparação entre kernels é recusada: a mudança relatada seria a reconstrução.
+
+### O Pi10 existe porque a área de parede depende do tamanho da via aérea
+
+Um brônquio segmentar e um subsegmentar têm frações de parede diferentes num pulmão saudável,
+então "a porcentagem de área de parede" não significa nada sem dizer qual via aérea. O Pi10 — a
+raiz da área de parede de uma via aérea hipotética de 10 mm de perímetro interno, lida de uma
+regressão sobre muitas vias — remove a dependência do tamanho.
+
+**Ele não remove a dependência do kernel**, e é rotineiramente tratado como se removesse.
+
+### Abaixo do limite de resolução a espessura da parede é a função de espalhamento
+
+Com dois milímetros de luz, a parede tem poucos voxels e a maior parte da espessura aparente é
+volume parcial. A medida ainda devolve um número, e o número ainda varia entre pacientes — **só
+varia com como o borrão caiu**. Abaixo do piso o módulo recusa, em vez de contribuir ruído para
+a regressão.
+
+### Calibre muda com o volume pulmonar, e apneia ruim parece doença
+
+Vias aéreas estreitam conforme o pulmão esvazia. Comparar um exame inspiratório com outro em que
+o paciente não inspirou bem mostra um estreitamento que é a apneia. O mesmo confundidor corre no
+sentido inverso para aprisionamento aéreo: **expiração incompleta deixa o pulmão parecendo menos
+aprisionado**, e o viés aponta para o resultado tranquilizador.
+
+Aprisionamento aéreo na expiração e enfisema na inspiração são **a mesma conta em aquisições
+diferentes** — rodada na errada, o número sai plausível e descreve outra coisa.

@@ -21,6 +21,7 @@ export * from './virtualEndoscopy';
 export * from './abdominalOrgans';
 export * from './aorticDiameter';
 export * from './muscleIndex';
+export * from './airwayMetrics';
 
 const id = '@ohif/extension-thorax-abdomen';
 
