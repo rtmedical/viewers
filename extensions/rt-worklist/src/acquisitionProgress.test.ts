@@ -4,7 +4,7 @@ import {
   COMPLETENESS_LABELS,
   DEFAULT_PROGRESS,
   derivedArtefactWarning,
-  describeProgress,
+  describeArrival,
   detectGaps,
   OPERATION_LABELS,
   SeriesArrival,
@@ -165,13 +165,13 @@ describe('acquisitionProgress — a derived artefact outlives the state it was m
 
 describe('acquisitionProgress — the indicator', () => {
   it('states received, expected and state', () => {
-    expect(describeProgress(assessSeries(arrival(), T0))).toBe(
+    expect(describeArrival(assessSeries(arrival(), T0))).toBe(
       `100/100 instância(s), ${COMPLETENESS_LABELS.complete}.`
     );
   });
 
   it('omits the expected count when the source did not give one', () => {
-    const line = describeProgress(assessSeries(arrival({ expectedInstances: undefined }), T0));
+    const line = describeArrival(assessSeries(arrival({ expectedInstances: undefined }), T0));
     expect(line).toMatch(/^100 instância\(s\), chegando\./);
   });
 });
