@@ -283,3 +283,36 @@ numa consulta a jusante. Pego aqui, ainda dá para atribuir à edição que caus
 E o catálogo é validado antes de ser usado: elemento de quantidade sem unidade ou elemento
 codificado sem valores permitidos **falha aberto** — toda observação contra ele passa. Isso é
 pior que elemento faltando, que pelo menos falha alto.
+
+## Evidência de imagem para achados (RTV-221)
+
+`imageEvidence.ts` — um achado estruturado que diz "8 mm" sem dizer *onde* é um número que
+alguém tem que aceitar na fé e ninguém consegue reconferir. Este é o link de volta aos pixels,
+na forma que o DICOM SR já define, para poder ser exportado em vez de reinventado.
+
+**Coordenada 2D não sobrevive a uma reconstrução; 3D sobrevive.** O DICOM tem dois tipos
+espaciais e eles não são intercambiáveis:
+
+- **SCOORD** é em coordenada de pixel e pertence a *um* SOP Instance. Se a série for
+  reconstruída com outra espessura de corte — o que acontece, e é invisível para o laudo — os
+  SOP Instances são novos e as coordenadas não apontam para nada. **Pior: podem apontar para
+  alguma coisa, no lugar errado.**
+- **SCOORD3D** é no frame of reference e sobrevive, porque um ponto em coordenada de paciente
+  continua sendo aquele ponto depois de qualquer reconstrução da mesma aquisição.
+
+O tipo é **registrado, nunca inferido**, e `assessDurability` diz que tipo de link o achado
+tem. Um laudo cuja evidência inteira fica pendurada depois de uma reconstrução parece bem
+até alguém clicar — tipicamente meses depois, num seguimento, quando importa.
+
+**Frames começam em 1.** O DICOM conta de 1, todo array conta de 0. O off-by-one põe a seta no
+corte errado, e num objeto de 200 frames ninguém percebe para que lado. É validado aqui em vez
+de ser uma convenção que as pessoas lembram.
+
+**A evidência tem que pertencer ao estudo do laudo.** Referência a SOP Instance de outro estudo
+é ou clique errado ou contaminação cruzada entre laudos de dois pacientes. Vale falhar nas
+duas.
+
+A serialização usa os content items do DICOM SR: achado exportado como SR é legível por
+qualquer PACS, blob JSON próprio é legível por este viewer. Anotação 2D fica **aninhada** sob
+o item IMAGE, porque as coordenadas só significam algo relativas àquele instance; 3D fica ao
+lado, com o frame of reference, porque não.
