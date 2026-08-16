@@ -20,6 +20,7 @@
  */
 export * from './rtStructParser';
 export * from './drawingTools';
+export * from './contourGeometry';
 
 import getPanelModule from './getPanelModule';
 import getCommandsModule from './getCommandsModule';
