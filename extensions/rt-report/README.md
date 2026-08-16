@@ -465,3 +465,48 @@ realizado.
 convenções dos fabricantes divergem. Ele contribui **um ponto**; o sinal útil costuma estar na
 descrição do estudo. A confiança devolvida diz quais sinais de fato dispararam, e um casamento
 só por modalidade é rotulado como fraco.
+
+## Distribuição multi-canal (RTV-110)
+
+`distribution.ts` — decide **o que pode viajar por qual canal**, **se uma entrega de fato
+fechou o ciclo**, e **quem está segurando um laudo superado**. Os transportes em si (SMTP, a
+API do WhatsApp Business, o portal, a fila de impressão) são adaptadores e não estão aqui.
+
+### Canal que não autentica o destinatário não pode levar o laudo
+
+É a regra que o módulo existe para impor. Laudo é dado de saúde, que a LGPD trata como dado
+pessoal sensível, e os canais **diferem em natureza, não em conveniência**: o portal sabe quem
+fez login; um e-mail e um telefone são strings digitadas no balcão, frequentemente
+compartilhadas com um familiar e frequentemente desatualizadas.
+
+Então canal não autenticado pode levar **notificação** — "seu laudo está pronto, entre no
+portal" — e nunca o conteúdo. `planDistribution` **recusa a combinação em vez de rebaixá-la em
+silêncio**, porque o rebaixamento silencioso é exatamente como um laudo acaba num grupo de
+WhatsApp — e porque esconderia de quem enviou que o destinatário não vai receber o que lhe foi
+prometido.
+
+### Enviado não é entregue, entregue não é lido
+
+Um relay SMTP aceitar a mensagem significa que a mensagem saiu do prédio. Um sistema de
+distribuição que trata isso como "o médico solicitante tem o resultado" é o mecanismo pelo qual
+**um achado crítico deixa de ser tratado enquanto o log de auditoria diz que foi comunicado**.
+Só uma leitura confirmada — ou um aceite fora de banda que alguém registrou — fecha o ciclo, e
+`closesCommunicationLoop` é o único lugar que diz isso; o `safetyNet.ts` (RTV-229) depende
+dessa resposta.
+
+Cinco e-mails enviados e nenhuma leitura **não são cinco quintos de uma comunicação.**
+
+### Reenvio não pode virar uma segunda divulgação
+
+O reenvio perigoso é o que acontece depois de um timeout ambíguo, quando a primeira mensagem
+pode muito bem ter chegado. Não é idempotente como uma chamada de API que falhou: uma segunda
+cópia do laudo num telefone compartilhado é **uma segunda divulgação** para quem mais lê aquele
+aparelho. Toda tentativa carrega uma chave derivada de laudo, versão, canal, tipo de conteúdo e
+destinatário, e `isDuplicate` responde **antes** de o adaptador ser chamado. Versão nova não é
+duplicata: distribuir um laudo retificado a quem recebeu o original é uma divulgação nova.
+
+### Uma retificação torna errado todo destinatário anterior
+
+Quem recebeu a versão 1 está agindo sobre um laudo que mudou desde então. Produzir essa lista
+não é refinamento de relatório — é o único jeito de a retificação alcançar as pessoas que o
+original alcançou.
