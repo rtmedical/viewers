@@ -93,3 +93,41 @@ O voxel exterior mais próximo de um disco digitalizado é **diagonal**, não ax
 de raio 5 é (5,1) a 5,10 mm, não (6,0) a 6 mm. O raio de lúmen reportado corre um pouco abaixo
 do nominal, e um limiar de cintura fixado no raio nominal dispara num tubo exatamente daquele
 calibre.
+
+## Volume e densidade de órgãos abdominais (RTV-72)
+
+`abdominalOrgans.ts` — a segmentação em si é um sidecar Python. Esta é a parte que transforma
+uma máscara em números que um radiologista pode pôr no laudo, e **a parte que se recusa a
+transformar**.
+
+### Uma atenuação sem fase de contraste é um número sem unidade
+
+Um fígado a 55 HU é normal sem contraste e nitidamente anormal na fase portal. Os mesmos três
+dígitos, e a diferença entre "nada a dizer" e "esteatose significativa, mencione". Reportar
+densidade de órgão sem a fase não é uma medida incompleta — é uma **medida ininterpretável**.
+Os limiares de esteatose se recusam a rodar fora da fase em que foram derivados: aplicá-los a um
+fígado em fase portal produz um grau que varia com **a velocidade com que o contraste foi
+empurrado**.
+
+A diferença fígado-baço é preferida quando há baço porque **normaliza por kV, kernel e tamanho
+do paciente** — o número absoluto não normaliza.
+
+### A precisão do volume não é a mesma para um fígado e uma adrenal
+
+Contagem de voxels erra na borda, por cerca de meio voxel para cada lado, e o tamanho desse erro
+em relação ao órgão é dado pela razão superfície/volume. **O mesmo contorno dá um volume
+hepático bom a uma fração de por cento e um volume adrenal bom a talvez dez.** Imprimir os dois
+com a mesma casa decimal afirma uma precisão que um deles não tem.
+
+### Uma média sobre o órgão inteiro responde a uma pergunta que ninguém fez
+
+Um fígado com um cisto grande, um rim incluindo o sistema coletor opacificado: a média cai entre
+as duas populações, num valor que **não descreve nenhuma**. Mediana e intervalo interquartil
+saem por isso, e dispersão larga é sinalizada em vez de ser mediada.
+
+### Vazamento move dois órgãos em direções opostas
+
+Uma segmentação que escorre do fígado para o baço infla um e deflaciona o outro na mesma medida.
+**O total é preservado**, então uma conferência de "está tudo somando" passa. A borda
+compartilhada é a única pista disponível a partir das máscaras — pista, não prova: órgãos se
+tocam mesmo.

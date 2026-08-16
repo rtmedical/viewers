@@ -18,6 +18,7 @@
  */
 export * from './lungRads';
 export * from './virtualEndoscopy';
+export * from './abdominalOrgans';
 
 const id = '@ohif/extension-thorax-abdomen';
 
