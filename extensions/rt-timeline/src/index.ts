@@ -14,6 +14,7 @@
  */
 export * from './courseTimeline';
 export * from './trendsTimeline';
+export * from './imagingTimeline';
 export * from './timelineWindow';
 export * from './timelinePrefs';
 
