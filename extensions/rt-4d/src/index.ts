@@ -6,6 +6,9 @@
  * - **RTV-93 — 4D-CT respiratory gating.** Labels the phases of a respiratory-gated
  *   4D-CT ("40% EX", not "time point 5 of 10"), flags an incomplete cycle, and adds
  *   the temporal **MIP / MinIP** that RT planning needs for the ITV.
+ * - **RTV-92 - binagem respiratoria.** O passo antes do RTV-93: decidir qual aquisicao
+ *   vai em qual bin, por fase ou por amplitude, e medir a irregularidade que faz a
+ *   binagem por fase produzir o artefato de degrau -- e o ITV subestimar a excursao.
  * - **RTV-51 — ECG gating.** Detects cardiac synchronisation and reports whether the
  *   acquisition was **prospective** or **retrospective**, expressing each phase as a
  *   percentage of the RR interval.
@@ -24,6 +27,7 @@
  * is touched.
  */
 export * from './phaseDetect';
+export * from './respiratoryBinning';
 export * from './temporalProjection';
 export {
   dynamic4dProtocol,
