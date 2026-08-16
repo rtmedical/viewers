@@ -27,6 +27,9 @@
  * - **CDE catalogue** (RTV-217): validating an observation against its element
  *   definition — unit mismatch as an error rather than a silent conversion,
  *   versioned value sets, and cardinality.
+ * - **Image evidence** (RTV-221): the link back to the pixels, in DICOM SR
+ *   shape, with the coordinate space recorded rather than inferred — because a
+ *   2D coordinate does not survive a re-reconstruction and a 3D one does.
  *
  * This is the state layer the rest of the RTV-103 family sits on: the rich-text
  * editor (RTV-104), templates (RTV-105), macros (RTV-106), peer review
@@ -43,6 +46,7 @@ export * from './peerReview';
 export * from './turnaround';
 export * from './canonicalReport';
 export * from './cdeCatalog';
+export * from './imageEvidence';
 export * from './fhirExport';
 
 const id = '@ohif/extension-rt-report';
