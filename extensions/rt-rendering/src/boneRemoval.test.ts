@@ -7,26 +7,26 @@ import {
   growBoneMask,
   recommendApproach,
   removeBone,
-  Volume,
+  BoneVolume,
 } from './boneRemoval';
 
 const N = 16;
 const index = (x: number, y: number, z: number) => z * N * N + y * N + x;
 
 /** Empty soft-tissue volume. */
-const blank = (): Volume => ({
+const blank = (): BoneVolume => ({
   data: new Float32Array(N * N * N).fill(40),
   width: N,
   height: N,
   depth: N,
 });
 
-const set = (volume: Volume, x: number, y: number, z: number, hu: number) => {
+const set = (volume: BoneVolume, x: number, y: number, z: number, hu: number) => {
   (volume.data as Float32Array)[index(x, y, z)] = hu;
 };
 
 /** A bone slab along x at y=2, and a bright vessel along z at (10,10). */
-const scene = ({ touching = false, vesselHu = 400 } = {}): Volume => {
+const scene = ({ touching = false, vesselHu = 400 } = {}): BoneVolume => {
   const volume = blank();
   for (let z = 0; z < N; z++) {
     for (let x = 0; x < N; x++) {

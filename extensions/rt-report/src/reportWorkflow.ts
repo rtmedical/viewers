@@ -94,7 +94,7 @@ export interface ReportAuthor {
   registration?: string;
 }
 
-export interface ReportVersion {
+export interface WorkflowVersion {
   version: number;
   /** 'report' for the original, 'addendum' for each amendment. */
   kind: 'report' | 'addendum';
@@ -110,7 +110,7 @@ export interface ReportDocument {
   /** Working text: the draft body, or the addendum being written. */
   workingBody: string;
   /** Signed, immutable versions, in order. */
-  versions: ReportVersion[];
+  versions: WorkflowVersion[];
   /** Author of the current working text. */
   workingAuthor?: ReportAuthor;
   /** Set while a preliminary is outstanding. */
@@ -298,7 +298,7 @@ export function applyEvent(document: ReportDocument, event: ReportEvent): Transi
       if (!text(current.workingBody)) {
         return refuse(current, 'Não é possível assinar um laudo vazio.');
       }
-      const version: ReportVersion = {
+      const version: WorkflowVersion = {
         version: nextVersion(current),
         kind: 'report',
         body: current.workingBody,
@@ -326,7 +326,7 @@ export function applyEvent(document: ReportDocument, event: ReportEvent): Transi
       if (!text(current.workingBody)) {
         return refuse(current, 'Não é possível assinar um adendo vazio.');
       }
-      const version: ReportVersion = {
+      const version: WorkflowVersion = {
         version: nextVersion(current),
         kind: 'addendum',
         body: current.workingBody,
@@ -420,7 +420,7 @@ function nextVersion(document: ReportDocument): number {
   );
 }
 
-function lastSignedVersion(document: ReportDocument): ReportVersion | undefined {
+function lastSignedVersion(document: ReportDocument): WorkflowVersion | undefined {
   return document.versions.length ? document.versions[document.versions.length - 1] : undefined;
 }
 
@@ -461,7 +461,7 @@ export function isSigned(document: ReportDocument): boolean {
 }
 
 /** The current version number a recipient should be holding. */
-export function currentVersion(document: ReportDocument): number {
+export function currentWorkflowVersion(document: ReportDocument): number {
   return lastSignedVersion(document)?.version ?? 0;
 }
 
@@ -492,7 +492,7 @@ export function describeState(document: ReportDocument): string {
   if (!state) {
     return '';
   }
-  const version = currentVersion(document);
+  const version = currentWorkflowVersion(document);
   const suffix = version > 0 ? ` · versão ${version}` : '';
   if (state === 'preliminary') {
     return `${STATE_LABELS.preliminary} — NÃO É LAUDO DEFINITIVO${suffix}`;

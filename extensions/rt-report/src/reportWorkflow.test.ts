@@ -2,7 +2,7 @@ import {
   allowedEvents,
   applyEvent,
   canApply,
-  currentVersion,
+  currentWorkflowVersion,
   describeState,
   emptyReport,
   isEditable,
@@ -95,7 +95,7 @@ describe('reportWorkflow — draft and signing', () => {
     const doc = emptyReport();
     expect(doc.state).toBe('draft');
     expect(isSigned(doc)).toBe(false);
-    expect(currentVersion(doc)).toBe(0);
+    expect(currentWorkflowVersion(doc)).toBe(0);
   });
 
   it('signs the working body as version 1', () => {
@@ -206,7 +206,7 @@ describe('reportWorkflow — addenda', () => {
     expect(doc.versions.map(v => v.version)).toEqual([1, 2]);
     expect(doc.versions[0].body).toBe('Tórax sem alterações.');
     expect(doc.versions[1]).toMatchObject({ kind: 'addendum', amends: 1 });
-    expect(currentVersion(doc)).toBe(2);
+    expect(currentWorkflowVersion(doc)).toBe(2);
   });
 
   it('an addendum on an addendum keeps climbing', () => {

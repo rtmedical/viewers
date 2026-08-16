@@ -99,7 +99,7 @@ export const CHANNELS: Record<Channel, ChannelProfile> = {
 
 export type Payload = 'notification' | 'report';
 
-export interface Recipient {
+export interface DeliveryRecipient {
   id: string;
   name: string;
   /** e-mail, phone, portal account, physical destination. */
@@ -120,7 +120,7 @@ export interface DistributionRequest {
   reportVersion: number;
   channel: Channel;
   payload: Payload;
-  recipient: Recipient;
+  recipient: DeliveryRecipient;
   /** Whether this report carries a critical finding. */
   critical?: boolean;
 }
@@ -245,7 +245,7 @@ export function planDistribution(
 
 export type DeliveryStatus = 'queued' | 'sent' | 'delivered' | 'read' | 'failed';
 
-export const STATUS_LABELS: Record<DeliveryStatus, string> = {
+export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
   queued: 'na fila',
   sent: 'enviado',
   delivered: 'entregue',
@@ -307,7 +307,7 @@ export function advanceStatus(
   if (!record) {
     return { record, ok: false, reason: 'Registro ausente.' };
   }
-  if (!STATUS_LABELS[status]) {
+  if (!DELIVERY_STATUS_LABELS[status]) {
     return { record, ok: false, reason: `Status desconhecido: ${String(status)}.` };
   }
   if (status === 'failed') {
@@ -330,7 +330,7 @@ export function advanceStatus(
       record,
       ok: false,
       reason:
-        `Já está em "${STATUS_LABELS[record.status]}"; um webhook atrasado de "${STATUS_LABELS[status]}" não pode reabrir um ciclo fechado.`,
+        `Já está em "${DELIVERY_STATUS_LABELS[record.status]}"; um webhook atrasado de "${DELIVERY_STATUS_LABELS[status]}" não pode reabrir um ciclo fechado.`,
     };
   }
   return { ok: true, record: { ...record, status, updatedAt: Number(at) } };
@@ -422,7 +422,7 @@ export function criticalCommunication(records: DeliveryRecord[]): LoopStatus {
   return {
     closed: false,
     message:
-      `${list.length} tentativa(s), a melhor em "${STATUS_LABELS[best.status]}". ` +
+      `${list.length} tentativa(s), a melhor em "${DELIVERY_STATUS_LABELS[best.status]}". ` +
       'Enviado não é entregue e entregue não é lido — a comunicação de um achado crítico não se fecha aqui.',
   };
 }
@@ -435,5 +435,5 @@ export function describeDelivery(record: DeliveryRecord): string {
   const channel = CHANNELS[record.channel]?.label ?? record.channel;
   const payload = record.payload === 'report' ? 'laudo' : 'notificação';
   const closed = closesCommunicationLoop(record) ? ' · ciclo fechado' : '';
-  return `${payload} v${record.reportVersion} por ${channel}: ${STATUS_LABELS[record.status]}${closed}`;
+  return `${payload} v${record.reportVersion} por ${channel}: ${DELIVERY_STATUS_LABELS[record.status]}${closed}`;
 }

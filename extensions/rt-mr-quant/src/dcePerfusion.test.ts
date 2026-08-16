@@ -1,7 +1,7 @@
 import {
   cumulativeTrapezoid,
   DCE_CAVEAT_LABELS,
-  describeCaveats,
+  describeDceCaveats,
   describeTofts,
   fitExtendedTofts,
   KTRANS_MAX_PER_MIN,
@@ -9,7 +9,7 @@ import {
   meanBaseline,
   parkerAif,
   relativeEnhancement,
-  signalToConcentration,
+  dceSignalToConcentration,
   ToftsInput,
   VE_MAX,
 } from './dcePerfusion';
@@ -61,12 +61,12 @@ describe('dcePerfusion — signal to concentration', () => {
   const SPGR = { flipAngleDeg: 15, trSec: 0.005, t1Sec: 1.2 };
 
   it('returns zero concentration for the pre-contrast baseline', () => {
-    const concentration = signalToConcentration([100, 100, 100], { ...SPGR, baseline: 100 });
+    const concentration = dceSignalToConcentration([100, 100, 100], { ...SPGR, baseline: 100 });
     concentration.forEach(c => expect(c).toBeCloseTo(0, 9));
   });
 
   it('rises monotonically with signal, as shortening T1 must', () => {
-    const concentration = signalToConcentration([100, 120, 160, 220], {
+    const concentration = dceSignalToConcentration([100, 120, 160, 220], {
       ...SPGR,
       baseline: 100,
     });
@@ -77,19 +77,19 @@ describe('dcePerfusion — signal to concentration', () => {
 
   // The relaxivity scales it, so a wrong r1 is a wrong Ktrans by the same factor.
   it('scales inversely with the relaxivity', () => {
-    const a = signalToConcentration([100, 200], { ...SPGR, baseline: 100, relaxivity: 4.5 });
-    const b = signalToConcentration([100, 200], { ...SPGR, baseline: 100, relaxivity: 9 });
+    const a = dceSignalToConcentration([100, 200], { ...SPGR, baseline: 100, relaxivity: 4.5 });
+    const b = dceSignalToConcentration([100, 200], { ...SPGR, baseline: 100, relaxivity: 9 });
     expect(a[1] / b[1]).toBeCloseTo(2, 6);
   });
 
   it('needs the sequence parameters and gives zeros without them', () => {
-    expect(signalToConcentration([100, 200], { flipAngleDeg: 0, trSec: 0, t1Sec: 0 })).toEqual([
+    expect(dceSignalToConcentration([100, 200], { flipAngleDeg: 0, trSec: 0, t1Sec: 0 })).toEqual([
       0, 0,
     ]);
   });
 
   it('clamps at zero rather than producing negative concentration from noise', () => {
-    const concentration = signalToConcentration([100, 95], { ...SPGR, baseline: 100 });
+    const concentration = dceSignalToConcentration([100, 95], { ...SPGR, baseline: 100 });
     expect(concentration[1]).toBe(0);
   });
 
@@ -257,7 +257,7 @@ describe('dcePerfusion — the caveats are the point', () => {
     const result = fitExtendedTofts(input({ method: 'relativeEnhancement' }));
     expect(result.method).toBe('relativeEnhancement');
     expect(result.caveats).toContain('relativeEnhancement');
-    expect(describeCaveats(result)).toMatch(/NÃO são Ktrans/);
+    expect(describeDceCaveats(result)).toMatch(/NÃO são Ktrans/);
     expect(describeTofts(result)).toMatch(/relativo/);
   });
 
@@ -272,7 +272,7 @@ describe('dcePerfusion — the caveats are the point', () => {
       'populationAif'
     );
     expect(fitExtendedTofts(input({ aifSource: 'unknown' })).caveats).toContain('unknownAif');
-    expect(describeCaveats(fitExtendedTofts(input({ aifSource: 'population' })))).toMatch(
+    expect(describeDceCaveats(fitExtendedTofts(input({ aifSource: 'population' })))).toMatch(
       /Parker/
     );
   });
@@ -337,6 +337,6 @@ describe('dcePerfusion — the readout', () => {
 
   it('survives a nullish result', () => {
     expect(describeTofts(undefined as never)).toBe('');
-    expect(describeCaveats(undefined as never)).toBe('');
+    expect(describeDceCaveats(undefined as never)).toBe('');
   });
 });

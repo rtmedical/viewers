@@ -1,6 +1,6 @@
 import {
   compareMuscle,
-  ContrastPhase,
+  MuscleContrastPhase,
   describeMuscle,
   MUSCLE_HU,
   REFERENCE_LEVEL,
@@ -34,7 +34,7 @@ const area = (
   side: number,
   hu: number | ((i: number) => number),
   level: VertebralLevel = 'L3',
-  phase: ContrastPhase = 'unenhanced',
+  phase: MuscleContrastPhase = 'unenhanced',
   window?: [number, number]
 ) => {
   const built = slice(side, hu);

@@ -9,14 +9,14 @@ import {
   scaleNormalise,
   suggestC,
   symmetricEigenvalues,
-  Volume,
+  FrangiVolume,
   vesselness,
 } from './frangi';
 
 const N = 24;
 
 /** A bright cylinder of the given radius along z, centred in an N³ volume. */
-const cylinder = (radiusVox: number, bright = true): Volume => {
+const cylinder = (radiusVox: number, bright = true): FrangiVolume => {
   const data = new Float32Array(N * N * N);
   const centre = (N - 1) / 2;
   for (let z = 0; z < N; z++) {
@@ -168,7 +168,7 @@ describe('frangi — Gaussian machinery', () => {
 
   it('the Hessian of a bright ridge is negative across it and near zero along it', () => {
     const blurred = gaussianBlur(cylinder(3), 1.5);
-    const smoothed: Volume = { data: blurred, width: N, height: N, depth: N };
+    const smoothed: FrangiVolume = { data: blurred, width: N, height: N, depth: N };
     const [xx, yy, zz] = hessianAt(smoothed, centre, centre, centre);
     expect(xx).toBeLessThan(0);
     expect(yy).toBeLessThan(0);

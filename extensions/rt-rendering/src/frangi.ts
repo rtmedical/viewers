@@ -194,14 +194,14 @@ export function frobeniusNorm(eigenvalues: [number, number, number]): number {
   return Math.sqrt(a * a + b * b + c * c);
 }
 
-export interface Volume {
+export interface FrangiVolume {
   data: ArrayLike<number>;
   width: number;
   height: number;
   depth: number;
 }
 
-const at = (volume: Volume, x: number, y: number, z: number): number => {
+const at = (volume: FrangiVolume, x: number, y: number, z: number): number => {
   const { width, height, depth } = volume;
   const cx = Math.min(width - 1, Math.max(0, x));
   const cy = Math.min(height - 1, Math.max(0, y));
@@ -224,7 +224,7 @@ export function gaussianKernel(sigma: number): number[] {
 }
 
 /** Separable Gaussian blur. Clamps at the border rather than wrapping. */
-export function gaussianBlur(volume: Volume, sigma: number): Float32Array {
+export function gaussianBlur(volume: FrangiVolume, sigma: number): Float32Array {
   const { width, height, depth } = volume;
   const kernel = gaussianKernel(sigma);
   const radius = (kernel.length - 1) / 2;
@@ -240,7 +240,7 @@ export function gaussianBlur(volume: Volume, sigma: number): Float32Array {
   ];
 
   for (const [dx, dy, dz] of passes) {
-    const current: Volume = { data: source, width, height, depth };
+    const current: FrangiVolume = { data: source, width, height, depth };
     for (let z = 0; z < depth; z++) {
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -260,7 +260,7 @@ export function gaussianBlur(volume: Volume, sigma: number): Float32Array {
 }
 
 /** Central-difference Hessian at one voxel: [xx, yy, zz, xy, xz, yz]. */
-export function hessianAt(volume: Volume, x: number, y: number, z: number): number[] {
+export function hessianAt(volume: FrangiVolume, x: number, y: number, z: number): number[] {
   const c = at(volume, x, y, z);
   const xx = at(volume, x + 1, y, z) - 2 * c + at(volume, x - 1, y, z);
   const yy = at(volume, x, y + 1, z) - 2 * c + at(volume, x, y - 1, z);
@@ -304,7 +304,7 @@ export interface MultiscaleOptions {
  * term is comparable between them.
  */
 export function multiscaleVesselness(
-  volume: Volume,
+  volume: FrangiVolume,
   options: MultiscaleOptions
 ): MultiscaleResult {
   const { width, height, depth } = volume;
@@ -323,7 +323,7 @@ export function multiscaleVesselness(
 
   for (const sigma of scales) {
     const blurred = gaussianBlur(volume, sigma);
-    const smoothed: Volume = { data: blurred, width, height, depth };
+    const smoothed: FrangiVolume = { data: blurred, width, height, depth };
     const eigen = new Float32Array(size * 3);
     for (let z = 0; z < depth; z++) {
       for (let y = 0; y < height; y++) {

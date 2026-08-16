@@ -46,7 +46,7 @@
  * Framework-free, no `@ohif/*`. Zero-fork per RTV-114.
  */
 
-export interface Volume {
+export interface BoneVolume {
   data: ArrayLike<number>;
   width: number;
   height: number;
@@ -91,10 +91,10 @@ function neighbourOffsets(connectivity: Connectivity): number[][] {
   return out;
 }
 
-const indexOf = (v: Volume, x: number, y: number, z: number) =>
+const indexOf = (v: BoneVolume, x: number, y: number, z: number) =>
   z * v.width * v.height + y * v.width + x;
 
-const inside = (v: Volume, x: number, y: number, z: number) =>
+const inside = (v: BoneVolume, x: number, y: number, z: number) =>
   x >= 0 && y >= 0 && z >= 0 && x < v.width && y < v.height && z < v.depth;
 
 export interface Seed {
@@ -121,7 +121,7 @@ export interface GrowthResult {
  * which {@link findContactRegions} finds.
  */
 export function growBoneMask(
-  volume: Volume,
+  volume: BoneVolume,
   seeds: Seed[],
   thresholdHu = BONE_THRESHOLD_HU,
   connectivity: Connectivity = 26
@@ -129,7 +129,7 @@ export function growBoneMask(
   const size = (volume?.width ?? 0) * (volume?.height ?? 0) * (volume?.depth ?? 0);
   const mask = new Uint8Array(Math.max(0, size));
   if (!size || !(volume?.data?.length >= size)) {
-    return { mask, voxels: 0, rejectedSeeds: 0, ok: false, reason: 'Volume inválido.' };
+    return { mask, voxels: 0, rejectedSeeds: 0, ok: false, reason: 'BoneVolume inválido.' };
   }
 
   const threshold = Number(thresholdHu);
@@ -222,7 +222,7 @@ export interface AtRiskVoxel {
  * way to tell an occlusion from a deletion.
  */
 export function findAtRiskVoxels(
-  volume: Volume,
+  volume: BoneVolume,
   mask: Uint8Array,
   options: {
     ambiguousFromHu?: number;
@@ -278,7 +278,7 @@ function numberOr(value: unknown, fallback: number): number {
 
 /** Grows the mask by one voxel in every direction. */
 export function dilate(
-  volume: Volume,
+  volume: BoneVolume,
   mask: Uint8Array,
   connectivity: Connectivity = 6
 ): Uint8Array {
@@ -302,7 +302,7 @@ export function dilate(
 }
 
 export interface RemovalResult {
-  /** Volume with the masked voxels replaced by `fillHu`. */
+  /** BoneVolume with the masked voxels replaced by `fillHu`. */
   data: Float32Array;
   mask: Uint8Array;
   removedVoxels: number;
@@ -330,7 +330,7 @@ export interface RemovalOptions {
  * uncertain is the failure mode this whole module is arranged around — the result looks
  * clean either way.
  */
-export function removeBone(volume: Volume, options: RemovalOptions): RemovalResult {
+export function removeBone(volume: BoneVolume, options: RemovalOptions): RemovalResult {
   const warnings: string[] = [];
   const size = (volume?.width ?? 0) * (volume?.height ?? 0) * (volume?.depth ?? 0);
   const empty: RemovalResult = {

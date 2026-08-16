@@ -392,3 +392,42 @@ Comparar os últimos N caracteres do nome concatenado **não acha** o par perigo
 "MARIASOUZA" e "MARIOSOUZA" a última letra do prenome cai dentro da janela e os finais diferem.
 A comparação é por **token de sobrenome**, com suporte a `família^prenome` do DICOM PN e à
 convenção local de sobrenome por último.
+
+## Passo de procedimento executado (RTV-100)
+
+`performedProcedureStep.ts` — o `modalityWorklist.ts` (RTV-99) modela o que foi **agendado**.
+Este modela o que foi **feito**, e a distância entre os dois é onde estão as falhas
+interessantes.
+
+### Um MPPS final que não chega deixa a sala ocupada para sempre
+
+O passo vai para "em andamento" quando o exame começa, e **nada o move dali** se o console
+travar, a rede cair, ou o técnico sair. O agendamento então não distingue um exame abandonado de
+um em curso: a sala aparece ocupada, o pedido não fecha, e o paciente parece estar na mesa.
+
+Tempo decorrido não resolve. Exame longo e exame morto são a mesma coisa vistos de fora — mesma
+forma do commitment sem resposta (RTV-101) e do canal silencioso (RTV-189). O módulo **avisa um
+humano e se recusa a fechar sozinho**: fechar por tempo transformaria um exame em curso em
+concluído no registro.
+
+### Executado não é agendado, e copiar um no outro fatura o que não foi feito
+
+O MPPS final carrega o protocolo que **de fato rodou** e as séries que **de fato saíram**.
+Preencher esses campos a partir do agendamento é o atalho óbvio, e erra numa direção específica
+e cara: exame agendado com contraste e feito sem fatura como contrastado, e é laudado contra um
+protocolo que não aconteceu. A diferença **não é erro a corrigir — é o fato que o registro existe
+para carregar**.
+
+### Interrompido não é vazio
+
+Um exame parado depois de três séries **tem três séries**. Elas são diagnósticas, são do
+paciente, e precisam ser guardadas e lidas. Tratar "interrompido" como "não aconteceu nada"
+descarta; tratar como "concluído" lauda um estudo parcial como inteiro. O motivo separa os casos:
+**reação ao contraste é incidente, paciente que não tolerou a posição é reagendamento.**
+
+### A contagem de instâncias é o sinal mais precoce de perda
+
+O MPPS final diz quantas séries e instâncias a modalidade produziu. Comparar com o que o arquivo
+recebeu é **a detecção mais barata de uma transferência que perdeu alguma coisa**, e está
+disponível antes de alguém abrir o estudo — quando o leitor percebe uma série curta, ele já está
+lendo.

@@ -17,7 +17,7 @@
  *
  * Integrating the raw signal drop and calling it CBV under-weights the peak and
  * over-weights the shoulders — the error is largest exactly where the bolus is
- * concentrated, so it does not cancel. {@link signalToConcentration} does the conversion
+ * concentrated, so it does not cancel. {@link dscSignalToConcentration} does the conversion
  * and needs a real baseline, which is why {@link estimateBaseline} exists and why it
  * refuses to guess from too few pre-bolus points.
  *
@@ -117,7 +117,7 @@ export function estimateBaseline(signal: ArrayLike<number>): BaselineEstimate {
  * noise above the baseline is noise, and letting it go negative puts holes in the area
  * under the curve.
  */
-export function signalToConcentration(
+export function dscSignalToConcentration(
   signal: ArrayLike<number>,
   options: ConcentrationOptions = {}
 ): number[] {
@@ -388,7 +388,7 @@ export function analysePerfusion(input: PerfusionInput): PerfusionResult {
     return { ...empty, caveats: [...empty.caveats, 'fitFailed'], reason: baseline.reason };
   }
 
-  const concentration = signalToConcentration(input.signal, {
+  const concentration = dscSignalToConcentration(input.signal, {
     echoTimeMs: input.echoTimeMs,
     baseline: baseline.value,
   });
@@ -437,6 +437,6 @@ export const CAVEAT_LABELS: Record<PerfusionCaveat, string> = {
 };
 
 /** The disclaimer that has to travel with the map. */
-export function describeCaveats(result: PerfusionResult): string {
+export function describeDscCaveats(result: PerfusionResult): string {
   return (result?.caveats ?? []).map(c => CAVEAT_LABELS[c]).filter(Boolean).join(' ');
 }

@@ -1,14 +1,14 @@
 import {
   analysePerfusion,
   CAVEAT_LABELS,
-  describeCaveats,
+  describeDscCaveats,
   estimateBaseline,
   fitGammaVariate,
   gammaVariateArea,
   gammaVariateAt,
   gammaVariateFirstMoment,
   MIN_BASELINE_POINTS,
-  signalToConcentration,
+  dscSignalToConcentration,
 } from './dscPerfusion';
 
 const TR = 1.5;
@@ -63,7 +63,7 @@ describe('dscPerfusion — baseline', () => {
 
 describe('dscPerfusion — signal is not concentration', () => {
   it('inverts the exponential exactly', () => {
-    const recovered = signalToConcentration(SIGNAL, { baseline: 1000, echoTimeMs: 1 });
+    const recovered = dscSignalToConcentration(SIGNAL, { baseline: 1000, echoTimeMs: 1 });
     recovered.forEach((c, i) => expect(c).toBeCloseTo(CURVE[i], 9));
   });
 
@@ -71,7 +71,7 @@ describe('dscPerfusion — signal is not concentration', () => {
   // the error is largest exactly where the bolus is concentrated, so it does not cancel.
   it('differs from the raw signal drop by more than a scale factor', () => {
     const drop = SIGNAL.map(s => 1000 - s);
-    const concentration = signalToConcentration(SIGNAL, { baseline: 1000 });
+    const concentration = dscSignalToConcentration(SIGNAL, { baseline: 1000 });
     const peakIndex = concentration.indexOf(Math.max(...concentration));
     const shoulderIndex = peakIndex + 6;
 
@@ -82,13 +82,13 @@ describe('dscPerfusion — signal is not concentration', () => {
 
   // Letting noise above the baseline go negative puts holes in the area under the curve.
   it('clamps at zero instead of producing negative concentration', () => {
-    const noisy = signalToConcentration([1010, 1005, 990], { baseline: 1000 });
+    const noisy = dscSignalToConcentration([1010, 1005, 990], { baseline: 1000 });
     expect(noisy.slice(0, 2)).toEqual([0, 0]);
     expect(noisy[2]).toBeGreaterThan(0);
   });
 
   it('is defensive about zero and non-finite samples', () => {
-    expect(signalToConcentration([0, NaN, -5], { baseline: 1000 })).toEqual([0, 0, 0]);
+    expect(dscSignalToConcentration([0, NaN, -5], { baseline: 1000 })).toEqual([0, 0, 0]);
   });
 });
 
@@ -204,18 +204,18 @@ describe('dscPerfusion — the analysis, and what it refuses to claim', () => {
     const result = analyse({ aifArea: 48 });
     expect(result.requiresDeconvolution).toBe(true);
     expect(result.caveats).toContain('noDeconvolution');
-    expect(describeCaveats(result)).toMatch(/sem deconvolução pela AIF/);
+    expect(describeDscCaveats(result)).toMatch(/sem deconvolução pela AIF/);
   });
 
   it('always declares the units as relative', () => {
     expect(analyse().caveats).toContain('relativeUnits');
-    expect(describeCaveats(analyse())).toMatch(/não mL\/100 g/);
+    expect(describeDscCaveats(analyse())).toMatch(/não mL\/100 g/);
   });
 
   it('adds a louder caveat when there is no AIF at all', () => {
     expect(analyse().caveats).toContain('noAif');
     expect(analyse({ aifArea: 48 }).caveats).not.toContain('noAif');
-    expect(describeCaveats(analyse())).toMatch(/não são comparáveis entre exames/);
+    expect(describeDscCaveats(analyse())).toMatch(/não são comparáveis entre exames/);
   });
 
   it('declares the missing leakage correction', () => {
@@ -236,7 +236,7 @@ describe('dscPerfusion — the analysis, and what it refuses to claim', () => {
     }
   });
 
-  it('describeCaveats survives a nullish result', () => {
-    expect(describeCaveats(undefined as never)).toBe('');
+  it('describeDscCaveats survives a nullish result', () => {
+    expect(describeDscCaveats(undefined as never)).toBe('');
   });
 });

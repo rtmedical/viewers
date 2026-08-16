@@ -131,7 +131,7 @@ export type SafetyNetState =
   | 'escalatedToInstitution'
   | 'closed';
 
-export const STATE_LABELS: Record<SafetyNetState, string> = {
+export const SAFETY_STATE_LABELS: Record<SafetyNetState, string> = {
   scheduled: 'Programado',
   due: 'Vencendo',
   overdue: 'Vencido',
@@ -438,5 +438,5 @@ export function describeRecommendation(
     return '';
   }
   const state = assessState(recommendation, now);
-  return `${STATE_LABELS[state.state]} · ${text(recommendation.text)} · ${state.message}`;
+  return `${SAFETY_STATE_LABELS[state.state]} · ${text(recommendation.text)} · ${state.message}`;
 }

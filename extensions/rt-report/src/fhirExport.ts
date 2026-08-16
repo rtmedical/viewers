@@ -149,7 +149,7 @@ export function buildReference(
   };
 }
 
-export interface CodedConcept {
+export interface FhirCoding {
   system: string;
   code: string;
   display?: string;
@@ -158,13 +158,13 @@ export interface CodedConcept {
 export interface StructuredFinding {
   id: string;
   /** RadElement / LOINC / SNOMED code. Without one it cannot be an Observation. */
-  code?: CodedConcept;
+  code?: FhirCoding;
   /** Numeric value with a unit, or a coded value, or plain text. */
   valueQuantity?: { value: number; unit: string; system?: string; code?: string };
-  valueCodeableConcept?: CodedConcept;
+  valueCodeableConcept?: FhirCoding;
   valueString?: string;
   /** Laterality, body site and so on. */
-  bodySite?: CodedConcept;
+  bodySite?: FhirCoding;
   /** DICOM evidence: the image the finding was made on. */
   evidence?: { studyInstanceUid?: string; seriesInstanceUid?: string; sopInstanceUid?: string };
 }
@@ -173,13 +173,13 @@ export interface FhirObservation {
   resourceType: 'Observation';
   id: string;
   status: 'preliminary' | 'final' | 'amended';
-  code: CodedConcept;
+  code: FhirCoding;
   subject: Reference;
   effectiveDateTime: string;
   valueQuantity?: StructuredFinding['valueQuantity'];
-  valueCodeableConcept?: CodedConcept;
+  valueCodeableConcept?: FhirCoding;
   valueString?: string;
-  bodySite?: CodedConcept;
+  bodySite?: FhirCoding;
   derivedFrom?: Reference[];
 }
 
@@ -187,8 +187,8 @@ export interface FhirDiagnosticReport {
   resourceType: 'DiagnosticReport';
   id: string;
   status: FhirReportStatus;
-  category?: CodedConcept[];
-  code: CodedConcept;
+  category?: FhirCoding[];
+  code: FhirCoding;
   subject: Reference;
   /** When the imaging happened. */
   effectiveDateTime: string;
@@ -205,7 +205,7 @@ export interface ExportInput {
   reportId: string;
   state: InternalReportState;
   /** LOINC or local code for the procedure. */
-  code: CodedConcept;
+  code: FhirCoding;
   patient: Identifier;
   patientDisplay?: string;
   /** ISO-8601. When the imaging happened. */
@@ -218,7 +218,7 @@ export interface ExportInput {
   narrative?: string;
   /** Base64 PDF/A, if one was produced. */
   pdfBase64?: string;
-  category?: CodedConcept[];
+  category?: FhirCoding[];
 }
 
 export interface ExportResult {
