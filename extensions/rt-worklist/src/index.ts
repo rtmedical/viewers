@@ -30,7 +30,11 @@
  * checkboxes are not wired into RtWorklistPage.
  *
  * RTV-190 adds worklistActions.ts: the per-study action resolver for the
- * hover row, the overflow and the right-click menu. Permissions arrive as an
+ * hover row, the overflow and the right-click menu.
+ *
+ * RTV-183 adds multiDatasource.ts: merging the QIDO worklist with the RIS one
+ * field by field rather than record by record, and treating a source that is
+ * down as unknown rather than as empty. Permissions arrive as an
  * injected predicate rather than an import from rt-governance, hidden and
  * disabled are distinct answers, and destructive actions are kept off the
  * hover row. Also pure, also not wired into the page yet.
@@ -38,6 +42,7 @@
 export * from './worklistModel';
 export * from './worklistSelection';
 export * from './worklistActions';
+export * from './multiDatasource';
 export * from './worklistBatch';
 export * from './worklistExport';
 export * from './iheInvoke';
