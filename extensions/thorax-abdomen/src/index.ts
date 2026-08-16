@@ -22,6 +22,7 @@ export * from './abdominalOrgans';
 export * from './aorticDiameter';
 export * from './muscleIndex';
 export * from './airwayMetrics';
+export * from './renalUrogram';
 
 const id = '@ohif/extension-thorax-abdomen';
 
