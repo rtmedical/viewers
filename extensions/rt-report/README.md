@@ -316,3 +316,31 @@ A serialização usa os content items do DICOM SR: achado exportado como SR é l
 qualquer PACS, blob JSON próprio é legível por este viewer. Anotação 2D fica **aninhada** sob
 o item IMAGE, porque as coordenadas só significam algo relativas àquele instance; 3D fica ao
 lado, com o frame of reference, porque não.
+
+## Packs ACR RADS (RTV-220)
+
+`radsPacks.ts` — TI-RADS, PI-RADS, BI-RADS e LI-RADS. Parecem iguais de fora e não são: dois
+são **computados** de características, um tem regra sobre *quando* uma categoria pode ser
+usada, e um muda **qual sequência decide** dependendo de onde a lesão está.
+
+**Uma categoria sem o tamanho não é acionável.** É o que faz valer a pena implementar em vez
+de listar. No TI-RADS, um nódulo nível 4 com 8 mm é seguimento e o mesmo nível 4 com 18 mm é
+punção. **Mesma categoria, conduta diferente.** Um viewer que renderiza "TI-RADS 4" e para
+imprimiu a metade menos útil — então o tamanho é obrigatório e a recomendação vem junto.
+
+**BI-RADS 3 só existe em baseline.** "Provavelmente benigno, seguimento curto" significa *é a
+primeira vez que vejo isso e espero que fique estável*. Em seguimento que já mostrou
+estabilidade o achado é benigno (2); em seguimento que mostrou mudança é suspeito (4).
+**Repetir 3 a cada visita é um jeito de acompanhar um câncer por três anos.** Categoria 3 sem
+baseline é recusada.
+
+**PI-RADS muda a sequência dominante conforme a zona.** Periférica pontua no DWI, transição no
+T2 — pontuar a errada erra nas duas direções dependendo da lesão. E DCE positivo eleva um 3
+para 4 **só na zona periférica**: é o único lugar em que o DCE muda alguma coisa, e é a razão
+de ele ser adquirido. Na zona de transição o DCE é ignorado, e o módulo diz isso em vez de
+aceitar em silêncio.
+
+**LR-5 é um diagnóstico, não uma suspeita.** Significa CHC definitivo e, no contexto certo,
+justifica tratamento **sem biópsia**. A combinação que chega lá é tabela e não julgamento, e a
+dependência de tamanho é fácil de inverter: com 10–19 mm e hiperrealce arterial são precisas
+**duas** características adicionais, com ≥ 20 mm basta **uma**.
