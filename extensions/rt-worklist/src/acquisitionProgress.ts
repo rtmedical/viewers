@@ -279,6 +279,6 @@ export function derivedArtefactWarning(
 }
 
 /** One line for the arrival indicator. */
-export function describeProgress(assessment: ProgressAssessment): string {
+export function describeArrival(assessment: ProgressAssessment): string {
   return assessment.message;
 }

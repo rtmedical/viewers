@@ -47,6 +47,7 @@ export * from './realtimeSync';
 export * from './localDatasource';
 export * from './storageCommitment';
 export * from './acquisitionProgress';
+export * from './modalityWorklist';
 export * from './worklistBatch';
 export * from './worklistExport';
 export * from './iheInvoke';

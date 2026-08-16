@@ -347,3 +347,48 @@ uma pilha truncada é um número.
 E o artefato derivado **sobrevive ao estado em que foi feito**: um MIP salvo como captura
 secundária de um estudo pela metade é um MIP normal para sempre depois disso, e nenhuma regra
 sobre o viewport ao vivo alcança ele.
+
+## Lista de trabalho da modalidade (RTV-99)
+
+`modalityWorklist.ts` — o C-FIND contra o MWL SCP é um adaptador. O que está aqui é o modelo do
+qual o console escolhe, e a razão pela qual **escolher dessa lista é o clique de maior
+consequência do serviço**.
+
+### Selecionar a entrada errada escreve o nome de outro paciente no estudo
+
+As imagens herdam a identificação da entrada que o técnico selecionou. Pegue a linha de cima e o
+estudo é criado, armazenado, indexado e laudado sob outro paciente — e **nada a jusante consegue
+detectar**, porque todos os campos ficam internamente consistentes: o nome bate com o ID, o ID
+bate com o accession, o accession bate com o pedido. **Não sobra contradição nenhuma para um
+validador achar.**
+
+As únicas defesas são antes do clique: uma lista estreita o bastante para a entrada certa ser
+óbvia, e uma confirmação que mostra o que está prestes a ser herdado.
+
+### Consultar sem o AE da estação põe o serviço inteiro num console
+
+MWL é consultada por modalidade, AE da estação agendada e data. Tire o AE e o console da TC passa
+a listar o trabalho da sala de RM. O exame acaba feito na máquina errada, e o único rastro é um
+nome de estação nas imagens **que ninguém lê até a física perguntar por que um protocolo rodou
+onde ele não existe**.
+
+### Exame não agendado é coisa real, não linha faltando
+
+Trauma e demanda espontânea chegam sem pedido. Forjar uma entrada de agenda para o software ficar
+feliz produz **um pedido que o faturamento e o RIS vão tratar como verdadeiro**. O módulo marca
+como não agendado, deixa o accession vazio em vez de inventar um, e exige motivo — sem ele
+ninguém depois distingue um trauma de um erro de fluxo, e a reconciliação nunca acontece.
+
+### Um procedimento solicitado não é um passo
+
+TC de tórax e abdome são comumente dois passos sob um procedimento, e um passo pode gerar várias
+séries. Colapsar passos em procedimentos fatura errado; colapsar séries em passos perde qual
+protocolo de fato rodou. Por isso casar um estudo por accession quando o accession cobre vários
+passos é **recusado**.
+
+### Detalhe de comparação de nomes
+
+Comparar os últimos N caracteres do nome concatenado **não acha** o par perigoso: em
+"MARIASOUZA" e "MARIOSOUZA" a última letra do prenome cai dentro da janela e os finais diferem.
+A comparação é por **token de sobrenome**, com suporte a `família^prenome` do DICOM PN e à
+convenção local de sobrenome por último.
