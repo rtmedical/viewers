@@ -349,3 +349,32 @@ e também o caso de encostar sem fundir, que continua acontecendo.
 espectrais diferentes, e os módulos do `rt-dect` separam os dois de verdade — sem limiar, sem
 conectividade, sem ponto cego na base do crânio. `recommendApproach` diz isso, em vez de
 deixar uma heurística de energia única ser usada sobre dado que suporta coisa melhor.
+
+## Polígono de Willis (RTV-53)
+
+`circleOfWillis.ts` — descrever quais segmentos estão presentes é fácil e, sozinho, quase
+inútil. A razão de reportar é a frase seguinte: **o que acontece com este paciente se um vaso
+ocluir.**
+
+**Círculo incompleto não é achado.** Um círculo completo de livro existe em algo como 40–50%
+das pessoas. Reportar "círculo de Willis incompleto" como anormalidade é reportar variante
+normal como patologia — enche o laudo de ruído e treina o leitor a pular a linha. O que vale
+reportar é a variante que **remove uma via colateral que o paciente teria**.
+
+**PCA fetal é a que muda o que uma oclusão de carótida faz.** Normalmente a cerebral posterior
+é alimentada pela basilar via P1. Na configuração fetal o P1 é ausente ou hipoplásico e a PCA
+é alimentada pela comunicante posterior — ou seja, **pela carótida interna**. A consequência é
+o achado: oclusão carotídea nesse paciente ameaça o lobo occipital além do território da
+cerebral média, e o planejamento de trombectomia muda. Reportar "P1 hipoplásico" sem dizer
+isso é reportar a anatomia e reter o ponto.
+
+**A1 ausente faz os dois lobos frontais dependerem de uma carótida só.** Com um A1 ausente ou
+hipoplásico, as duas cerebrais anteriores enchem pela outra carótida através da comunicante
+anterior — e a oclusão daquela carótida vira infarto anterior bilateral. A mesma assimetria é a
+associação clássica com aneurisma de comunicante anterior, porque todo o fluxo cruzado passa
+por ela.
+
+**Hipoplásico conta como não funcional.** Um A1 de 0,8 mm é visível na angio e não carrega
+nada sob carga. Tratá-lo como presente porque dá para ver é como um laudo diz que a colateral
+existe quando ela não existe. A palavra usada no texto continua distinguindo os dois, porque
+não são a mesma anatomia.

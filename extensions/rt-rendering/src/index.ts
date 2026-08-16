@@ -15,6 +15,8 @@
  *   global threshold, and — because a vessel that touches bone is absorbed by
  *   the grower — at-risk voxels identified by attenuation rather than by
  *   geometry.
+ * - **Circle of Willis** (RTV-53): variant classification, and the collateral
+ *   consequence that is the only reason to report one.
  * - **Frangi vesselness** (RTV-62): multiscale Hessian vessel enhancement,
  *   with the polarity required rather than assumed, gamma normalisation so the
  *   scales are comparable, a data-derived structureness constant, and the
@@ -34,6 +36,7 @@
 export * from './vip';
 export * from './frangi';
 export * from './boneRemoval';
+export * from './circleOfWillis';
 export * from './ssdPresets';
 export * from './ssdBudget';
 export * from './dsa';
