@@ -81,3 +81,41 @@ permanência e decaimento é **a única checagem independente disponível num re
 
 O erro provável é digitar uma fração que depois chega pela máquina. O curso conta as duas e a
 dose acumulada **passa da prescrição sem nada parecer errado**.
+
+## Edição e baixa de registros, e o log que sobrevive a elas (RTV-178)
+
+`treatmentAudit.ts` — a contraparte do `manualTreatment.ts` (RTV-177): o que pode ser mudado
+depois que um registro existe, e o que precisa continuar visível.
+
+### Apagar nunca é apagar
+
+Um registro de tratamento é documento clínico-legal. Removê-lo torna a dose entregue menor do
+que foi, e faz isso **retroativamente e em silêncio**: o resumo do curso simplesmente mostra um
+número menor, sem nada na tela indicando que já mostrou um maior. Quem agiu sobre o número
+anterior — um físico aprovando um boost, um médico decidindo que a prescrição estava completa —
+agiu sobre um total que não existe mais em lugar nenhum.
+
+`retireRecord` escreve uma **lápide**. O registro fica, marcado como baixado com quem, quando e
+por quê; os totais o excluem e `summariseWithAudit` **diz isso em voz alta** — excluir em
+silêncio no relatório reintroduziria exatamente a falha que a lápide existe para evitar.
+
+### Só registro manual pode ser baixado
+
+Um registro de máquina é evidência de que o acelerador entregou algo. **Ninguém torna isso falso
+apagando a linha.** Se ele está errado, é falha de equipamento ou de transferência de dado, e a
+conversa começa na máquina, não no registro.
+
+### "Editado" não é uma entrada de auditoria
+
+Um log dizendo que o campo de dose foi editado não responde nada. A pergunta que uma auditoria
+faz é **o que ele dizia antes**, porque as edições interessantes são as que mudaram um número
+sobre o qual alguém já agiu. Toda alteração carrega o valor antigo e o novo lado a lado.
+
+Alteração não pode mudar identificador nem curso — e a recusa é explícita, não silenciosa:
+"lançado no curso errado" se resolve **baixando o registro e inserindo no curso certo**, para que
+os dois cursos guardem o que aconteceu.
+
+### O resumo precisa ser reconstruível num momento passado
+
+"Quanto a dose acumulada marcava quando o boost foi aprovado?" é a pergunta, e uma tabela de
+estado atual não a responde. `stateAt` reexecuta o log.
