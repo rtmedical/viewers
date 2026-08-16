@@ -220,3 +220,42 @@ aprisionado**, e o viés aponta para o resultado tranquilizador.
 
 Aprisionamento aéreo na expiração e enfisema na inspiração são **a mesma conta em aquisições
 diferentes** — rodada na errada, o número sai plausível e descreve outra coisa.
+
+## Cálculos, hidronefrose e cobertura do urograma (RTV-73)
+
+`renalUrogram.ts` — a segmentação é um sidecar e os volumes de órgão vivem em
+`abdominalOrgans.ts`. O que está aqui é o raciocínio específico do trato urinário, e é quase
+todo sobre **os jeitos pelos quais um número confiante deixa de significar o que diz**.
+
+### A atenuação de um cálculo é propriedade da espessura de corte
+
+Composição por unidade Hounsfield supõe que a atenuação de pico pertence ao cálculo. Em cortes
+grossos ela não pertence: um cálculo de quatro milímetros num corte de cinco é mediado com a
+urina e a gordura em volta, e o pico volta **centenas de unidades baixo**. Um cálculo de cálcio
+então lê na faixa do ácido úrico — que é justamente a chamada que muda a conduta, porque ácido
+úrico dissolve com alcalinização e cálcio não.
+
+A falha escala com a razão, então **bate mais forte nos cálculos pequenos** — e é neles que a
+decisão clínica ou cirúrgica está em aberto. O módulo recusa em vez de classificar, e aponta
+para a dupla energia (RTV-89), que separa por material e não por atenuação.
+
+### O diâmetro máximo depende do plano em que você olhou
+
+Previsão de eliminação usa diâmetro máximo, e um cálculo alongado no eixo crânio-caudal mede
+pequeno em todo corte axial e grande no reformatado coronal. Medir só no axial **não é
+impreciso, é enviesado para menor** — e menor é a direção que prevê eliminação espontânea.
+
+### Dilatação não é obstrução, e obstrução nem sempre dilata
+
+Pelve extrarrenal é larga num rim normal. Obstrução precoce ou já descomprimida quase não dilata.
+Graduar pelo diâmetro pélvico sozinho erra os dois casos, **em direções opostas**. Os cálices
+decidem o grau; o parênquima diz há quanto tempo aquilo dura — e parênquima fino significa que
+a função daquele rim provavelmente não recupera com a desobstrução, o que só uma medida
+**absoluta** de função responde (a relativa, do RTV-209, não).
+
+### Um ureter que nunca opacificou não é um ureter normal
+
+O urograma exclui falha de enchimento **apenas nos segmentos que encheram**. "Sem falha de
+enchimento" escrito sobre um segmento não opacificado é uma afirmação sobre o tempo do contraste
+que se lê como afirmação sobre o ureter. O módulo lista o que **não** foi avaliado em vez de
+omitir.
