@@ -510,3 +510,43 @@ duplicata: distribuir um laudo retificado a quem recebeu o original é uma divul
 Quem recebeu a versão 1 está agindo sobre um laudo que mudou desde então. Produzir essa lista
 não é refinamento de relatório — é o único jeito de a retificação alcançar as pessoas que o
 original alcançou.
+
+## Reconhecimento de voz pluggable (RTV-112)
+
+`speechAdapter.ts` — a captura é Web Audio (RTV-111) e os provedores são serviços de rede. O
+que pertence aqui é o **contrato** que um provedor precisa satisfazer e a parte que decide
+**quais trechos de um laudo ditado um humano tem que olhar antes de assinar**.
+
+### Confiança de reconhecimento é calibrada em som, não em consequência
+
+É a observação em torno da qual o módulo foi construído, e é por isso que **um limiar de
+confiança não é mecanismo de segurança**. Um motor que ouve "esquerda" com clareza e transcreve
+"esquerda" reporta confiança alta — e se o radiologista disse "direita", o número não diz nada.
+Os erros que importam num laudo **não são os murmurados; são os nítidos, confiantes e errados.**
+
+Quatro classes de token exigem olhar humano **independentemente do escore do provedor**:
+
+| classe | por quê |
+|---|---|
+| **negação** | um "não" perdido inverte o achado — "não há sinais de pneumotórax" e "há sinais de pneumotórax" diferem por uma sílaba curta e átona |
+| **lateralidade** | lado errado, e o ditado é uma das portas de entrada dele no prontuário |
+| **medida** | "1,5 cm" e "15 cm" são os mesmos dígitos; uma vírgula perdida transforma um intervalo de seguimento numa biópsia |
+| **dose** | a mesma falha, com uma droga junto |
+
+`acceptDictation` recusa enquanto qualquer marcação estiver sem revisão — **por marcação, não
+por ditado**, para o leitor confirmar a lateralidade que de fato disse, e não um checkbox que
+cobre um parágrafo inteiro.
+
+### Comando não reconhecido vira texto, nunca nada
+
+"Ponto final" é um comando; também é uma frase que um radiologista pode dizer. Um parser que
+descarta em silêncio o que não casa **apaga conteúdo ditado**, que é o pior desfecho possível:
+uma ausência é o único tipo de erro que o leitor não consegue perceber lendo. Candidatos não
+casados são inseridos literalmente e reportados.
+
+### Provedor: idioma é rejeição, não aviso
+
+Um motor de pt-PT transcrevendo ditado pt-BR não falha alto — produz **português plausível com
+as palavras erradas dentro**. Provedor em nuvem é recusado quando o áudio não pode sair: ditado
+é dado do paciente. Provedor sem confiança por token é aceito com aviso, porque a varredura de
+risco nunca dependeu da confiança.
