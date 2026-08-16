@@ -128,3 +128,44 @@ estatística por fração construída sobre a linha do tempo.
 Pertence ao planejamento. Colocada no eixo de tratamento na data em que foi adquirida, faz o
 curso **parecer ter começado semanas antes da primeira fração**, e toda duração lida do gráfico
 fica errada.
+
+## Estatísticas da sessão e sub-timeline (RTV-171)
+
+`sessionStats.ts` — a sub-timeline sob uma sessão de tratamento: todos os eventos de imagem e
+entrega daquela sessão, em ordem, com a contagem que fica acima dela.
+
+### "Passou", "revisado" e "aprovado" são três afirmações diferentes
+
+São rotineiramente somadas num número só, e o número então não responde nada. Um teste de
+tolerância passando é **o software dizendo** que o desvio foi pequeno. Revisado é **uma pessoa
+ter olhado**. Aprovado é **uma pessoa ter autorizado**. Um painel marcando "8 pass" numa sessão
+em que ninguém abriu uma única imagem é tecnicamente correto e completamente enganoso — e é o
+que sai naturalmente de uma contagem de `status === 'ok'`.
+
+`STATUS_KIND` separa o que a máquina afirmou do que uma pessoa afirmou, e as duas contagens
+saem lado a lado, nunca somadas. Quando não houve nenhuma verificação humana, o resumo diz isso:
+**o que passou, passou no software.**
+
+### Exceção sem nome não é exceção
+
+Aceitar algo fora da tolerância é ato clínico legítimo, e a única coisa que o torna prestável é
+**quem**. Uma linha de override com atribuição vazia é uma exceção que ninguém assume — que é
+justamente o estado que um programa de QA existe para evitar. É recusada.
+
+### Sessão é um intervalo de tempo, não uma data
+
+Agrupar por dia do calendário erra os dois casos comuns: hiperfracionamento duas vezes ao dia
+vira uma sessão que **parece ter durado oito horas**, e uma sessão noturna cruzando a meia-noite
+vira duas, a segunda das quais **parece um tratamento sem imagem de setup**.
+
+### Empate de horário: imagem primeiro
+
+Registros de tratamento costumam ter precisão de minuto, então a imagem de setup e o feixe que
+veio depois caem no mesmo instante. Ordenar só por tempo às vezes põe o feixe primeiro, e uma
+sub-timeline mostrando o feixe antes da imagem que o autorizou **diz que o terapeuta tratou e
+depois imageou**. Ninguém lê isso como artefato de renderização.
+
+### Contagens, não porcentagens
+
+Uma sessão tem um punhado de eventos, e uma taxa sobre três deles é um número com intervalo de
+confiança mais largo que ele mesmo. Taxas pertencem ao curso, não à sessão.
