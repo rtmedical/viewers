@@ -460,3 +460,44 @@ acabou enquanto ele ainda subia.
 
 `delta` e `absolute` coexistem em protocolos reais e **dão respostas diferentes no mesmo
 paciente**, então a escolha é explícita e não tem default implícito.
+
+## Quantificação de estenose carotídea (RTV-54)
+
+`carotidStenosis.ts` — a segmentação é um sidecar. Esta é a parte que transforma uma luz numa
+porcentagem, e **a porcentagem é o número que manda o paciente para endarterectomia ou não**.
+
+### A mesma lesão é 70% por um método e 85% pelo outro
+
+NASCET divide a luz residual pela **carótida interna distal normal**. ECST divide pelo
+**diâmetro original estimado no bulbo**, que é bem mais largo. Não são duas estimativas de uma
+grandeza; são **duas grandezas diferentes**, e os limiares pertencem ao ensaio que os produziu.
+Uma estenose de 70% ECST é aproximadamente 50% NASCET e **não atinge** o limiar cirúrgico que os
+70% parecem atingir.
+
+O método é campo obrigatório, a conversão existe para **mostrar a diferença e não para tornar os
+números intercambiáveis**, e a graduação contra o limiar do outro método é recusada.
+
+### Quase-oclusão é uma categoria, não uma porcentagem alta
+
+É a falha que mais importa. Quando a estenose é grave o bastante para colabar a carótida interna
+distal, **o denominador do NASCET encolhe junto com o numerador — e a porcentagem calculada
+cai.** Um vaso quase fechado calcula como 50%, e toda regra a jusante lê isso como doença
+moderada.
+
+A fórmula **não quebra alto**: devolve um número plausível e moderado para a lesão mais grave da
+lista. O módulo olha o calibre distal e a diferença entre os lados e **se recusa a reportar
+porcentagem quando o segmento de referência está colabado**.
+
+### Área e diâmetro são números diferentes
+
+A angio-TC torna a área fácil de calcular e os ensaios mediram diâmetro. Numa luz circular, 50%
+de redução de diâmetro é **75% de redução de área** — e o número maior é o que parece alarmante
+num laudo. A conversão existe sob a suposição declarada de circularidade, e placa excêntrica
+quebra essa suposição.
+
+### Verificação cruzada com o Doppler
+
+Duas medidas independentes da mesma lesão. Quando discordam, uma delas está errada de um jeito
+que nenhuma detecta sozinha: **placa muito calcificada faz a angio-TC superestimar** (o cálcio
+florescente fecha a luz na imagem), e **oclusão contralateral eleva as velocidades do lado
+pérvio** sem nenhum estreitamento adicional ali.

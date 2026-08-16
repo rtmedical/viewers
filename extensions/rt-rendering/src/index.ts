@@ -42,6 +42,7 @@ export * from './ssdBudget';
 export * from './dsa';
 export * from './roadmap';
 export * from './bolusTracking';
+export * from './carotidStenosis';
 export * from './centerline';
 export * from './cpr';
 export * from './stitching';
