@@ -190,3 +190,37 @@ Nas estatísticas, mediana e p90 em vez de média — distribuições de turnaro
 e a média fica entre o caso típico e a cauda descrevendo nenhum dos dois. E **laudos em aberto
 são excluídos dos percentis** e contados à parte: incluí-los no tempo decorrido atual faz uma
 fila represada parecer serviço rápido, porque os mais demorados ainda não terminaram.
+
+## Export FHIR DiagnosticReport (RTV-219)
+
+`fhirExport.ts` — mapear o laudo interno para `DiagnosticReport` + `Observation`. A maior
+parte é cópia de campo. Quatro coisas sustentam o resto.
+
+**O mapeamento de status não é um-para-um, e a ponta errada dele é insegura.** O FHIR tem
+`registered | partial | preliminary | final | amended | corrected | entered-in-error`; o
+workflow interno (RTV-107/108) tem rascunho, aguardando revisão, preliminar, assinado,
+adendado. Eles quase se alinham — e os quase são os perigosos:
+
+- `awaitingReview` é **`partial`**, não `preliminary`. Não foi comunicado a ninguém; chamar de
+  preliminar diz a um sistema receptor que um clínico pode agir sobre ele.
+- `draft` é **`registered`**, não `partial`. Nada foi escrito que alguém deva ver.
+- **Nada que não esteja assinado mapeia para `final`.** Um receptor trata `final` como
+  clinicamente acionável e para de re-buscar.
+
+`toFhirStatus` é total sobre a união, **sem arm default** — um estado interno novo vira erro de
+compilação em vez de virar um `final` silencioso.
+
+**`effectiveDateTime` é quando a imagem foi feita; `issued` é quando o laudo foi liberado.**
+São rotineiramente trocados, e o resultado é uma linha do tempo em que o laudo precede o
+exame. São argumentos separados e os dois são exigidos.
+
+**Referência que ninguém consegue resolver não é interoperabilidade.** `Patient/42` serve
+dentro de um banco e é inútil fora dele. Identificador sem `system` é recusado, e um assunto
+irresolvível derruba o export inteiro — export irresolvível **parece bem-sucedido e falha do
+outro lado, dias depois**.
+
+**Achado estruturado não mora no HTML.** A nota de arquitetura da família RTV-103 é explícita.
+Achado com código vira `Observation` referenciado de `DiagnosticReport.result`; o narrativo é
+`conclusion` e `presentedForm`. Achado **sem** código é reportado como tal, com aviso de que
+contraria a decisão CDE-first — em vez de ser achatado em prosa em silêncio. Evidência DICOM
+vai como `derivedFrom` com o UID no namespace `urn:dicom:uid`.

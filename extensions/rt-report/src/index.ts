@@ -18,6 +18,9 @@
  * - **Turnaround** (RTV-109): the deadline clock, measured to the first
  *   actionable report rather than to the signature, and stopped while the
  *   radiologist cannot act.
+ * - **FHIR export** (RTV-219): DiagnosticReport + Observation, with a status
+ *   mapping that never lets an unsigned report claim `final`, and references
+ *   that have to resolve outside the database that made them.
  *
  * This is the state layer the rest of the RTV-103 family sits on: the rich-text
  * editor (RTV-104), templates (RTV-105), macros (RTV-106), peer review
@@ -32,6 +35,7 @@ export * from './macros';
 export * from './criticalFindings';
 export * from './peerReview';
 export * from './turnaround';
+export * from './fhirExport';
 
 const id = '@ohif/extension-rt-report';
 
