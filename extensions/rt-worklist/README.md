@@ -161,3 +161,31 @@ Backend: `PUT /api/studies/{id}/assign`, `PATCH /api/studies/{id}/priority`,
 `POST /api/dicom/send`, presença por WebSocket e peers do RTVW-16 — nada disso existe
 ainda. **Não está ligado na `RtWorklistPage`**: os botões de hover, o menu de contexto e os
 toasts são o passo de UI que falta.
+
+## Adaptador multi-datasource: QIDO-RS + RIS (RTV-183)
+
+`multiDatasource.ts` — o QIDO sabe que imagens existem; o RIS sabe o que foi pedido, quão
+urgente é, para quem está atribuído e se já foi laudado. **Nenhum dos dois é autoridade sobre a
+metade do outro**, e a worklist precisa das duas.
+
+**A propriedade é por campo, não por registro.** A fusão óbvia — pegar o registro que chegou
+por último — **troca o responsável a cada refresh**, porque a linha do PACS não tem responsável
+e sobrescreve com nada. Ou perde a contagem de séries, porque a linha do RIS não tem uma.
+`FIELD_OWNER` é o desenho inteiro: `numSeries` vem do PACS diga o RIS o que disser, `priority`
+vem do RIS diga o PACS o que disser, e um campo só cai para a outra fonte quando o dono está
+calado.
+
+**Fonte fora do ar não é fonte dizendo "vazio".** Se o QIDO dá timeout e a fusão trata o
+resultado vazio como verdade, todo estudo perde a imagem e metade some da lista. O radiologista
+vê uma worklist mais curta e conclui que a manhã está tranquila. É a falha clássica de sistema
+distribuído, e vale explicitar porque **o sintoma — lista com menos linhas — parece operação
+normal**. A função recebe um *resultado* por fonte, não uma lista: fonte que falhou não
+contribui e marca as linhas que não pôde confirmar.
+
+**Casar entre as fontes, e recusar chutar.** StudyInstanceUID quando o RIS o tem; accession +
+paciente quando não. Quando dois candidatos casam com uma linha, **nenhum é usado**: um par
+fundido de estudos *diferentes* produz uma linha com as imagens de um paciente e o status de
+laudo de outro, e nada nela parece errado.
+
+`fieldProvenance` existe para uma conversa de suporte sobre "a prioridade está errada" ser
+respondida apontando a fonte, em vez de adivinhando qual sistema culpar.
