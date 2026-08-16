@@ -51,6 +51,8 @@ export * from './criticalFindings';
 export * from './peerReview';
 export * from './turnaround';
 export * from './canonicalReport';
+export * from './reportTemplate';
+export * from './mrrtImport';
 export * from './cdeCatalog';
 export * from './imageEvidence';
 export * from './radsPacks';
