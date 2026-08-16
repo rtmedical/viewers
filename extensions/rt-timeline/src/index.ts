@@ -13,6 +13,7 @@
  * display sets — duck-typed, so there is no cross-extension import.
  */
 export * from './courseTimeline';
+export * from './trendsTimeline';
 export * from './timelineWindow';
 export * from './timelinePrefs';
 
