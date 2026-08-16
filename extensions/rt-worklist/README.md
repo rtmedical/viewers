@@ -189,3 +189,42 @@ laudo de outro, e nada nela parece errado.
 
 `fieldProvenance` existe para uma conversa de suporte sobre "a prioridade está errada" ser
 respondida apontando a fonte, em vez de adivinhando qual sistema culpar.
+
+## Atualização em tempo real: transporte, reconexão e recuperação (RTV-189)
+
+`realtimeSync.ts` — os sockets são adaptadores. O que está aqui é a parte que decide **quando a
+lista na tela pode ser confiada**, que é o requisito de produto de verdade: a funcionalidade
+existe para que ninguém aperte F5, e uma lista que ninguém atualiza só é segura se estiver ou
+atual ou **visivelmente não**.
+
+### Reconectar não é retomar
+
+É a falha que o módulo existe para evitar. Um canal de push que cai por noventa segundos e
+volta **não recebe** os estudos que chegaram naqueles noventa segundos — eles foram transmitidos
+para ninguém. Retomar o socket e seguir em frente deixa a worklist **permanentemente sem** esses
+exames, sem lacuna visível em lugar nenhum: a lista parece normal, ela só está curta. Numa
+emergência, é o risco inteiro numa frase.
+
+Toda reconexão marca `resyncRequired` e devolve a janela a reconsultar, e o estado **não volta
+para `live`** enquanto a recuperação não for aplicada. A janela alcança antes da queda por uma
+folga deliberada: sobrepor é barato e deduplicado, perder um estudo não é.
+
+### Degradado precisa ser visível, ou é pior que nada
+
+Polling a cada trinta segundos é fallback legítimo e significa que a lista pode estar meio
+minuto atrasada. Isso é aceitável quando o usuário sabe, e **perigoso quando ele foi informado
+de que a lista se atualiza sozinha**. Por isso `degraded` é um estado de primeira classe.
+
+Um canal vivo e calado por muito tempo também deixa de ser confiável: **canal silencioso e canal
+morto são indistinguíveis daqui**.
+
+### O mesmo estudo vai chegar duas vezes
+
+Recuperação e push se sobrepõem por construção. Deduplicar não é otimização: **uma linha
+duplicada numa worklist de urgência se lê como um segundo paciente**.
+
+### Nada rola sob o leitor
+
+Uma linha aparecendo acima daquela que alguém está prestes a clicar **move o alvo**, e o clique
+cai em outro paciente. `autoScroll` é `false` no tipo. O badge diz quantos chegaram; o leitor
+decide quando olhar.
