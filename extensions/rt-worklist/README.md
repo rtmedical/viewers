@@ -307,3 +307,43 @@ parcial em vez de um sim ou não geral.
 Relatórios chegam fora de banda. Casar um com "a solicitação pendente mais recente" é um atalho
 de aparência plausível que, sob carga, **marca o estudo errado como comprometido** — e parece
 robustez.
+
+## Estudos que ainda estão chegando (RTV-20)
+
+`acquisitionProgress.ts` — visualizar uma série durante a aquisição é a funcionalidade. O que
+precisa ser escrito é **o que não pode ser feito** com uma série que ainda não está toda lá,
+porque a série incompleta é a que parece bem.
+
+### Série chegando parece série terminada
+
+Nada numa pilha de imagens diz quantas deveriam existir. O leitor rola do primeiro ao último
+corte e vê um exame inteiro; **a anatomia que não chegou lê-se como anatomia que não foi
+imageada**. Essa é a falha, e ela é silenciosa por construção.
+
+### Falha no meio é muito pior que cauda curta
+
+Uma série truncada é visivelmente truncada: o volume acaba num lugar anatomicamente estranho e o
+leitor percebe. Um **corte faltando no meio é invisível** — o viewer passa reto, e se a lesão
+estava ali nada indica que falta alguma coisa. Por isso a detecção olha as **posições dos
+cortes** e não a contagem: a contagem não distingue as duas.
+
+Uma consequência disso é que a lacuna **passa na frente da contagem satisfeita**: se uma
+instância foi rejeitada na ingestão e a contagem veio do emissor, os números batem e o buraco
+continua lá.
+
+### "Terminou" e "travou" são a mesma coisa vistos daqui
+
+Sem contagem esperada, uma série que parou porque acabou e uma que parou porque o emissor caiu
+são indistinguíveis. Mesma forma do canal silencioso do `realtimeSync.ts` (RTV-189), um nível
+abaixo: **tempo decorrido não é evidência**.
+
+### Olhar é permitido, medir não
+
+O ponto da funcionalidade é olhar cedo, então visualizar **nunca** é bloqueado. Medir, reformatar,
+segmentar e laudar são — porque cada um produz algo que **não carrega marca nenhuma da
+incompletude**: um MIP sobre meio pulmão é um MIP perfeitamente normal, e um volume calculado de
+uma pilha truncada é um número.
+
+E o artefato derivado **sobrevive ao estado em que foi feito**: um MIP salvo como captura
+secundária de um estudo pela metade é um MIP normal para sempre depois disso, e nenhuma regra
+sobre o viewport ao vivo alcança ele.
