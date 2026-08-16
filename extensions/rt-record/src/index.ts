@@ -11,6 +11,7 @@
 export * from './rtRecordParser';
 export * from './overrideEvents';
 export * from './treatmentDetails';
+export * from './manualTreatment';
 export { getSopClassHandlerModule } from './getSopClassHandlerModule';
 
 import getSopClassHandlerModule from './getSopClassHandlerModule';
