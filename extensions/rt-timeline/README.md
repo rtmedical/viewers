@@ -85,3 +85,46 @@ que é exatamente o período em que a perda aconteceu.
 
 Não o primeiro registrado. Se o primeiro peso no sistema é de uma semana depois do início, a
 perda medida a partir dele é **a perda que aconteceu depois que a perda começou**.
+
+## Linha do tempo de imagem: os sete tipos (RTV-167)
+
+`imagingTimeline.ts` — um curso gera imagens de verificação de naturezas muito diferentes, e o
+registro as mostra lado a lado. Errar o tipo não é cosmético: muda **o que a imagem significa,
+o que pode ser medido nela, e se a dose dela pertence ao tratamento ou à carga de imagem do
+paciente**.
+
+### Classificar por atributos, nunca pela descrição da série
+
+`SeriesDescription` é digitada por quem montou o protocolo. Um serviço que chama seu protocolo
+de feixe cônico de "CBCT Pelve" e outro que chama de "Volume View" produzem as mesmas imagens, e
+um classificador que olha a string acha um e perde o outro. Pior: um par kV descrito como "CBCT
+setup" é arquivado como feixe cônico, e a linha do tempo passa a reportar **uma aquisição
+volumétrica que não houve**.
+
+A descrição é usada só para exibir. Quando os atributos não decidem, a resposta é `unknown` — e
+**`unknown` é uma resposta legítima**: encaixar uma série não classificável no balde mais comum
+a esconde num lugar plausível, onde ninguém vai procurá-la de novo.
+
+### kV e MV não são dois ajustes da mesma coisa
+
+Uma imagem portal MV é feita **com o feixe de tratamento**: energia terapêutica, no eixo do
+feixe, dentro do alvo — é parte do tratamento, e em alguns protocolos é contabilizada no plano.
+Uma imagem kV é dose de imagem, de um tubo separado, em outro ângulo, e pertence à carga de
+imagem. Somar as duas produz um número que não descreve nenhuma.
+
+### Imagem de dose portal é um mapa dosimétrico, não uma figura
+
+Ela carrega unidades de dose. Janelá-la como imagem anatômica e ler anatomia dela é erro de
+categoria — e o resultado **parece apenas uma imagem portal mal janelada**.
+
+### Um par ortogonal é um evento
+
+Duas imagens ortogonais adquiridas com segundos de diferença são uma única verificação de setup.
+Listá-las separadamente dobra a frequência aparente de imagem e corrompe em silêncio toda
+estatística por fração construída sobre a linha do tempo.
+
+### Imagem de simulação não faz parte do curso
+
+Pertence ao planejamento. Colocada no eixo de tratamento na data em que foi adquirida, faz o
+curso **parecer ter começado semanas antes da primeira fração**, e toda duração lida do gráfico
+fica errada.
