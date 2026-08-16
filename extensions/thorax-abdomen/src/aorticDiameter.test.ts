@@ -5,7 +5,7 @@ import {
   compareToPrior,
   CONVENTION_LABELS,
   describeAorta,
-  Grid,
+  AortaGrid,
   MIN_GROWTH_INTERVAL_DAYS,
   perpendicularDiameter,
   planeBasis,
@@ -15,7 +15,7 @@ import {
   Vec3,
 } from './aorticDiameter';
 
-const grid: Grid = { dims: [80, 80, 80], spacing: [1, 1, 1] };
+const grid: AortaGrid = { dims: [80, 80, 80], spacing: [1, 1, 1] };
 const N = 80 * 80 * 80;
 const T0 = new Date('2026-01-01T00:00:00Z').getTime();
 const DAY = 86_400_000;

@@ -11,7 +11,7 @@ import {
   GRACE_DAYS,
   proposeMatch,
   Recommendation,
-  STATE_LABELS,
+  SAFETY_STATE_LABELS,
   triage,
 } from './safetyNet';
 
@@ -89,8 +89,8 @@ describe('safetyNet — the escalation ladder', () => {
   });
 
   it('labels every state', () => {
-    for (const key of Object.keys(STATE_LABELS)) {
-      expect(STATE_LABELS[key as keyof typeof STATE_LABELS].length).toBeGreaterThan(3);
+    for (const key of Object.keys(SAFETY_STATE_LABELS)) {
+      expect(SAFETY_STATE_LABELS[key as keyof typeof SAFETY_STATE_LABELS].length).toBeGreaterThan(3);
     }
   });
 });

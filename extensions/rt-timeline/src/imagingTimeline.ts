@@ -343,7 +343,7 @@ export function buildImagingEvents(
   return events;
 }
 
-export interface CourseTimeline {
+export interface ImagingCourseTimeline {
   /** Events that belong on the treatment axis. */
   events: ImagingEvent[];
   /** Simulation imaging, kept off the axis. */
@@ -359,7 +359,7 @@ export interface CourseTimeline {
  * acquisition date it makes the course appear to have started weeks before the first
  * fraction, and every duration read off the chart is then wrong.
  */
-export function courseImagingTimeline(events: ImagingEvent[]): CourseTimeline {
+export function courseImagingTimeline(events: ImagingEvent[]): ImagingCourseTimeline {
   const list = events ?? [];
   const planning = list.filter(e => e.kind === 'simulation');
   const unclassified = list.filter(e => e.kind === 'unknown');

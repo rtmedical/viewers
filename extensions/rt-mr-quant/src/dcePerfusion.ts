@@ -42,7 +42,7 @@
  * patient's baseline T1. It cannot be compared between visits, which is the entire point
  * of measuring Ktrans in an oncology follow-up.
  *
- * So {@link signalToConcentration} does the real conversion when it is given a T1 map, and
+ * So {@link dceSignalToConcentration} does the real conversion when it is given a T1 map, and
  * {@link relativeEnhancement} exists as the fallback — with `ConcentrationMethod` carried
  * all the way into the result, and a caveat that says the values are not comparable
  * between acquisitions.
@@ -101,7 +101,7 @@ export function meanBaseline(signal: ArrayLike<number>, count = 5): number {
  * concentration is `(R1(t) − R1₀)/r₁`. Requires a T1 map — see the module note on why the
  * shortcut is not equivalent.
  */
-export function signalToConcentration(
+export function dceSignalToConcentration(
   signal: ArrayLike<number>,
   options: SpgrOptions
 ): number[] {
@@ -443,7 +443,7 @@ export const DCE_CAVEAT_LABELS: Record<DceCaveat, string> = {
 };
 
 /** The disclaimer that has to travel with the map. */
-export function describeCaveats(result: ToftsResult): string {
+export function describeDceCaveats(result: ToftsResult): string {
   return (result?.caveats ?? []).map(c => DCE_CAVEAT_LABELS[c]).filter(Boolean).join(' ');
 }
 

@@ -10,14 +10,14 @@ import {
   DistributionRequest,
   isDuplicate,
   planDistribution,
-  Recipient,
+  DeliveryRecipient,
   supersededDeliveries,
   VERIFICATION_VALIDITY_MS,
 } from './distribution';
 
 const NOW = 1_700_000_000_000;
 
-const recipient = (over: Partial<Recipient> = {}): Recipient => ({
+const recipient = (over: Partial<DeliveryRecipient> = {}): DeliveryRecipient => ({
   id: 'pac-1',
   name: 'Maria',
   address: 'maria@example.com',

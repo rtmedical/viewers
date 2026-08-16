@@ -133,7 +133,7 @@ export function requestCommitment(input: {
   };
 }
 
-export interface ApplyResult {
+export interface ReportApplication {
   request: CommitmentRequest;
   ok: boolean;
   reason?: string;
@@ -146,7 +146,7 @@ export interface ApplyResult {
  * because the UID is unfamiliar is the shortcut that marks the wrong study committed under
  * load, and it looks like resilience.
  */
-export function applyReport(request: CommitmentRequest, report: CommitmentReport): ApplyResult {
+export function applyReport(request: CommitmentRequest, report: CommitmentReport): ReportApplication {
   if (!request || !report) {
     return { request, ok: false, reason: 'Solicitação ou resposta ausente.' };
   }

@@ -47,12 +47,12 @@ export const IMAT_HU: [number, number] = [-190, -30];
 /** Visceral and subcutaneous adipose tissue. */
 export const FAT_HU: [number, number] = [-190, -30];
 
-export type Sex = 'male' | 'female';
+export type MuscleSex = 'male' | 'female';
 
 /** Prado cutoffs for sarcopenia, cm² per m². */
-export const SMI_CUTOFF: Record<Sex, number> = { male: 52.4, female: 38.5 };
+export const SMI_CUTOFF: Record<MuscleSex, number> = { male: 52.4, female: 38.5 };
 
-export type ContrastPhase = 'unenhanced' | 'arterial' | 'portal-venous' | 'delayed' | 'unknown';
+export type MuscleContrastPhase = 'unenhanced' | 'arterial' | 'portal-venous' | 'delayed' | 'unknown';
 
 export interface SliceGrid {
   /** In-plane voxel counts. */
@@ -63,7 +63,7 @@ export interface SliceGrid {
 
 export interface MuscleArea {
   level: VertebralLevel;
-  phase: ContrastPhase;
+  phase: MuscleContrastPhase;
   /** Square centimetres. */
   areaCm2: number;
   /** Mean attenuation of the counted muscle, HU. */
@@ -95,7 +95,7 @@ export function skeletalMuscleArea(
   mask: ArrayLike<number>,
   grid: SliceGrid,
   level: VertebralLevel,
-  phase: ContrastPhase,
+  phase: MuscleContrastPhase,
   window: [number, number] = MUSCLE_HU
 ): MuscleArea {
   const [nx, ny] = grid.dims;
@@ -197,7 +197,7 @@ export interface SmiResult {
 export function skeletalMuscleIndex(
   area: MuscleArea,
   heightM: number,
-  sex: Sex
+  sex: MuscleSex
 ): SmiResult {
   const cutoff = SMI_CUTOFF[sex] ?? SMI_CUTOFF.male;
   const height = num(heightM);

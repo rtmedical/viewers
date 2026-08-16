@@ -39,7 +39,7 @@
 
 export type Vec3 = [number, number, number];
 
-export interface Grid {
+export interface AortaGrid {
   dims: [number, number, number];
   /** Millimetres. */
   spacing: [number, number, number];
@@ -55,7 +55,7 @@ export const CONVENTION_LABELS: Record<MeasurementConvention, string> = {
 const index = (dims: [number, number, number], x: number, y: number, z: number): number =>
   x + dims[0] * (y + dims[1] * z);
 
-function inside(mask: ArrayLike<number>, grid: Grid, p: Vec3): boolean {
+function inside(mask: ArrayLike<number>, grid: AortaGrid, p: Vec3): boolean {
   const x = Math.round(p[0] / grid.spacing[0]);
   const y = Math.round(p[1] / grid.spacing[1]);
   const z = Math.round(p[2] / grid.spacing[2]);
@@ -118,7 +118,7 @@ export interface CrossSection {
  */
 export function perpendicularDiameter(
   mask: ArrayLike<number>,
-  grid: Grid,
+  grid: AortaGrid,
   centreMm: Vec3,
   tangent: Vec3,
   convention: MeasurementConvention,
@@ -211,10 +211,10 @@ export function axialOverestimate(tangent: Vec3, trueDiameterMm: number): AxialO
   };
 }
 
-export type Sex = 'male' | 'female';
+export type AortaSex = 'male' | 'female';
 
 /** Repair thresholds for an infrarenal abdominal aortic aneurysm, millimetres. */
-export const AAA_THRESHOLD_MM: Record<Sex, number> = { male: 55, female: 50 };
+export const AAA_THRESHOLD_MM: Record<AortaSex, number> = { male: 55, female: 50 };
 /** Growth above this in a year is itself an indication, millimetres per year. */
 export const RAPID_GROWTH_MM_PER_YEAR = 10;
 /** Below this interval an annualised rate is mostly measurement variability. */
@@ -332,7 +332,7 @@ export interface SurveillanceAdvice {
  */
 export function surveillanceAdvice(
   diameterMm: number,
-  sex: Sex,
+  sex: AortaSex,
   growth?: GrowthResult
 ): SurveillanceAdvice {
   const thresholdMm = AAA_THRESHOLD_MM[sex] ?? AAA_THRESHOLD_MM.male;
