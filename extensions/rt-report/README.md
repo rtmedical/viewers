@@ -253,3 +253,33 @@ humano confirmou. Isso importa hoje para revisão por pares e importa muito mais
 em que um assistente de IA (RTV-224) propuser achados: **afirmação de máquina não confirmada
 que parece idêntica à de um radiologista é a falha que desacredita a feature inteira.** Por
 isso ela é *erro* de validação, não aviso.
+
+## Catálogo CDE e validação (RTV-217)
+
+`cdeCatalog.ts` — um CDE diz o que um achado estruturado pode ser: tipo de valor, valores
+permitidos, unidade, quantas vezes pode aparecer. Validar a observação contra o elemento é a
+diferença entre um laudo estruturado e um blob de JSON com códigos dentro.
+
+**A divergência de unidade é a silenciosa.** Elemento definido em milímetros recebendo um
+valor medido em centímetros está errado por um fator de dez — e **os dois são números, os
+dois são tamanhos plausíveis de nódulo, e nada no registro parece quebrado**. É o jeito mais
+provável de um valor estruturado dar errado, porque a unidade mora na definição e o número
+mora na observação e ninguém olha os dois. Então é **erro**, não conversão automática. Quem
+*quer* a conversão pede explicitamente e recebe o fator de volta, para poder mostrar —
+conversão silenciosa é a mesma falha chegando pelo outro lado. E a tabela de conversões é
+deliberadamente pequena: conversor genérico convida a converter entre grandezas que nem são a
+mesma coisa física, e a falha sai como um número plausível.
+
+**Value set tem versão, e código aposentado passa na versão errada.** Códigos são
+aposentados. Um valor válido no release de 2023 pode não existir em 2025, e validar contra
+qualquer versão que estiver carregada aceita algo que vai ser rejeitado lá na frente, meses
+depois, por um sistema que tem o release atual. A versão do elemento faz parte da identidade,
+e a validação avisa quando a observação foi gravada contra outra.
+
+**Cardinalidade não é formalidade.** Elemento de valor único com duas observações é erro de
+dado que aparece como *"a última vence"* em algum lugar imprevisível — no export FHIR, no PDF,
+numa consulta a jusante. Pego aqui, ainda dá para atribuir à edição que causou.
+
+E o catálogo é validado antes de ser usado: elemento de quantidade sem unidade ou elemento
+codificado sem valores permitidos **falha aberto** — toda observação contra ele passa. Isso é
+pior que elemento faltando, que pelo menos falha alto.
