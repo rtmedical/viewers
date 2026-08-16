@@ -157,3 +157,44 @@ pelo algoritmo. **Uma "resposta" de 30% dentro de um campo que comprimiu 25% nã
 sobre o tórax é dominada por pulmão e parede torácica; um registro que acerta esses e erra o
 linfonodo mediastinal por um centímetro pontua lindamente. Global e local são reportados
 **separados, nunca a média** — a média é o número que esconde o problema.
+
+## QA de registro deformável no seguimento oncológico (RTV-199)
+
+`deformableQa.ts` — o RTV-205 registra estudos de seguimento e o RTV-134 cuida da sessão de
+fusão. Esta é a parte que decide se um campo de deformação **pode ser usado, e para quê**.
+
+### Similaridade de imagem não valida um registro
+
+Vale dizer primeiro, porque é a métrica de QA que todo mundo alcança: NCC, informação mútua e
+parentes **são o que o otimizador maximizou**. Devolver uma delas como evidência de acurácia
+mede o quanto o algoritmo se esforçou, não se ele acertou. Um campo deformável com graus de
+liberdade suficientes alinha lindamente quase quaisquer duas imagens **movendo tecido para
+onde ele nunca esteve**.
+
+As três checagens aqui independem da função objetivo: o **jacobiano**, que é propriedade só do
+campo; a **consistência inversa**, que pede às duas direções que concordem entre si; e o **erro
+em landmarks**, que pergunta a um humano.
+
+### Um campo que dobra não é uma deformação
+
+Onde o determinante jacobiano é zero ou negativo a transformação não é inversível: o tecido foi
+virado do avesso. Não é um erro pequeno, e não parece um — as imagens alinham **porque** o
+algoritmo empurrou voxels uns através dos outros. `foldingReport` **localiza**, em vez de dar um
+escore global: "0,2% de dobra" não diz ao planejador se a dobra está no GTV ou no ar fora do
+paciente.
+
+### Propagar um contorno e depois medi-lo mede o registro
+
+É a falha específica do seguimento oncológico, e é o buraco dentro do qual este ticket existe.
+Registro deformável é guiado por intensidade de imagem. No exame de seguimento, **a intensidade
+é o que mudou** — essa mudança é o achado. Propagar o contorno da linha de base e ler um
+diâmetro dele produz um número que descreve como o algoritmo interpolou, e **o viés é na direção
+de "sem mudança"**, porque o campo foi ajustado para fazer os dois exames se parecerem. Que é
+exatamente a direção que perde uma progressão. `propagatedMeasurement` recusa, e `measurement` é
+`false` no tipo do veredito.
+
+### Dose é padrão mais estrito que contorno
+
+Um contorno propagado é revisado por um humano antes de ser tratado; uma dose acumulada
+normalmente não é — ela vira um número numa comparação de planos. Por isso dobra reprova dose
+imediatamente, e ausência de landmarks também.

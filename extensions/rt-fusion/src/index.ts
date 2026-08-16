@@ -27,6 +27,7 @@ export * from './fusionTools';
 export * from './fusionRegistration';
 export * from './fusionSession';
 export * from './followUpRegistration';
+export * from './deformableQa';
 
 import getPanelModule from './getPanelModule';
 
