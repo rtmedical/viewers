@@ -242,3 +242,55 @@ em relação ao plano. Os dois são úteis, e **só um deles entra numa análise
 
 O deslocamento é o que o casamento produziu; editá-lo transforma uma medida numa opinião sem
 registro de qual das duas era. Um casamento diferente é uma correção nova.
+
+## QA de registro rígido multimodal (RTV-196)
+
+`rigidRegistrationQa.ts` — o otimizador ITK vive no sidecar. O `deformableQa.ts` (RTV-199) cobre
+campos deformáveis. Este é o caso rígido, que **falha de outro jeito**: um campo deformável erra
+dobrando, e uma transformação rígida erra **convergindo numa resposta plausível que é a errada**.
+
+### RM não é geometricamente verdadeira, então um registro rígido CT–RM não pode estar certo em todo lugar
+
+É o fato que decide o que o QA pode honestamente afirmar. Não-linearidade de gradiente e
+inomogeneidade de B0 deslocam voxels da RM — fração de milímetro perto do isocentro do magneto,
+vários milímetros na borda do túnel. Uma transformação rígida tem **seis graus de liberdade e não
+absorve deslocamento que varia no espaço**.
+
+O registro é exato perto do centro e progressivamente errado para fora — e "para fora" é onde
+estão o crânio, a superfície cerebral e o pescoço. **Um número único de resíduo faz a média do
+centro bom com a periferia ruim e não descreve nenhum dos dois.**
+
+### Determinante negativo é um espelhamento, e nenhum paciente é um espelho
+
+Corpo rígido tem determinante +1. Determinante −1 é um espelho, que **nenhum movimento físico
+produz** — significa que um eixo foi invertido em algum lugar, e confusão LPS/RAS entre dois
+toolkits é a causa usual. As imagens ainda vão se sobrepor de forma convincente num corte axial
+de uma cabeça quase simétrica, com esquerda e direita trocadas. É recusa e não aviso, porque **a
+conferência visual que um humano faria é exatamente a que essa falha sobrevive**.
+
+Escala embutida numa transformação declarada rígida também é recusada: é afim rotulada de rígida.
+
+### Anatomia periódica dá ao otimizador uma resposta errada quase igualmente boa
+
+Corpos vertebrais se repetem, então a informação mútua um nível acima ou abaixo é quase tão boa
+quanto no nível certo. Um registro de coluna que começou mal converge para um resultado que
+**parece correto em todos os cortes** e põe a dose uma vértebra ao lado. Não existe corte em que
+isso pareça errado, **porque cada corte casa com uma vértebra**.
+
+### Rígida não corrige postura
+
+Braços para cima contra braços para baixo, pescoço fletido contra estendido: o otimizador devolve
+uma transformação de qualquer jeito, certa onde o gradiente de intensidade dominou e errada no
+resto — e nada no número diz qual região foi ajustada.
+
+### Fusão visual e transferência de contorno não são o mesmo pedido
+
+Fusão tolera alguns milímetros; transferir contorno ou dose não. A separação importa porque **a
+mesma transformação é oferecida para as duas coisas no mesmo diálogo**. Sem landmark humano, a
+transferência é bloqueada: similaridade é a função que o otimizador maximizou (RTV-199), e uma
+transformação rígida bem-comportada e errada tem exatamente a mesma aparência de uma certa.
+
+### A chave de cache
+
+Precisa incluir o tipo de transformação e o pré-processamento. Uma chave só com as duas séries
+devolve uma rígida a quem pediu afim — **e a resposta é plausível, que é o problema inteiro**.
