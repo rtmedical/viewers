@@ -119,3 +119,49 @@ os dois cursos guardem o que aconteceu.
 
 "Quanto a dose acumulada marcava quando o boost foi aprovado?" é a pergunta, e uma tabela de
 estado atual não a responde. `stateAt` reexecuta o log.
+
+## Seleção de curso, recarga e correções de dose (RTV-180)
+
+`courseContext.ts` — três controles de cabeçalho que parecem não ter relação e compartilham um
+perigo: **cada um deles muda sobre o que os números na tela são, sem mudar como eles parecem.**
+
+### Trocar de curso tem que limpar tudo que foi derivado do anterior
+
+Dose acumulada, contagem de frações, DVH: calculados para o curso A e deixados na tela sob o
+curso B, cada um é **um número correto sobre outro tratamento**. Nada neles parece velho — 50 Gy
+de dose acumulada é plausível para qualquer um dos dois cursos.
+
+O único desenho seguro é tratar estado derivado como pertencente **ao curso** e não à sessão. O
+descarte é incondicional, porque não existe valor que possa ser inspecionado e mantido. E como o
+descarte só alcança o que o contexto conhece, há uma checagem para o caso em que **um painel
+guardou o próprio número** — que é exatamente onde essa falha sobrevive.
+
+### Um paciente pode ter mais de um curso aberto ao mesmo tempo
+
+Tratamento bilateral, ou um paliativo correndo ao lado de um curativo. "O curso ativo" não é uma
+coisa só, então uma tela que escolhe o mais recente **escolhe arbitrariamente** — e arbitrário é
+pior que ausente, porque parece decidido. O módulo se recusa a escolher e devolve os candidatos
+com sítio e intenção, para que dê para distingui-los.
+
+### Uma correção de dose é uma escrita manual na dose entregue
+
+Não é uma edição de um registro entregue — aquele registro é o que a máquina reportou e fica como
+está (`treatmentAudit.ts`, RTV-178). Uma correção é uma entrada **separada e atribuível** que diz
+que a contabilidade estava errada, e ela muda o número que um médico usa para decidir se a
+prescrição está completa.
+
+Por isso exige: ponto de referência, valor, motivo de lista fechada, quem lançou, **quem
+autorizou — e não a mesma pessoa** — e mostra o que fez ao total.
+
+Correção sem ponto de referência é um número somado a nada em particular: **dose no ponto de
+prescrição e dose num ponto de órgão de risco são grandezas diferentes**, e somar "à dose" escolhe
+uma em silêncio.
+
+No total, a correção fica **visível ao lado** do valor entregue: dobrá-la dentro dele produz um
+número que ninguém consegue reconciliar contra os registros de tratamento — mesma razão pela qual
+o `manualTreatment.ts` (RTV-177) reporta dose de máquina e dose digitada separadas.
+
+### Recarregar não pode descartar trabalho em silêncio
+
+Um descarte que **parece bem-sucedido** é como a mesma anotação acaba escrita duas vezes,
+diferente.

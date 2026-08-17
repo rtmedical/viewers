@@ -13,6 +13,7 @@ export * from './overrideEvents';
 export * from './treatmentDetails';
 export * from './manualTreatment';
 export * from './treatmentAudit';
+export * from './courseContext';
 export { getSopClassHandlerModule } from './getSopClassHandlerModule';
 
 import getSopClassHandlerModule from './getSopClassHandlerModule';
