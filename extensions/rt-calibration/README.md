@@ -44,3 +44,56 @@ plausível, porque **régua errada plausível é usada sem questionamento**.
 
 Não só a nova. Uma medida contestada seis meses depois só é reconferível se as duas réguas —
 a que foi usada e a que ela deslocou — estiverem registradas.
+
+## QA de acelerador: interpretação dos resultados (RTV-129)
+
+`linacQa.ts` — o pylinac faz a análise de imagem no sidecar. O que está aqui é **o que os
+números significam depois** que ele os produziu, e a interpretação é onde um programa de QA
+silenciosamente para de funcionar.
+
+### Passa e falha são três estados, não dois
+
+O TG-142 dá uma **tolerância** e, separadamente, um **nível de ação**. Dentro da tolerância está
+bem. Acima do nível de ação, não tratar. **Entre os dois** está o estado que o programa de QA
+existe para pegar: investigar, decidir, e provavelmente tratar enquanto investiga. Colapsar os
+três num booleano joga fora a faixa onde quase toda deriva real vive, e deixa um painel que fica
+verde até o dia em que fica vermelho.
+
+### Um resultado que passa e está derivando não é o mesmo que um estável
+
+Duas máquinas marcam 1,2% de erro de output. Uma marca 1,2% há um ano; a outra marcava 0,1% no
+mês passado. **O valor é idêntico e a segunda estará fora de tolerância em três semanas.** A
+separação é a mesma do `setupStatistics.ts` (RTV-208) para erro de setup e do `trendsTimeline.ts`
+(RTV-169) para peso: **direção sustentada** e **dispersão** são fatos diferentes, e um desvio
+padrão sobre os dois não é nenhum.
+
+Quando a dispersão é grande e a deriva não, o problema é reprodutibilidade da medida — e **não
+adianta ajustar a máquina**.
+
+### Re-basear apaga a deriva do registro
+
+Muitas tolerâncias do TG-142 são relativas a uma linha de base do comissionamento. Quando a
+máquina deriva e alguém re-estabelece a base, toda leitura futura volta a estar em tolerância e a
+deriva **desaparece do histórico — não marcada, desaparecida**. Mesma falha que a lápide do
+`treatmentAudit.ts` (RTV-178) evita e que a régua substituída do `calibration.ts` (RTV-138)
+registra, e precisa da mesma resposta: a base anterior fica, com motivo, e **quanto de deriva a
+mudança absorveu** é registrado para ninguém ter que reconstruir depois.
+
+### Um evento de manutenção é uma descontinuidade, não um ponto
+
+Tendência atravessando uma troca de guia de onda ou uma recalibração de MLC faz a média de **duas
+máquinas**. O histórico é segmentado no evento.
+
+### Um número único de Winston-Lutz culpa o acelerador pelo fantoma
+
+O deslocamento medido combina sag do gantry, walkout do colimador, walkout da mesa, o offset do
+próprio painel de imagem **e onde o técnico colocou a esfera**. Só os walkouts de eixo se
+corrigem ajustando a máquina — e o deslocamento **médio**, que é o número normalmente citado como
+"tamanho do isocentro", é dominado pelos dois que não se corrigem.
+
+Citá-lo sozinho culpa o acelerador pelo posicionamento do fantoma, e **manda o físico ajustar
+algo que nunca esteve fora**.
+
+### Energia que ninguém mediu não é energia que passou
+
+Um teste em 6 MV não diz nada sobre 10 MV.
