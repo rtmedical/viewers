@@ -855,6 +855,18 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
 
+  extensions/rt-4d:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
   extensions/rt-bev:
     dependencies:
       prop-types:
@@ -867,7 +879,31 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
 
+  extensions/rt-calibration:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
   extensions/rt-capture:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
+  extensions/rt-dect:
     dependencies:
       prop-types:
         specifier: 15.8.1
@@ -927,6 +963,30 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
 
+  extensions/rt-governance:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
+  extensions/rt-grid:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
   extensions/rt-gsps:
     dependencies:
       prop-types:
@@ -939,7 +999,67 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
 
+  extensions/rt-igrt:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
   extensions/rt-isodose:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
+  extensions/rt-lesion-tracker:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
+  extensions/rt-mr-quant:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
+  extensions/rt-nm:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
+  extensions/rt-pet:
     dependencies:
       prop-types:
         specifier: 15.8.1
@@ -987,6 +1107,30 @@ importers:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
 
+  extensions/rt-rendering:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
+  extensions/rt-report:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
   extensions/rt-services:
     dependencies:
       prop-types:
@@ -1016,6 +1160,18 @@ importers:
       '@carbon/icons-react':
         specifier: ^11.83.0
         version: 11.85.0(react@18.3.1)
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+
+  extensions/rt-tabs:
+    dependencies:
       prop-types:
         specifier: 15.8.1
         version: 15.8.1
@@ -1128,6 +1284,18 @@ importers:
       cross-env:
         specifier: 7.0.3
         version: 7.0.3
+
+  extensions/thorax-abdomen:
+    dependencies:
+      prop-types:
+        specifier: 15.8.1
+        version: 15.8.1
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
 
   extensions/tmtv:
     dependencies:
