@@ -165,3 +165,68 @@ o `manualTreatment.ts` (RTV-177) reporta dose de máquina e dose digitada separa
 
 Um descarte que **parece bem-sucedido** é como a mesma anotação acaba escrita duas vezes,
 diferente.
+
+## Planos em cache externo e limpeza do cache (`cachedPlans.ts`) — RTV-179
+
+Inventário do cache, o que um plano bloqueado pode exibir, e a decisão de limpar com suas recusas e
+seu registro de auditoria. Sem `@ohif/*`, sem relógio, sem `Date`, sem `throw` — datas são
+formatadas por aritmética sobre o epoch recebido.
+
+### Tratar cópia em cache como plano vigente
+
+O risco central. Um plano vindo de um sistema externo é um **instantâneo**, e o plano autoritativo
+pode ter sido revisado desde então. Entregar contra o instantâneo velho é entregar a distribuição de
+dose errada a um paciente real, e **nada no resultado entregue pareceria errado**.
+
+A classificação é de três vias — `verifiable-current`, `snapshot-unverified`, `known-stale` — e
+falha fechada em cada degrau: sem identificação de revisão, sem verificação contra a origem,
+verificação **expirada** (24 h, porque revisão de plano num ciclo de replanejamento é evento do mesmo
+dia), verificação sem revisão vigente registrada, situação diferente de `APPROVED`, e relógios
+divergentes (data de cache no futuro) todos resultam em não-vigente.
+
+E o selo na tela é necessário e não suficiente: a via de entrega chama
+`planCacheGuardPlanForDelivery`, que **recusa**, em vez de ler o veredicto e decidir por si.
+
+### "Ninguém está usando" e "não consegui descobrir" são fatos diferentes
+
+Só o primeiro permite limpar. Estado de uso desconhecido **recusa**, com código próprio. Curso em
+andamento recusa. E o item que não é cópia externa recusa — com a ausência da flag lendo como *não
+é cache*, porque um chamador que esqueceu a flag não ganha direito de remoção por omissão.
+
+Quando vários bloqueios se aplicam, a recusa nomeia o **pior**.
+
+### A confirmação está amarrada ao que foi mostrado
+
+Confirmar um diálogo que listava 3 planos não pode limpar um 4º acrescentado entre a abertura e o
+clique. A impressão digital cobre chave, paciente, curso, origem, revisão, UID, situação de
+aprovação, bloqueio, último tratamento e a flag de cache — e é **ordenada**, para que um repaint que
+reordene a lista não invalide a confirmação, enquanto acrescentar, remover ou revisar qualquer linha
+invalide. Mesma lógica do digest de conteúdo numa assinatura.
+
+A confirmação também expira em 5 min: longo o bastante para ler uma lista de 20 planos, curto o
+bastante para que uma confirmação capturada antes de uma troca de turno não seja reexecutada pelo
+operador seguinte.
+
+### `success` nunca pode exagerar
+
+`success` exige **todo** plano autorizado confirmado removido; um plano **não contabilizado** degrada
+para `partial`; `failed` é reservado para todos confirmadamente retidos. O dano evitado: o físico lê
+"cache limpo", reimporta, e trabalha com uma mistura de planos frescos e instantâneos sobreviventes
+sem nada distinguindo os dois.
+
+Detalhe fino que vale registrar: o aviso de reimportação pende de `stalePlansMayRemain`, não de
+`verdict !== success` — assim um plano **não contabilizado** avisa tão alto quanto um que falhou.
+
+### A auditoria é parte da decisão
+
+Estruturalmente: `PlanCacheClearDecision` carrega o registro, então **não existe caminho de código —
+recusa incluída — que produza uma decisão sem auditoria**. Fatos faltantes viram lacunas nomeadas em
+vez de um registro ausente.
+
+### Data ausente nunca lê como "nunca tratado"
+
+Três estados distintos, e `never-treated` exige quem atestou; uma alegação não atestada degrada para
+`unknown`. Um leitor que conclui que o curso não começou pode recomeçá-lo da primeira fração e
+**dobrar a dose entregue**.
+
+85 testes.

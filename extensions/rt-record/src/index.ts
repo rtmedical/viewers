@@ -28,3 +28,4 @@ const rtRecordExtension = {
 };
 
 export default rtRecordExtension;
+export * from './cachedPlans';
