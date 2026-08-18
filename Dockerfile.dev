@@ -15,9 +15,11 @@ ENV PNPM_HOME=/pnpm \
     # "heap out of memory", que é legível, em vez de o cgroup matar o processo.
     NODE_OPTIONS=--max-old-space-size=2560
 
-# Fixa a versão exigida pelo packageManager do repo. O pnpm do host do DEV1 é
-# 9.15.9 e o repo pede 11.5.2 -- host e contêiner divergindo é como se produz um
-# lockfile que só funciona numa das duas máquinas.
+# Fixa a versão exigida pelo packageManager do repo, para a imagem não depender do
+# que estiver no host. (O host do DEV1 resolve 11.5.2 corretamente num shell
+# interativo; o que erra é a invocação não-interativa -- ver scripts/dev-env.sh e a
+# seção 1 do plano. Aqui a razão é outra: uma imagem reproduzível não pergunta ao
+# host qual pnpm usar.)
 RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
 
 # git: parte do grafo resolve por git. curl: healthcheck.
