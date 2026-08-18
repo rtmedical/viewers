@@ -679,3 +679,49 @@ falta, um artefato desatualizado se parece com a verdade.
   recusados **antes de qualquer assinatura existir**.
 
 66 testes.
+
+## Comparação entre versões do laudo (`versionDiff.ts`) — RTV-227
+
+Diff por seção entre duas versões, classificado por **risco clínico** em vez de tamanho, com
+aprovação de escopo limitado. Sem `@ohif/*`, sem relógio, sem `throw`.
+
+### O decimal engolido
+
+`1,5 cm` para `15 cm` é **um caractere** e um nódulo que virou massa. Num diff de texto comum a
+vírgula é um token de pontuação, e `1,5` e `15` passam a diferir só por ruído descartável — a
+mudança some no painel.
+
+`diffTokenize` trata sequências numéricas como **um token inteiro, com o separador dentro**, e as
+compara byte a byte; o dobramento de caixa e acento se aplica **só a palavras**. A regra fina é que
+o separador só entra no número quando **um dígito o segue** — assim `1,5` fica inteiro e o ponto
+final da frase não é absorvido. O resultado é um span `measurement` de risco alto cuja mensagem
+soletra *"aumento de cerca de 10x"*.
+
+### Risco não é tamanho
+
+Um `não` apagado ou `direito` virando `esquerdo` é uma mudança de três letras que **supera** um
+parágrafo reescrito. `diffClassifySpan` ordena por classe de risco — negação, lateralidade,
+categoria (BI-RADS e afins), medida — nunca por número de tokens. E uma reformulação genuinamente
+equivalente permanece `low`, que é o que mantém o selo confiável: um indicador que grita em toda
+versão deixa de ser lido.
+
+### `identical` é um veredicto, não um painel vazio
+
+Quando as versões são iguais, a resposta diz que o painel está vazio *"porque as versões são iguais,
+e não porque a comparação falhou"*. Seção grande demais e versão carregada vazia são **recusadas**
+em vez de renderizadas em branco — um diff vazio por falha de carregamento é indistinguível de um
+diff vazio por igualdade.
+
+### v1 contra v3 relata o que ficou escondido
+
+Comparação não adjacente informa `adjacency.skipped` e lista as seções que **existiram só nas
+versões intermediárias** — um adendo acrescentado na v2 e removido na v3 não aparece em nenhum dos
+dois lados do diff, e sem esse aviso o revisor concluiria que ele nunca existiu.
+
+### Aprovar a comparação não é aprovar o laudo
+
+`diffApproveComparison` grava `scope: 'comparison-only'` com a frase de escopo explícita, e recusa
+`stale-review` (o alvo revisado já não é a versão corrente), `self-review` e
+`missing-rejection-note`.
+
+45 testes.
