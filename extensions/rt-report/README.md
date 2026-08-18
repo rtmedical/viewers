@@ -1037,3 +1037,57 @@ precisa de prazo e motivo; e mandar para um reconhecedor em nuvem precisa do pro
 *"onde isso foi processado"* é a primeira pergunta de uma auditoria.
 
 87 testes.
+
+## Laudo inline no painel direito (`inlineReporting.ts`) — RTV-121
+
+Este ticket reusa a extensão de laudo num container menor, e **todo o risco de um reuso assim é que
+"menor" seja implementado como "menos"**. Um editor de tela cheia e um painel lateral têm de produzir
+**o mesmo documento com as mesmas obrigações**; só a apresentação pode diferir.
+
+### Um template de RT oferecido para uma leitura de radiologia
+
+A biblioteca tem templates de radiologia e de radioterapia, e os campos de um template de RT são
+sobre um plano de tratamento: dose prescrita, fracionamento, volumes-alvo. Oferecer um para a leitura
+de uma CT de tórax não é apenas desarrumado — **seus padrões pré-preenchidos são afirmações clínicas
+sobre um tratamento que não existe**, e RTV-228 então bloqueia a assinatura por campos que o
+radiologista não consegue interpretar.
+
+Então a elegibilidade é decidida por um `domain` **explícito**, nunca inferido do título: *"Tórax"
+está no nome de um template diagnóstico de tórax e de um template de plano de RT de tórax*, e um
+casamento por título mais cedo ou mais tarde escolhe o errado.
+
+### 🚨 Menor não pode significar menos campos
+
+O painel é estreito, então a implementação óbvia recolhe seções ou descarta as que não caibam. Duas
+coisas dão errado, e a segunda é séria:
+
+1. uma pendência bloqueante dentro de uma seção recolhida deixa o radiologista **sem ver por que** a
+   assinatura é recusada, e ele conclui que o botão está quebrado;
+2. uma implementação que valida **só o que renderiza** deixa o laudo ser assinado com um campo
+   afirmativo não confirmado — que é exatamente o "laudo normal por omissão" que RTV-228 existe para
+   impedir, **reintroduzido pelo layout**.
+
+Então `validatedFieldIds` é sempre a lista completa, nos dois modos; seções podem ser recolhidas; e
+**qualquer seção contendo uma pendência bloqueante é forçada aberta**.
+
+`inlineAssertSameObligations` é a asserção de que o conjunto de campos do modo inline é igual ao da
+tela cheia — escrita como asserção e não deixada para revisão, porque uma divergência aqui é
+invisível: **os dois painéis renderizam, os dois salvam**, e a diferença só aparece como um laudo sem
+uma seção que o template exigia.
+
+### Esconder o chrome de RT é o objetivo; esconder o dado de RT não é
+
+Uma CT de tórax lida diagnosticamente num paciente que também tem RTSTRUCT e RTPLAN no estudo
+significa que **o paciente está sob tratamento**, e isso é contexto clínico com o qual o laudo devia
+ser escrito. Suprimir o fato junto com a barra de ferramentas é laudar o estudo sem ele.
+
+### O painel direito desmonta
+
+Troca de hanging protocol, troca de layout e recolher a barra lateral todos desmontam o painel — e
+acontecem no meio de uma frase, porque o radiologista troca o layout para olhar um comparativo
+enquanto dita. Desmontar descartando o rascunho perde texto que ele **viu a si mesmo produzir**.
+
+`study-closed` é tratado igual, não como exceção: fechar o estudo é o momento em que o rascunho tem
+mais chance de ser esquecido.
+
+58 testes.

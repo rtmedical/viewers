@@ -77,3 +77,4 @@ export * from './reportDocument';
 export * from './aiCopilot';
 export * from './workspaceLayout';
 export * from './voiceStructure';
+export * from './inlineReporting';
