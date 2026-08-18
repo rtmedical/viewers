@@ -71,3 +71,4 @@ const rtReportExtension = { id };
 export { id };
 export default rtReportExtension;
 export * from './signOff';
+export * from './versionDiff';
