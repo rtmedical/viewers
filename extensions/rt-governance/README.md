@@ -100,3 +100,75 @@ stylistic: this repo's `@babel/plugin-transform-regenerator` fails with
 ```bash
 node node_modules/.bin/jest --config extensions/rt-governance/jest.config.js --ci
 ```
+
+## Governança institucional de templates, CDE/RADS, macros e IA (`adminGovernance.ts`) — RTV-230
+
+O ticket diz: *"templates e IA precisam de governança institucional, senão viram comportamento
+imprevisível"*. A pergunta de governança que realmente morde não é quem pode clicar em editar. É
+**o que acontece com laudos já assinados** quando a coisa contra a qual foram assinados muda por
+baixo deles.
+
+### Template aprovado é imutável, e editar bifurca
+
+Um laudo assinado em 12 de março afirma o que afirma **em parte por referência**: usou o template
+"Tórax CT", e esse template decidiu quais campos existiam, quais eram afirmativos, e o que o texto
+padrão dizia. Editar o template no lugar muda **retroativamente** o significado do laudo assinado —
+a trilha de auditoria diz "conforme o template Tórax CT" e o template que ela nomeia já não é o que
+foi usado. Ninguém é notificado, e não há diff para olhar.
+
+Então `govEditTemplate` **recusa** modificar versão aprovada e devolve uma bifurcação. Rascunho é
+editado direto, porque nada foi assinado contra ele.
+
+### Aprovação clínica não é "um administrador salvou"
+
+Um template que traz texto de normalidade pré-preenchido está fazendo afirmações clínicas por quem
+assinar (é exatamente a falha que RTV-228 bloqueia campo a campo). Decidir essa redação é **ato
+clínico**, então o registro de aprovação exige um clínico nomeado **com registro profissional**.
+
+Pedir o registro em vez de checar um papel é deliberado: **um papel pode ser concedido a um
+administrador de TI, um CRM não.**
+
+E template com campos afirmativos exige que o aprovador **os reconheça por id** — senão "aprovei o
+template" é uma afirmação sobre o layout enquanto os padrões afirmativos entram sem serem lidos.
+
+Autor não aprova a própria versão: a aprovação existe para ser um segundo par de olhos.
+
+### "Importa sem deploy" não pode significar "importa para uso clínico"
+
+O critério de aceite é que o admin importe RadReport/CDE sem deploy. Isso é sobre processo de
+release, **não sobre confiança**: um MRRT importado é conteúdo de terceiro que ninguém nesta
+instituição leu. `govImportTemplate` sempre aterra como **rascunho**, e **não existe parâmetro que
+mude isso**. Importar e aprovar são dois atos de duas pessoas.
+
+### Uma versão de pacote não se retira enquanto laudos apontam para ela
+
+Um laudo registra um achado como elemento `RDE818` com valor `RDE818.2`. Se o pacote é atualizado e o
+significado ou o conjunto permitido daquele valor muda, o laudo histórico **não quebra** — ele
+continua perfeitamente legível e passa a significar outra coisa. Fixar a versão por laudo é o que
+evita isso, e fixar não vale nada se a versão fixada pode ser removida.
+
+Daí `govResolvePackForReport` **recusar** cair para "a versão atual" quando o laudo já existe: a
+versão atual é a resposta certa só na criação; para um laudo existente é a resposta errada que
+acontece de estar disponível.
+
+### Macro sombreada
+
+Três escopos — radiologista, grupo, instituição — e o mais específico vence, que é a única regra que
+não surpreende ninguém. A parte que valia construir é o **relatório**: quando a instituição
+acrescenta uma macro cujo gatilho um radiologista já usa, a do radiologista continua vencendo e a
+institucional **silenciosamente nunca dispara**. Sem essa lista o admin vê uma macro que "não
+funciona" sem causa visível.
+
+Duas macros no **mesmo** escopo com o mesmo gatilho não é questão de precedência, é erro de
+configuração: qual dispara dependeria da ordem de carregamento. Recusa.
+
+### Desligar a IA tem um caso interessante
+
+Ligar exige modelo e versão — RTV-224 recusa rodar sem eles de todo modo, e falhar aqui dá ao
+administrador o motivo em vez de deixar o recurso misteriosamente inerte.
+
+**Desligar** é onde está o problema: sugestões já na tela esperando aceite deixam de ser decidíveis.
+Elas são **nomeadas por id e descartadas**, não deixadas no documento — um trecho de máquina
+indecidível bloquearia a assinatura para sempre, e o radiologista não teria como limpá-lo.
+
+69 testes.

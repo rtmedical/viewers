@@ -19,3 +19,4 @@ const rtGovernanceExtension = { id };
 
 export { id };
 export default rtGovernanceExtension;
+export * from './adminGovernance';
