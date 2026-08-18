@@ -642,3 +642,40 @@ desfazer — e também varre o texto do documento.
 
 Um valor proposto que ninguém confirmou não pode ser exportado como afirmação. E "confirmar" não
 pode lavar um chute: confirmar é recusado enquanto a proposta contradiz a prosa.
+
+## Assinatura, retificação e distribuição (`signOff.ts`) — RTV-228
+
+O núcleo puro do fecho do laudo: prontidão, autorização do assinante, assinatura, retificação
+versionada, registro de envio e auditoria dos artefatos derivados. Sem `@ohif/*`, sem relógio,
+sem hash — o digest e o horário entram como parâmetro.
+
+### "Laudo normal por omissão" é bloqueio, não aviso
+
+Um parágrafo de normalidade pré-preenchido que o radiologista não tocou é o modo de falha mais
+perigoso deste fluxo: ele produz uma afirmação clínica positiva — "sem alterações" — que ninguém
+fez. `signEvaluateReadiness` classifica cada campo assertivo não confirmado como item
+**bloqueante**, nunca como faixa de aviso, porque **faixas são lidas depois que a assinatura
+irreversível já existe**.
+
+E o mesmo portão roda **dentro de** `signCreateSignature`, não só na tela: um botão habilitado não
+é uma permissão, e o assinador em lote e a API compartilham esse caminho.
+
+### Divergência estruturado/prosa, e artefato derivado velho
+
+A camada de DICOM SR/FHIR e a prosa são cada uma internamente consistente, então **nenhum leitor
+isolado vê a contradição** — o clínico lê a prosa, o registro de câncer lê o SR, e os dois saem com
+conclusões diferentes sem nenhum erro aparecer. Já um PDF/A ou SR gerado na v1 e mantido depois da
+v2 é uma resposta errada com aparência de confiança.
+
+As duas coisas são tratadas com pesos diferentes de propósito: artefato **velho bloqueia** a
+distribuição; artefato **ausente é apenas informativo** — um artefato que falta é visivelmente
+falta, um artefato desatualizado se parece com a verdade.
+
+### Assinar, enviar e ter direito de assinar são três fatos distintos
+
+- `dispatch-before-signature` é recusado, e uma falha de canal **nunca desassina** o laudo;
+- "assinado" nunca é renderizado como "entregue" — `signSummarizeDelivery` mantém os dois separados;
+- residente em laudo final, delegação expirada, fora de escopo ou autoconcedida, e CRM ausente são
+  recusados **antes de qualquer assinatura existir**.
+
+66 testes.
