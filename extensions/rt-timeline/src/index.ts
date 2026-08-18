@@ -29,3 +29,4 @@ const rtTimelineExtension = {
 };
 
 export default rtTimelineExtension;
+export * from './imageDetails';

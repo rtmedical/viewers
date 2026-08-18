@@ -169,3 +169,73 @@ depois imageou**. Ninguém lê isso como artefato de renderização.
 
 Uma sessão tem um punhado de eventos, e uma taxa sobre três deles é um número com intervalo de
 confiança mais largo que ele mesmo. Taxas pertencem ao curso, não à sessão.
+
+## Detalhes da imagem e troca para Revisão Offline (`imageDetails.ts`) — RTV-172
+
+Quais linhas de metadado mostrar e como apresentá-las, navegação entre eventos de imagem, e as
+precondições da troca para o workspace de Revisão Offline. Sem `@ohif/*`, sem Cornerstone, sem
+relógio, sem `throw`.
+
+### A imagem atribuída à fração errada
+
+O trabalho deste painel é deixar um físico olhar *a imagem de uma sessão específica*. Se a
+associação a uma fração é ambígua, `imgResolveSession` **recusa** em vez de escolher: referência que
+não existe, referência que casa com duas sessões, referência que **contradiz o horário de
+aquisição**, horário entre duas sessões, horário dentro de duas sessões sobrepostas, aquisição sem
+horário, sessão de outro paciente.
+
+O dano nomeado: um físico revisando o que o painel rotula "fração 12" enquanto olha a imagem da
+fração 11, vendo posicionamento correto, e aprovando um curso em que a fração 12 teve um erro de
+setup não corrigido.
+
+Detalhe que merece atenção: a **tolerância em torno da janela da sessão é zero por padrão**. Imagem
+de setup normalmente acontece minutos antes do beam-on, então instalações cujas janelas não cobrem o
+setup precisam passar tolerância explícita. Não foi defaultada para "alguns minutos" de propósito —
+uma tolerância silenciosa é exatamente como uma imagem feita pouco antes da sessão N+1 é atribuída à
+sessão N.
+
+### Ausente, zero e não aplicável são três estados, e nenhum é um traço
+
+Um kV/mAs/SID faltante renderizado como `0`, `-` ou célula vazia lê como *medido e zero* ou *não se
+aplica*. **Um traço numa coluna de dose é lido como "não aplicável" por metade dos leitores e como
+"zero" pela outra metade.** Cada linha carrega seu estado, e há três strings que não se confundem
+entre si nem com uma medida.
+
+### A ideia mais afiada do módulo: o valor numérico só existe se a unidade foi declarada
+
+`numericValue` é populado **apenas** quando `unitState === 'declared'` e `state === 'present'`. Então
+qualquer coisa que leia esse campo — tendência entre frações, comparação, exportação — **não tem como
+pegar um número de escala desconhecida**. "Temos 100 e ninguém disse se é mm ou cm" não é valor
+presente nem ausente: é um valor que nunca deve ser comparado com o de outra fração.
+
+O estado da unidade tem cinco valores: declarada, não declarada, não reconhecida, **incompatível**
+(dimensão errada) e não aplicável.
+
+### Navegação que não pula e não dá a volta
+
+As setas navegam a lista **filtrada**, e o escopo é dito em palavras ao lado delas — sem isso um
+físico que deixou um filtro de modalidade ligado acredita que "próxima imagem" percorre o curso
+inteiro e relata ter revisado imagens que nunca apareceram. Nas pontas, **recusa em vez de dar a
+volta**: dar a volta da última para a primeira, com o usuário olhando a imagem e não o contador, faz
+ele re-revisar o começo acreditando que é o fim.
+
+### Prévia e metadados têm de ser do mesmo instante
+
+Prévia de cache ao lado de números de uma aquisição mais nova é uma resposta errada com aparência de
+confiança — o físico confere a imagem contra o kV/mAs e a geometria mostrados ao lado e aprova um par
+que **nunca existiu junto**. O emparelhamento exige mesmo UID e mesma revisão, e há recusa para
+prévia velha, metadado velho, prévia além da idade máxima e prévia renderizada no futuro.
+
+### A troca de workspace carrega o que está sendo revisado
+
+Os quatro campos de identidade são obrigatórios; não existe caminho "o workspace descobre". Contexto
+incompleto, paciente do contexto diferente do paciente do evento, sessão que não é a resolvida, sessão
+**nunca resolvida**, e prévia nunca emparelhada são recusas.
+
+E uma fração **inferida por horário** exige reconhecimento humano explícito antes da troca.
+
+Revisão pendente não é recusa nem descarte silencioso: volta como status próprio com
+`committed: false`, que a UI tem de resolver — senão uma nota de aprovação meio escrita para uma
+fração com erro de setup desaparece numa troca de tela.
+
+99 testes.
