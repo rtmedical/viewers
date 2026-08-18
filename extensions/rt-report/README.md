@@ -975,3 +975,65 @@ editor ainda tem o laudo anterior. O viewer mostra o estudo A, o editor edita o 
 medida passada de um para o outro **cai no paciente errado**.
 
 67 testes.
+
+## Fala para estrutura (`voiceStructure.ts`) — RTV-225
+
+A intuição do ticket está certa: *"a melhor experiência não é transcrever tudo em texto livre; é
+transformar fala em texto + estrutura"*. O perigo está na segunda metade.
+
+Texto livre é lido por um humano antes de ser assinado. **Dado estruturado não é lido por
+ninguém** — vai para o registro de câncer, para a categoria RADS, para a fila de seguimento, e o
+único contato do radiologista com ele foi o momento em que um chip apareceu na tela enquanto ele
+olhava a imagem.
+
+Então tudo que é extraído aqui é **candidato**: chips com confiança e estado de confirmação, e
+commit em campo CDE/RADS **recusado** sem confirmação explícita. Mesma regra do portão de procedência
+do copiloto (RTV-224), pelo mesmo motivo e com a mesma forma.
+
+### As três coisas que o ditado em português erra
+
+**Negação.** O reconhecedor engole palavras curtas e não acentuadas, e **"não" é a palavra
+clinicamente decisiva mais curta do idioma**. "não há nódulo" virando "há nódulo" inverte um laudo.
+Então polaridade nunca é inferida da ausência: frase sem marcador explícito volta `unknown`, e isso é
+recusa no commit.
+
+**Lateralidade.** "direito" e "esquerdo" são acusticamente distantes e raramente confundidos. A forma
+perigosa é a abreviação: **"D" e "E" ditos como nomes de letra são um fonema cada**, o reconhecedor os
+troca, e "lobo superior D" é exatamente como radiologista dita. A forma abreviada é marcada como
+confiança baixa e **nunca é auto-comitada** — nem com uma confirmação, porque confirmar um valor que o
+reconhecedor adivinhou de um fonema é confirmar o palpite, não o lado.
+
+**O separador decimal.** Um motor configurado para en-US emite "1.5" onde o falante disse "um vírgula
+cinco", e um parser a jusante lendo "1.5" com expectativa pt-BR pode transformar em 15. É a falha que
+o diff de versões existe para pegar (RTV-227) chegando pelo microfone. Os dois separadores são
+aceitos, e um número com **os dois** ou com forma de milhar ambígua é **recusado** em vez de
+adivinhado.
+
+Medida sem unidade é recusada, não defaultada: *"um vírgula cinco" é 1,5 cm para um radiologista de
+tórax e 1,5 mm para um neurorradiologista medindo um aneurisma*, e o módulo não sabe qual dos dois
+está falando.
+
+### Conteúdo não pode executar
+
+"assinar" é comando. É também palavra que aparece em conteúdo ditado: *"o paciente assinou o termo de
+consentimento"*. Um parser que varre toda fala procurando palavras de comando **eventualmente assina
+um laudo porque alguém descreveu um termo de consentimento**.
+
+Comando só é reconhecido em modo de comando, no qual o chamador entra deliberadamente, e em modo de
+ditado o núcleo **nunca** devolve comando — devolve texto. Comandos destrutivos (assinar, apagar
+achado, marcar achado crítico) exigem confirmação mesmo dentro do modo de comando.
+
+### Ditado cai onde o cursor estava, ou não cai
+
+Uma fala de quatro segundos sobrevive ao foco em que começou. Texto que chega depois de o radiologista
+tabular para a impressão, inserido "no cursor atual", cai na seção errada — e **uma frase de achados
+na impressão é lida como a conclusão**.
+
+### Retenção e residência
+
+A transcrição é registro verbatim de um médico discutindo um paciente nomeado, e frequentemente contém
+**mais** que o laudo: o aparte que não foi ditado no documento, a correção falada em voz alta. Manter
+precisa de prazo e motivo; e mandar para um reconhecedor em nuvem precisa do provedor nomeado, porque
+*"onde isso foi processado"* é a primeira pergunta de uma auditoria.
+
+87 testes.
