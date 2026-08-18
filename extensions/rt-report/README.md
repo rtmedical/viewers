@@ -913,3 +913,65 @@ ninguém está lendo, que é por isso que a QA sinaliza impressão gerada e não
 que muda.
 
 74 testes.
+
+## Workspace de laudo: geometria, abas, medida e evidência (`workspaceLayout.ts`) — RTV-223
+
+O objetivo declarado do ticket é *"manter os olhos do radiologista na imagem e reduzir troca de
+contexto"*. Todas as regras aqui saem disso, e as úteis são os lugares onde a implementação óbvia
+trabalha silenciosamente **contra** ele.
+
+### 🚨 Viewer apertado é pior que layout recusado
+
+O painel é especificado em 440-560 px. Numa tela de 1920 px sobra. Num laptop de 1366 px — que é o
+que um residente de plantão realmente tem — 440 px de painel mais o chrome deixam **830 px de
+viewer**, e para uma mamografia adquirida em 4096 × 3328 essa é uma escala de exibição em que um
+agrupamento de microcalcificações fica **sub-pixel**.
+
+Então a restrição não é expressa como largura de painel. É expressa como **largura mínima de viewer,
+por modalidade**, e quando o viewport não comporta as duas coisas o núcleo **recusa o lado a lado** e
+manda desacoplar. Encolher o viewer em silêncio é o único desfecho que não pode acontecer, porque
+**nada na tela diz ao radiologista que ele passou a ler numa escala que esconde achados**.
+
+Os mínimos vêm da matriz de aquisição, que é o único dado que o núcleo tem: corte transversal é
+512², então 768 px é 1,5× e confortável; radiografia de projeção é 2048+; mamografia é a estrita.
+
+**Achado sobre o ticket, não sobre o código:** em 1366 px, com 1270 px úteis, o painel mais estreito
+permitido deixa 830 px de viewer — **corte transversal cabe, mamografia não cabe de jeito nenhum** e
+nenhuma largura de painel faz caber. Esse é o desfecho correto, não uma limitação a contornar: um
+laptop de 1366 px não é tela para ler mamografia ao lado de um painel de laudo.
+
+### Perder o cursor é chato; perder uma medida meio digitada é clínico
+
+Estado por aba, com scroll e seleção, porque o critério pede. Mas a parte que importa mais é a
+**edição não confirmada**: um campo com "1,5" digitado e não comitado, abandonado por uma troca de
+aba, **reverte em silêncio** — e o radiologista viu a si mesmo digitar, então não tem motivo para
+conferir. `wsSwitchTab` recusa até o chamador resolver.
+
+### Uma medida inserida como achado tem de chegar inteira
+
+*"Sem reeditar manualmente"* é o critério, e a falha que ele convida é um achado que carrega o número
+e **perde a unidade** — a família que este código encontra em todo módulo, onde um valor plausível na
+unidade errada não parece errado para ninguém. Recusa em vez de assumir milímetro. E recusa sem
+referência de imagem completa, porque achado cuja evidência não pode ser reaberta não é rastreável
+(RTV-226).
+
+Também recusa medida que **mudou ou foi apagada** no viewport desde o pedido: o viewer é a autoridade
+sobre o que está na imagem, e um achado afirmando um número que a imagem não carrega mais é uma
+resposta errada com aparência de confiança.
+
+### Clicar num achado tem de cair na imagem certa, ou não cair em lugar nenhum
+
+Contexto parcial resolve para *uma* imagem, não *a* imagem — e o radiologista então confere outra
+fatia e **confirma um achado que não olhou**, que é pior que o clique não fazer nada. Exige estudo,
+série, instância e quadro juntos.
+
+Série indisponível também recusa, em vez de navegar para um viewport vazio: **viewport vazio é lido
+como "nada aqui", que é uma afirmação sobre o paciente e não sobre o carregamento.**
+
+### Duas janelas divergem
+
+Não é exótico: é o que acontece quando alguém abre o próximo caso na janela principal enquanto o
+editor ainda tem o laudo anterior. O viewer mostra o estudo A, o editor edita o laudo do B, e uma
+medida passada de um para o outro **cai no paciente errado**.
+
+67 testes.
