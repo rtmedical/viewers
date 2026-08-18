@@ -783,3 +783,67 @@ mantém áudio sem decisão de retenção registrada, porque o padrão que valer
 sempre, porque ninguém escolheu". `keep` sem prazo é recusado com essa frase.
 
 95 testes.
+
+## Modelo do documento e round-trip com o Connect (`reportDocument.ts`) — RTV-104
+
+O editor é TipTap; o Connect guarda HTML do CKEditor. Todo load e todo save cruzam uma fronteira
+de formato, e é nessa fronteira que um laudo perde uma frase sem ninguém notar. Este módulo é a
+fronteira, mais a política de auto-save. Sem DOM, de propósito: o mesmo código roda no Jest, no
+navegador e no build desktop.
+
+### O round-trip que come uma frase
+
+Uma conversão que encontra um elemento que não modela tem três opções honestas: manter,
+normalizar, ou descartar. Só a terceira é perigosa, e só quando o descartado **carregava texto**.
+Perder um `<span>` de estilo não custa nada; perder um `<td>` custa a medida que estava dentro — e
+o laudo continua lendo como um laudo completo, que é o que o torna perigoso em vez de apenas
+quebrado.
+
+Por isso a comparação é de **texto normalizado**, não de HTML. Comparar HTML acusaria toda
+normalização inofensiva (ordem de atributo, `<b>` virando `<strong>`) e **ainda passaria** uma perda
+real sempre que ela deixasse a marcação bem-formada — ou seja, é ao mesmo tempo ruidoso e cego.
+
+### Formatação em laudo radiológico não é sempre cosmética
+
+Negrito na impressão é frequentemente como o achado crítico é marcado. Numeração de lista é como
+achados são referenciados depois ("achado 3"), então renumerar muda o que uma frase posterior
+aponta. Sobrescrito carrega o expoente em `cm3`.
+
+### 🐛 O defeito que este módulo encontrou em si mesmo
+
+As pilhas de marcas aberta e desejada eram comparadas como **strings concatenadas**. `s` é prefixo
+de `strong`, `sub` e `sup` — então riscado seguido de negrito lia como "a pilha aberta ainda é
+prefixo do que quero", e o serializador **nem fechava `<s>` nem abria `<strong>`**:
+
+```
+<s>ris</s><strong>neg</strong>   ->   <s>risneg</s>
+```
+
+O negrito silenciosamente perdido, e o riscado silenciosamente estendido sobre texto que nunca foi
+riscado. Exatamente a classe de perda que o módulo existe para detectar, chegando pelo seu próprio
+serializador. A comparação agora é elemento por elemento, e há um teste que percorre **todos os 42
+pares ordenados** de marcas.
+
+### O auto-save que grava vazio sobre um laudo real
+
+O pior deste módulo, e inteiramente banal: o load falha, o editor renderiza vazio, e trinta
+segundos depois o auto-save grava esse vazio sobre o laudo. Nada dá erro. O laudo acabou e a UI
+parece saudável.
+
+`docPlanAutosave` recusa salvar documento que não foi confirmado carregado, e recusa um save que
+esvazia um documento substancial sem intenção explícita de apagar. É a mesma distinção entre
+**vazio** e **não carregado** que o resto do código faz. E é a **primeira** checagem, antes da de
+revisão, porque é a única que destrói conteúdo já escrito e aceito — um documento vazio é HTML
+perfeitamente válido, sem conflito e sem tag descartada, e nenhuma checagem posterior o pegaria.
+
+### O auto-save que sobrescreve um colega
+
+Auto-save com last-write-wins é uma máquina de perder dados assim que duas abas estão abertas — e
+duas abas estão abertas constantemente. Todo save carrega a revisão em que se baseou, e uma revisão
+que andou no servidor é **recusa de conflito** nomeando as duas, nunca um merge e nunca um
+overwrite.
+
+`saved` sem revisão nova também é recusado: é o estado que pinta o "salvo" verde, e sem revisão a
+próxima checagem de conflito não checa nada.
+
+91 testes.
