@@ -1,0 +1,34 @@
+# Perfil STATIC -- nginx servindo um dist/ buildado fora, apontando para o
+# dcm4chee do host. É o perfil que sobe no DEV1.
+# Ver docs/plano-stack-dev-e-rtpy.md, seção 4.
+#
+#   # 1. builde fora desta máquina (CI, ou máquina com folga):
+#   pnpm install --frozen-lockfile && pnpm build
+#   git rev-parse --short HEAD > platform/app/dist/BUILD_INFO
+#   # 2. traga o dist/ para cá (rsync) e suba:
+#   docker compose -f docker-compose.static.yml up -d --build
+
+services:
+  viewer-static:
+    build:
+      context: .
+      dockerfile: Dockerfile.static
+    container_name: rtv-viewer-static
+    restart: unless-stopped
+    # Um nginx servindo arquivos estáticos não precisa de mais que isto, e o
+    # limite mantém a promessa de que este perfil não compete com o PACS por RAM.
+    mem_limit: 256m
+    memswap_limit: 256m
+    ports:
+      - '${RTV_STATIC_PORT:-3010}:80'
+    extra_hosts:
+      - 'dcm4chee-host:host-gateway'
+    environment:
+      # O upstream do dcm4chee está baked no template nginx (alias
+      # dcm4chee-host); trocar de AET é editar o template e o config de app, como
+      # o próprio template documenta. PUBLIC_PATH e PUBLIC_PATH_REDIRECT são
+      # derivados pelo entrypoint -- não os defina aqui.
+      PORT: '80'
+      PUBLIC_URL: '/'
+    volumes:
+      - ./platform/app/dist:/usr/share/nginx/html:ro

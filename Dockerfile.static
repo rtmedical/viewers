@@ -1,0 +1,17 @@
+# Serve um dist/ JÁ BUILDADO. Nenhum pnpm, nenhum node, nenhuma compilação.
+#
+# Existe porque build de produção do viewer não cabe numa máquina de 5 GiB: em
+# 2026-08-14 o build in-container no DEV1 levou a máquina a 190 MiB livres, swap
+# 13/15 GiB e load average 74, e o sshd parou de responder.
+#
+# Ver docs/plano-stack-dev-e-rtpy.md, seção 4.
+FROM nginx:1.27-alpine
+
+RUN apk add --no-cache gettext curl
+
+COPY docker/nginx-dcm4chee.conf.template /usr/src/default.conf.template
+COPY docker/entrypoint-static.sh /usr/local/bin/entrypoint-static.sh
+RUN chmod +x /usr/local/bin/entrypoint-static.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint-static.sh"]
+CMD ["nginx", "-g", "daemon off;"]

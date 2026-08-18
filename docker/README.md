@@ -136,3 +136,60 @@ corepack pnpm@11.5.2 install --no-frozen-lockfile
 ```
 
 Build em container não é afetado: o `Dockerfile` usa `node:24.15.0-slim`.
+
+---
+
+## Perfis novos (2026-08-18)
+
+Os dois perfis acima (`docker-compose.yml` e `docker-compose.dcm4chee.yml`) **buildam dentro do
+contêiner**, e por isso não sobem no DEV1. Foram acrescentados dois que sobem:
+
+| Perfil | Arquivo | Builda? | RAM de pico | HMR |
+|---|---|---|---|---|
+| **static** | `docker-compose.static.yml` | **não** — serve um `dist/` pronto | ~30 MiB | não |
+| **dev** | `docker-compose.dev.yml` | sim, em watch | ~2-3 GiB | **sim** |
+
+O plano completo, com o diagnóstico de por que o build cai e a sequência de execução, está em
+[`docs/plano-stack-dev-e-rtpy.md`](../docs/plano-stack-dev-e-rtpy.md).
+
+### O que mudou no diagnóstico
+
+O `⚠️` acima diz que o build "não cabe no DEV1", o que está certo mas incompleto. A parte que
+faltava: **o build não tinha limite de memória**. Sem `mem_limit`, o cgroup do contêiner é o cgroup
+da máquina, e quando o kernel precisou matar algo ele escolheu entre *todos* os processos do host —
+e escolheu o `sshd`.
+
+São dois problemas com correções separadas:
+
+- **raio de alcance:** todo serviço que compila agora recebe `mem_limit`, `memswap_limit` e `cpus`.
+  Isso não faz o build passar; faz o fracasso ser um build falhado em vez de uma máquina
+  inacessível.
+- **demanda de pico:** medido em 2026-08-18, o DEV1 tem 5 GiB totais e ~1 GiB disponível com 22
+  contêineres no ar. Build de produção quer 4-6 GiB. Não cabe, com ou sem limite — daí o perfil
+  static.
+
+### Perfil static, verificado no DEV1
+
+```bash
+# 1. builde FORA desta máquina (CI, ou máquina com folga)
+pnpm install --frozen-lockfile && pnpm build
+git rev-parse --short HEAD > platform/app/dist/BUILD_INFO
+# 2. traga o dist/ e suba
+docker compose -f docker-compose.static.yml up -d --build
+```
+
+Verificado em 2026-08-18 contra o `rt-arc-1`: `GET /` devolve 200, `/BUILD_INFO` responde, e
+`GET /dicom-web/studies?limit=1` **atravessa o proxy e devolve JSON de estudo real**. A imagem tem
+49 MB e roda com `mem_limit: 256m`.
+
+O entrypoint recusa duas coisas em vez de falhar tarde:
+
+- `dist/` sem `index.html` — porque um nginx servindo diretório vazio devolve 403, e o sintoma
+  parece problema de permissão em vez de "esqueci de buildar";
+- `PUBLIC_URL` diferente de `/` — resolver subcaminho aqui duplicaria a lógica de
+  `.docker/Viewer-v3.x/entrypoint.sh`, e duas lógicas que fazem a mesma coisa divergem.
+
+E roda `nginx -t` antes de servir, o que já pagou: pegou duas configurações inválidas durante o
+desenvolvimento deste perfil — `envsubst` sem `export` (as variáveis são de shell e o `envsubst` é
+processo filho) e `PUBLIC_PATH_REDIRECT` preenchido com `/` quando ele é um **bloco de diretivas**
+e tem de ser vazio na raiz.
