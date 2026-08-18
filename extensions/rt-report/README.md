@@ -550,3 +550,52 @@ Um motor de pt-PT transcrevendo ditado pt-BR não falha alto — produz **portug
 as palavras erradas dentro**. Provedor em nuvem é recusado quando o áudio não pode sair: ditado
 é dado do paciente. Provedor sem confiança por token é aceito com aviso, porque a varredura de
 risco nunca dependeu da confiança.
+
+## Reporting Hub: a fila, o SLA e a ordem (RTV-222)
+
+`hubQueue.ts` — o view-model da lista de exames aguardando laudo. Não é React: é a parte que
+decide **a ordem, os baldes e as recusas**.
+
+### A ordem é o produto, e ordenar por atraso é a ordem errada
+
+Se a lista ordena por "mais atrasado primeiro", uma RM de joelho ambulatorial esperando três dias
+fica **acima** de uma TC de crânio de emergência que chegou há quatro minutos. As duas linhas
+parecem perfeitamente razoáveis isoladas: a de cima realmente é a mais atrasada, e a TC realmente
+tem quatro minutos. **Nada na tela está errado**, e o radiologista que abre a lista de cima para
+baixo lê o exame errado primeiro.
+
+Urgência clínica domina; o SLA ordena **dentro** da faixa. Há um teste que calcula a ordem naïve
+"mais atrasado primeiro" e afirma que ela é o **inverso exato** da ordem correta — para ninguém
+regredir o comparador de volta.
+
+### Achado crítico não comunicado promove a linha
+
+A prioridade do pedido reflete o que o solicitante suspeitava **antes de as imagens existirem**; o
+achado crítico é o que foi de fato visto. Uma linha de rotina com achado crítico não comunicado é
+falha de comunicação, não trabalho de rotina.
+
+### Uma linha pode estar em vários baldes, e forçar um esconde trabalho
+
+Um exame pode estar aguardando assinatura **e** com achado crítico não comunicado **e** sem o
+prior, ao mesmo tempo. Uma coluna de status única tem de escolher, e o que ela não escolher
+desaparece das contagens — sem ninguém notar, porque o número exibido está correto.
+
+Status é um **conjunto** de marcadores, e as contagens por marcador **deliberadamente não somam**
+o total de linhas. A ressalva viaja no dado, não num comentário.
+
+### O relógio do SLA tem de ser escolhido
+
+Tempo desde o pedido, desde a chegada das imagens e desde a atribuição são **três números
+diferentes**, e divergem mais justamente nos exames que importam: um pedido urgente cujas imagens
+levaram uma hora para chegar lê 4 min em vez de 64 min e nunca aparece como violado. A referência
+é obrigatória; sem ela o módulo recusa calcular.
+
+### Urgente sem responsável é o pior estado e o mais fácil de perder
+
+Porque não aparece na fila pessoal de ninguém. Uma fila por usuário **estruturalmente** não
+encontra — e o módulo diz isso junto com a lista.
+
+### Contagem com filtro não é contagem do departamento
+
+"12 atrasados" com um filtro de modalidade aplicado significa 12 **naquele recorte**. O resumo
+recusa emitir contagem sem o contexto do filtro.

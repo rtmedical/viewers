@@ -56,6 +56,7 @@ export * from './mrrtImport';
 export * from './templateLibrary';
 export * from './distribution';
 export * from './speechAdapter';
+export * from './hubQueue';
 export * from './cdeCatalog';
 export * from './imageEvidence';
 export * from './radsPacks';
