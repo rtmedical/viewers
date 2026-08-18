@@ -58,18 +58,49 @@ Um dev server é outra coisa: rspack em modo watch, sem minificação, com `--ma
 controlado, fica na casa de 1,5-2,5 GiB. Isso é o limite do viável no DEV1 — cabe se o limite
 existir e se aceitarmos que ele compete com o resto.
 
-### Bloqueio secundário, e é imediato
+### Bloqueio secundário, e é mais estreito do que a primeira leitura sugeria
 
-| Ferramenta | No DEV1 | Exigido pelo repo |
-|---|---|---|
-| node (PATH) | v18.19.1 | `engines.node >= 24` |
-| node (nvm default) | v24.13.0 | ok |
-| pnpm | **9.15.9** | `packageManager: pnpm@11.5.2`, `engines.pnpm >= 11` |
+> **Correção de 18/08/2026.** A versão anterior desta seção dizia que o `pnpm` do host estava
+> duas majors atrás e que qualquer install resolveria diferente do lockfile. Isso estava errado, e
+> a correção importa porque mandava consertar o que não está quebrado.
 
-`pnpm` do host está duas majors atrás. Qualquer `pnpm install` no host falha ou, pior, resolve
-diferente do lockfile. **Correção: `corepack enable && corepack prepare pnpm@11.5.2 --activate`**
-com o node 24 do nvm ativo — e o contêiner de dev faz o mesmo no Dockerfile, para host e
-contêiner não divergirem.
+| Ferramenta | Shell interativo de login | `ssh DEV1 'cmd'` | Exigido pelo repo |
+|---|---|---|---|
+| node | **v24.13.0** | v18.19.1 | `engines.node >= 24` |
+| pnpm | **11.5.2** | 9.15.9 | `packageManager: pnpm@11.5.2` |
+
+O toolchain do DEV1 **está correto para um humano no prompt**, e `node_modules/.modules.yaml`
+registra `"packageManager": "pnpm@11.5.2"` com `storeDir` da store `v11` — a instalação existente
+foi feita pela versão certa, e a divergência de lockfile que eu havia afirmado nunca aconteceu.
+
+O que não funciona é a invocação **não-interativa**, por um motivo banal:
+
+- `~/.bashrc` aborta na linha 5 (`If not running interactively, don't do anything`) antes de
+  chegar ao carregamento do `nvm`, que está na linha 120;
+- `~/.profile`, que põe `~/.local/bin` no `PATH` — onde vive o `pnpm` 11.5.2 —, só é lido por
+  shell de **login**.
+
+`ssh host 'cmd'` não é interativo nem de login, então nenhum dos dois roda, e cai em
+`/usr/bin/node` (18) com `/usr/local/bin/pnpm` (9.15.9).
+
+**O sintoma é enganoso, e é por isso que vale escrito.** Nenhuma das duas metades funciona
+sozinha: com o `PATH` de login mas node 18, o `pnpm` 11.5.2 é encontrado e **se recusa a rodar**
+(`requires at least Node.js v22.13`); com node 24 mas sem `~/.local/bin`, o `PATH` cai no `pnpm`
+9.15.9 e o `engines.pnpm` do repo rejeita. As duas falhas juntas parecem "versão errada
+instalada" quando são ordem de `PATH`.
+
+**Correção: `scripts/dev-env.sh`** — carrega o `nvm`, põe `~/.local/bin` primeiro, e **verifica**
+que o `node` e o `pnpm` resolvidos são os exigidos antes de executar, em vez de deixar um install
+rodar com a versão errada. Uso: `./scripts/dev-env.sh pnpm install --frozen-lockfile`.
+
+Isso importa para tudo que é automatizado — cron, script de deploy, passo de CI que faz `ssh`.
+
+Nota menor: `.node-version` pede 24.15.0 e o nvm do DEV1 tem 24.13.0. O shim cai para a *major*
+de propósito: a major é o que decide `engines`, e falhar por um patch faria alguém contornar o
+shim à mão, que é pior.
+
+O `corepack prepare` dentro do `Dockerfile.dev` continua certo, e por outro motivo: fixar a versão
+**na imagem**, para o contêiner não depender do host.
 
 ---
 
@@ -588,7 +619,7 @@ número do que o cliente recalculá-lo.
 
 | # | Passo | Desbloqueia | Custo | Rodável no DEV1? |
 |---|---|---|---|---|
-| 1 | `corepack prepare pnpm@11.5.2` no host + documentar | qualquer coisa com pnpm | minutos | **sim** |
+| 1 | `scripts/dev-env.sh` para invocação não-interativa (o host interativo já está certo) | cron, deploy, `ssh` de CI | minutos | **sim, feito** |
 | 2 | `mem_limit` nos serviços que compilam (compose já existentes) | build deixa de derrubar o host | minutos | **sim** |
 | 3 | Perfil **static** + `dist/` vindo do CI | **React contra o PACS com dados reais** | horas | **sim** |
 | 4 | Alinhar prefixo `/dicom-web` entre dev server, nginx e config | perfil dev não dar 404 | horas | sim (só leitura) |
@@ -608,10 +639,11 @@ e evita descobrir o problema de paridade quando já existe algoritmo para reescr
 | # | Risco | Como aparece | Detecção |
 |---|---|---|---|
 | R1 | Build de produção tentado no DEV1 | host inacessível, sshd cai | `mem_limit` no compose; aviso no `docker/README.md` (já existe) |
-| R2 | pnpm 9 no host resolvendo diferente do lockfile | `dist/` que só funciona na máquina de quem buildou | `--frozen-lockfile` + `corepack` fixando 11.5.2 |
+| R2 | extensão nova entrando no workspace sem regenerar o `pnpm-lock.yaml` | `pnpm install --frozen-lockfile` aborta com `ERR_PNPM_OUTDATED_LOCKFILE`, e a suite de testes continua **verde** porque roda sobre o `node_modules` que já existe | `./scripts/dev-env.sh pnpm install --frozen-lockfile` antes de abrir PR. **Aconteceu:** catorze importers faltavam, corrigido em #223 |
 | R3 | `node_modules` em bind mount | install de minutos, symlink quebrado, HMR que não recarrega | volume nomeado (seção 3.2) |
 | R4 | Prefixo DICOMweb divergente entre os três lugares | lista de estudos **vazia**, que parece PACS sem dados | conferir os três antes de mexer; teste de fumaça que faz um QIDO e exige >= 1 estudo |
 | R5 | API e binário divergindo | mesmo estudo, número diferente no desktop e na web | `test_parity.py` com caso de recusa; golden file nos dois artefatos |
+| R11 | O `dist/` do perfil static depende de um build de CI, e o CI da org **não executa** desde 07/08/2026 — 60 runs seguidos falhando em 1-4s com zero passos, em todos os workflows | o perfil static não tem de onde tirar um `dist/` fresco, e o passo 3 desta sequência fica sem fonte | conferir billing/cota de Actions (precisa de `admin:org`); enquanto isso, buildar numa máquina com >= 8 GiB e trazer o `dist/` à mão |
 | R6 | SimpleITK em versão diferente nos dois artefatos | diferença numérica sem erro nenhum | versões exatas no `pyproject`; `rtpy version --json` no cabeçalho de toda resposta |
 | R7 | Pixel via JSON | 413, ou OOM no serviço | contrato só aceita caminho; sem campo de payload binário |
 | R8 | Log em `stdout` no binário | JSON corrompido na primeira linha de log | `stdout` só JSON, por contrato; teste que roda o CLI e faz `json.loads` do stdout inteiro |
