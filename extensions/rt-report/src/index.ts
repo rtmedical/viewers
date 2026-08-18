@@ -75,3 +75,4 @@ export * from './versionDiff';
 export * from './audioCapture';
 export * from './reportDocument';
 export * from './aiCopilot';
+export * from './workspaceLayout';
