@@ -599,3 +599,46 @@ encontra — e o módulo diz isso junto com a lista.
 
 "12 atrasados" com um filtro de modalidade aplicado significa 12 **naquele recorte**. O resumo
 recusa emitir contagem sem o contexto do filtro.
+
+## Blocos de achado estruturado no laudo (RTV-226)
+
+`findingBlock.ts` — o laudo é texto rico, e dentro dele ficam blocos de achado ligados a CDEs
+(RadElement/ACR-RSNA): uma lesão com tamanho, lateralidade, categoria. O radiologista pode editar
+**a prosa** ou **o campo estruturado**. Este módulo é o modelo do bloco, a ligação entre os dois, e
+as recusas.
+
+### A prosa e a estrutura podem discordar, e o laudo mostra só a prosa
+
+Se o radiologista edita "nódulo de 8 mm" para "nódulo de 18 mm" no texto mas o CDE ligado continua
+com 8, **o laudo assinado diz 18** e todo consumidor a jusante — registro, regra de seguimento,
+exportação FHIR — **recebe 8**. Nada parece errado em nenhum dos dois lugares.
+
+O módulo renderiza a estrutura de volta para prosa, compara com a frase editada, e **recusa a
+assinatura** enquanto discordarem — dizendo qual dos dois cada público vai receber.
+
+Igualdade entre unidades é acordo de verdade (1,8 cm == 18 mm), então o aviso não vira ruído.
+Mesmos dígitos com unidade diferente (8 mm vs 8 cm) e número sem unidade são **estados separados**.
+
+### Um CDE tem valores permitidos e a prosa não
+
+Texto livre pode dizer "moderadamente aumentado"; um CDE com conjunto enumerado não pode. Forçar a
+prosa no valor mais parecido **inventa uma afirmação que o radiologista não fez**. O módulo recusa,
+lista os valores permitidos, e mantém o bloco como texto livre com o **CDE vazio** — nada
+codificado é exportado, e o laudo continua assinável.
+
+### Unidade
+
+"1,5" é 1,5 mm ou 1,5 cm dependendo de nada. A unidade é obrigatória no lado estruturado, e ligação
+numérica sem unidade é recusada — a diferença é de dez vezes e muda a conduta.
+
+### Apagar a frase não pode deixar a estrutura órfã
+
+Se a frase é apagada mas o bloco sobrevive, o laudo exporta um achado estruturado que **não aparece
+em nenhum texto legível**: o prontuário fica com um achado legível por máquina que **nenhum humano
+escreveu**. A detecção não confia só na âncora — âncoras morrem em silêncio num colar ou num
+desfazer — e também varre o texto do documento.
+
+### Proposto por software não é afirmado por radiologista
+
+Um valor proposto que ninguém confirmou não pode ser exportado como afirmação. E "confirmar" não
+pode lavar um chute: confirmar é recusado enquanto a proposta contradiz a prosa.

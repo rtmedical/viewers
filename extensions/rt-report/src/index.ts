@@ -57,6 +57,7 @@ export * from './templateLibrary';
 export * from './distribution';
 export * from './speechAdapter';
 export * from './hubQueue';
+export * from './findingBlock';
 export * from './cdeCatalog';
 export * from './imageEvidence';
 export * from './radsPacks';
