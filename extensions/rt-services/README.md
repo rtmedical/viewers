@@ -122,3 +122,84 @@ involuntário (inatividade, renovação esgotada) prossegue, mas relata o que fo
 sido salvo. Perder um ditado é dano real mesmo não sendo uma medida errada.
 
 116 testes.
+
+## Google Cloud DICOM Store (`gcpDicomStore.ts`) — RTV-158
+
+A álgebra de caminhos, a máquina de estados do picker hierárquico, e a política de lotes, progresso
+e retentativa do upload. Sem HTTP, sem SDK do Google, sem relógio, sem `throw`.
+
+### 🚨 Subir um paciente para o store da instituição errada
+
+A hierarquia é `projects/{p}/locations/{l}/datasets/{d}/dicomStores/{s}` — quatro IDs opacos. Um
+picker que mantém a seleção filha quando o pai muda constrói `projectA/.../storeDoProjectB`: o
+caminho é **sintaticamente perfeito**, a API resolve cada ID independentemente, e o upload pousa no
+store de outro tenant **respondendo 200**.
+
+Então `gcpSelectLevel` invalida **todo descendente**, e construir caminho de hierarquia parcial é
+**recusa**, não uma string com buraco. IDs com `/` também são recusados — uma barra dentro do ID
+reparenta o recurso silenciosamente.
+
+Detalhe que evita o dano pelo outro lado: reselecionar o **mesmo** ID é no-op e **mantém** os
+descendentes. Um picker que apaga as escolhas de baixo a cada refresh de listagem força o operador
+a re-escolher o store sob pressão de tempo, que é como o store errado é escolhido em primeiro lugar.
+
+### "Upload completo" quando não estava
+
+Um estudo faltando instâncias **abre e renderiza**, e o radiologista não tem como notar as fatias
+que faltam. Então:
+
+- toda instância enviada tem de aparecer no corpo da resposta, senão **recusa** — um 200 de nível de
+  lote que simplesmente omite uma instância é a forma exata de "completo" sobre um estudo furado;
+- **2xx sobre um corpo com rejeições não é sucesso**;
+- resposta sobre instância que não enviamos é recusa — significa que respostas casaram com o pedido
+  errado, e contá-la infla o total aceito;
+- instância já aceita reportada como rejeitada é recusa: os dois relatos descrevem bytes diferentes
+  sob um UID, e escolher qualquer um perde uma instância silenciosamente.
+
+`safeToOpenInViewer` é a linha de fundo clínica, e é **falsa** enquanto uma única instância planejada
+estiver sem resposta.
+
+### Retentativa que retoma em vez de duplicar
+
+Reenvio é idempotente por SOP Instance UID, e uma reaceitação é contada como **duplicata**, nunca
+como segunda aceitação — um total inflado faz um upload incompleto parecer completo.
+
+E as três classes de falha são distintas de propósito: **`retryable`** (tente depois),
+**`permanent`** (conserte ou exclua o arquivo) e **`reauthRequired`** (autentique de novo). Colapsar
+as duas últimas é o que faz uma instância malformada retentar para sempre atrás de uma barra de
+progresso que nunca completa.
+
+### O escopo verificado antes do primeiro byte
+
+Um token válido para **ler** usado num **upload** falha só no momento do upload, depois da espera. O
+escopo é checado antes, e a assimetria é explícita: `cloud-platform` cobre `healthcare`, e o
+read-only **não cobre nada** — um token de leitura nunca é aceito para upload só porque lista stores
+bem.
+
+E há a pergunta que evita o estrago: *este upload termina antes do token morrer?* — feita **antes**
+do primeiro byte. Sem ela, um upload de 40 min começa com token de 3 min, falha na instância 900 de
+1200, e deixa um estudo parcial na nuvem que abre e renderiza.
+
+Nota de segurança que o rascunho trouxe e vale registrar: o tipo do token carrega **só escopos e
+expiração**, nunca a string do bearer — este núcleo é logado e fotografado em teste, e um bearer que
+chega a um snapshot ou a um relatório de bug é **credencial viva de um store de dados de paciente**.
+
+### De-identificação não é implícita
+
+Enviar imagens identificáveis para nuvem é divulgação regulada sob a LGPD, e o modo de falha é que
+**ninguém nunca decide**: a flag default é permissiva, o upload passa, e a instituição descobre a
+divulgação numa auditoria sem registro de quem autorizou. A decisão tem de ser **explícita,
+atribuível e recente** (1 h) — um reconhecimento velho não é reaproveitado para o próximo paciente.
+
+### 🐛 Dois defeitos corrigidos no rascunho
+
+1. **A atribuição em branco passava.** O guarda comparava `acknowledgedBy.length === 0`, então
+   `'   '` — presente, comprimento não-zero, e não uma atribuição — passava e era gravado
+   verbatim. A auditoria que pergunta *quem autorizou divulgar imagens identificáveis* responderia
+   com um espaço em branco. O código de recusa existia exatamente para esse caso e não disparava.
+2. **403 estava classificado como `permanent`.** Um grant sem o escopo `healthcare` responde upload
+   com **403 `insufficient_scope`** — que é a forma exata do modo de falha que esta seção descreve.
+   Como `permanent`, toda instância do lote é marcada rejeitada e o operador é informado de que
+   **seus arquivos foram recusados**, quando os arquivos estão bons e o grant está errado.
+
+102 testes.

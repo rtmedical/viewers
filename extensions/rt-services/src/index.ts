@@ -25,3 +25,4 @@ const rtServicesExtension = {
 
 export default rtServicesExtension;
 export * from './oidcSession';
+export * from './gcpDicomStore';
