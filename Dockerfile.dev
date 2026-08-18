@@ -1,0 +1,31 @@
+# Contêiner de DESENVOLVIMENTO do viewer. NÃO produz bundle de produção.
+#
+# Roda o rspack dev server em watch, com HMR, contra o código montado do host.
+# Ver docs/plano-stack-dev-e-rtpy.md, seção 3.
+#
+# Por que existe separado do Dockerfile: aquele faz `pnpm install` + `rspack
+# build` e pede 4-6 GiB de pico. Este não builda nada em tempo de imagem --
+# o install acontece no primeiro `up`, contra um volume nomeado.
+FROM node:24.13.0-bookworm-slim
+
+ENV PNPM_HOME=/pnpm \
+    PATH=/pnpm:$PATH \
+    # O default do node em contêiner (~2 GiB) é apertado para o grafo do OHIF.
+    # Fica ABAIXO do mem_limit do compose de propósito: assim o node falha com
+    # "heap out of memory", que é legível, em vez de o cgroup matar o processo.
+    NODE_OPTIONS=--max-old-space-size=2560
+
+# Fixa a versão exigida pelo packageManager do repo. O pnpm do host do DEV1 é
+# 9.15.9 e o repo pede 11.5.2 -- host e contêiner divergindo é como se produz um
+# lockfile que só funciona numa das duas máquinas.
+RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
+
+# git: parte do grafo resolve por git. curl: healthcheck.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+EXPOSE 3000
+CMD ["pnpm", "dev"]

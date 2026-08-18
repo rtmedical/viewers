@@ -1,0 +1,57 @@
+# Perfil DEV -- dev server com HMR, apontando para um dcm4chee que já roda no host.
+# Ver docs/plano-stack-dev-e-rtpy.md, seção 3.
+#
+#   docker compose -f docker-compose.dev.yml build
+#   docker compose -f docker-compose.dev.yml run --rm viewer-dev pnpm install --frozen-lockfile
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# O install roda num comando separado de propósito: se estourar o limite de
+# memória, o erro aparece no terminal em vez de virar um contêiner em restart loop.
+#
+# NÃO cabe no DEV1 sem liberar RAM. Medido em 2026-08-17: 5 GiB totais e ~1 GiB
+# disponível com 22 contêineres no ar. Para o DEV1, use o perfil static.
+
+services:
+  viewer-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: rtv-viewer-dev
+    # Limite explícito. Sem ele o cgroup do contêiner é o cgroup da máquina, e
+    # quando o kernel precisa matar algo ele escolhe entre TODOS os processos do
+    # host -- em 2026-08-14 escolheu o sshd. Com limite, um build que estoura
+    # falha como build falhado, não como máquina inacessível.
+    mem_limit: 3g
+    memswap_limit: 3g
+    cpus: 4.0
+    ports:
+      - '${RTV_DEV_PORT:-3010}:3000'
+    extra_hosts:
+      # O dcm4chee não está nesta rede: ele roda no host.
+      - 'dcm4chee-host:host-gateway'
+    environment:
+      APP_CONFIG: config/docker_compose_dcm4chee.js
+      # Lidos pelo proxy do dev server. Ver seção 3.4 do plano: o prefixo tem de
+      # ser o MESMO no dev server, no nginx e no config de app, senão o sintoma é
+      # uma lista de estudos vazia que parece PACS sem dados.
+      RTV_DICOMWEB_UPSTREAM: 'http://dcm4chee-host:8080/dcm4chee-arc/aets/RTPACS/rs'
+      RTV_WADOURI_UPSTREAM: 'http://dcm4chee-host:8080/dcm4chee-arc/aets/RTPACS/wado'
+    volumes:
+      - .:/workspace:cached
+      # Volume NOMEADO, nunca dentro do bind mount: este repo usa
+      # nodeLinker=hoisted, e resolver esse grafo sobre overlayfs custa minutos
+      # por install e quebra symlink em alguns kernels.
+      - rtv-node-modules:/workspace/node_modules
+      - rtv-pnpm-store:/pnpm
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:3000/']
+      interval: 30s
+      timeout: 5s
+      retries: 20
+      # O primeiro install + compile é longo; sem isto o contêiner é marcado
+      # unhealthy antes de terminar de subir.
+      start_period: 300s
+
+volumes:
+  rtv-node-modules:
+  rtv-pnpm-store:
