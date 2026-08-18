@@ -725,3 +725,61 @@ dois lados do diff, e sem esse aviso o revisor concluiria que ele nunca existiu.
 `missing-rejection-note`.
 
 45 testes.
+
+## Captura de áudio do ditado (`audioCapture.ts`) — RTV-111
+
+Ciclo de vida da gravação, verificação de sinal, destino de armazenamento e retenção. Sem
+`@ohif/*`, sem relógio, sem `throw`. O `MediaRecorder` e o botão ficam na camada de UI; aqui está
+tudo que é fácil errar.
+
+### Uma gravação que não captou nada é idêntica a uma que captou tudo
+
+Este é o modo de falha central, e ele não tem laço de realimentação: o radiologista fala quatro
+minutos, vê o ponto vermelho todo o tempo, e o microfone estava mudo. Descobre-se na transcrição —
+possivelmente dias depois, possivelmente depois de o laudo já ter sido assinado de memória.
+
+Então `audioFinishSession` exige um resumo de sinal observado, e `audioAttachToReport` **recusa**
+anexar uma captura silenciosa sem confirmação explícita de alguém. O piso é de **pico**, não de
+média: a média de um ditado real, com as pausas entre frases, cai até onde fica o ruído da sala.
+
+E `unknown` não é dobrado em `silent`: uma captura cujo nível nunca foi medido não é prova de
+silêncio nem de voz.
+
+### Permissão negada e ausência de dispositivo têm remédios diferentes
+
+Apresentam-se igual — sem áudio — e o conserto é um clique na barra de endereço num caso e um
+headset a conectar no outro. Colapsar os dois em "não foi possível gravar" manda o usuário ao lugar
+errado. São estados e mensagens separados. Um terceiro caso, o microfone **presente e silenciado
+pelo sistema**, é recusado dizendo o que aconteceria: um arquivo com a duração correta e sem voz.
+
+### O ditado que cai no laudo errado
+
+A sessão fixa paciente, estudo e laudo no **início**. Radiologistas trocam de estudo
+constantemente, e um ditado de quatro minutos que termina com outro laudo aberto não pode se anexar
+ao que está em foco — isso é um ditado sobre o paciente A arquivado no laudo do B, e lá ele lê como
+achado real da pessoa errada. A comparação é **campo por campo**, não por id de laudo: um id
+reaproveitado ou um estudo recarregado sob o mesmo id derrotam a checagem de id único.
+
+Essa é a primeira verificação de `audioAttachToReport`, antes de durabilidade e antes dos defeitos,
+porque paciente errado supera qualquer outro problema.
+
+### "Gravado" e "gravado onde"
+
+Web salva no Connect; o desktop cifra local e sincroniza depois. Não é o mesmo fato.
+`local-only` **não é durável**, mesmo sendo o caminho projetado do RTVW: é durável para aquela
+máquina, e o laudo não é. Um laudo assinado com base em áudio que só existe num disco perde a
+evidência no dia em que a estação é reinstalada. `audioIsDurable` é o único predicado que a UI pode
+usar para dizer que o áudio está a salvo.
+
+### Truncamento
+
+Aba suspensa, teto de memória ou troca de dispositivo param um gravador sem erro. A duração gravada
+passa a discordar do span da sessão, e o que falta é o **fim** — que num ditado é a impressão.
+
+### Retenção é decisão, não padrão
+
+A voz de um médico discutindo um paciente nomeado é dado pessoal dos dois. Laudo assinado não
+mantém áudio sem decisão de retenção registrada, porque o padrão que valeria é "guardar para
+sempre, porque ninguém escolheu". `keep` sem prazo é recusado com essa frase.
+
+95 testes.

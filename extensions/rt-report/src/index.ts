@@ -72,3 +72,4 @@ export { id };
 export default rtReportExtension;
 export * from './signOff';
 export * from './versionDiff';
+export * from './audioCapture';
