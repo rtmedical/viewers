@@ -847,3 +847,69 @@ overwrite.
 próxima checagem de conflito não checa nada.
 
 91 testes.
+
+## Copiloto de IA: procedência, portão de aceite, QA e auditoria (`aiCopilot.ts`) — RTV-224
+
+O enunciado do ticket é o requisito: *"a IA deve ser copiloto, não autora final"*. Fácil de concordar
+e difícil de garantir, porque a falha não é o modelo dizer algo errado — modelos dizem coisas erradas
+e o radiologista pega. A falha é **uma frase escrita por máquina virar uma afirmação humana assinada
+sem ninguém ter decidido que deveria**.
+
+### Texto sugerido e texto aceito são substâncias diferentes
+
+Uma sugestão no editor parece exatamente uma frase que o radiologista digitou. Depois de estar no
+documento não há como distinguir, e **a assinatura cobre as duas**. Então a procedência viaja no
+**trecho**, não no documento: `human`, `ai-suggested`, `ai-accepted`, `ai-edited`.
+`aiAssertSignable` recusa qualquer documento com um trecho ainda em `ai-suggested`, e essa recusa é
+o ticket inteiro numa função.
+
+`ai-accepted` e `ai-edited` são estados separados de propósito: ambos são atos humanos, mas
+respondem perguntas diferentes numa auditoria. Aceito significa que alguém leu e concordou; editado
+significa que alguém leu e mudou, que é evidência **mais forte** de atenção — e vale poder contar
+separadamente ao avaliar se o modelo ajuda.
+
+### Silêncio não é consentimento, e nem uma faixa
+
+O portão é **por sugestão**. Um único "revisei as sugestões da IA" não é uma decisão sobre as catorze
+frases que ele cobre — é uma decisão sobre a caixa de seleção. Por isso **não existe aceite em lote
+neste módulo**, e a ausência é decisão de desenho, não lacuna: aceite em lote é exatamente a
+affordance que transforma o copiloto em autor.
+
+### A impressão é a parte que não pode ser gerada sem leitura
+
+Um parágrafo de achados levemente errado é um parágrafo que o leitor confere contra as imagens. Uma
+**impressão** levemente errada é a parte em que o solicitante age, frequentemente sem ler o resto.
+Então a impressão tem regra mais estrita: pode ser rascunhada, mas **impressão gerada e aceita sem
+edição** é uma pendência de QA própria.
+
+### QA que bloqueia, e QA configurada para bloquear
+
+As checagens são pouco interessantes. O que importa é a resolução de severidade: uma checagem que a
+instituição **não configurou** é **bloqueante**. Defaultar para informativa significa que uma
+checagem acrescentada num release não faz nada até alguém ligá-la — e o dia em que ela não faz nada é
+o dia em que era necessária. Relaxar tem de ser ato deliberado, gravado na política.
+
+Tudo falha fechado: lista de perfis vazia concede **nada**, não tudo — uma allow-list vazia lida como
+"todos" é como um recurso chega a um hospital que decidiu contra ele.
+
+### Uma auditoria que responde "qual modelo escreveu esta frase"
+
+Meses depois a pergunta é sobre **uma frase de um laudo**: o que a produziu, de que contexto, qual
+versão, quem aceitou. Um log que registra "IA usada" não responde nada disso, e em particular **não
+sustenta a retirada de uma coorte de laudos** quando uma versão de modelo se mostra sistematicamente
+errada. Daí `modelVersion` não ser opcional, e o registro recusar-se a existir incompleto, listando
+as lacunas por nome.
+
+O contexto é guardado por **referência**. Manter o prompt inline poria identificadores de paciente
+numa tabela de auditoria com regra de retenção diferente da do estudo — uma divulgação criada pelo
+próprio log.
+
+### Aceitação e utilidade são números diferentes
+
+Um modelo cujas sugestões são sempre editadas tem aceitação ruim e **ainda economiza digitação**. Um
+modelo cujas sugestões são sempre aceitas sem alteração pode ser bom — ou pode ser sinal de que
+ninguém está lendo, que é por isso que a QA sinaliza impressão gerada e não editada
+**independentemente** do que essa taxa diga. Ambos quebrados por versão de modelo, que é a unidade
+que muda.
+
+74 testes.

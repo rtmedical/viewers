@@ -74,3 +74,4 @@ export * from './signOff';
 export * from './versionDiff';
 export * from './audioCapture';
 export * from './reportDocument';
+export * from './aiCopilot';
