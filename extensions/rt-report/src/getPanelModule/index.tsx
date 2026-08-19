@@ -13,9 +13,11 @@ import React from 'react';
 import ReportingHubPanel, { type HubPanelQueue } from './ReportingHubPanel';
 import SignOffPanel from './SignOffPanel';
 import AiCopilotPanel from './AiCopilotPanel';
+import VersionDiffPanel from './VersionDiffPanel';
 import type { HubFilterContext } from '../hubQueue';
 import type { SignReportDraft, SignSignature } from '../signOff';
 import type { AiPolicy, AiSegment, AiSuggestion } from '../aiCopilot';
+import type { DiffReportVersion } from '../versionDiff';
 
 interface PanelModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -111,6 +113,40 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
             segments={(props.segments as readonly AiSegment[]) ?? []}
             currentReportVersion={(props.currentReportVersion as number) ?? 1}
             actorId={(props.actorId as string) ?? ''}
+            nowMs={props.nowMs as number}
+            onDecision={props.onDecision as never}
+            servicesManager={servicesManager}
+          />
+        );
+      },
+    },
+    {
+      name: 'versionDiff',
+      iconName: 'tab-linear',
+      iconLabel: 'Versoes',
+      label: 'Comparar versoes',
+      /**
+       * Exige o historico COMPLETO, e nao as duas versoes: o nucleo precisa dele para
+       * detectar versoes saltadas e dizer quais secoes existiram apenas nelas -- que e o
+       * aviso sem o qual o revisor conclui que um adendo nunca existiu.
+       */
+      component: (props: Record<string, unknown>) => {
+        const history = props.history as readonly DiffReportVersion[] | undefined;
+        if (!history || history.length === 0) {
+          return (
+            <p data-testid="diff-no-history">
+              Historico de versoes nao informado. Sem ele nao e possivel comparar nem dizer o
+              que ficou de fora.
+            </p>
+          );
+        }
+        return (
+          <VersionDiffPanel
+            history={history}
+            baseVersionId={(props.baseVersionId as string) ?? ''}
+            targetVersionId={(props.targetVersionId as string) ?? ''}
+            currentVersionId={(props.currentVersionId as string) ?? ''}
+            reviewerId={(props.reviewerId as string) ?? ''}
             nowMs={props.nowMs as number}
             onDecision={props.onDecision as never}
             servicesManager={servicesManager}
