@@ -58,16 +58,43 @@ Compõe extensions existentes num workflow específico (rota). Define `routes`, 
 
 ## NÃO fazer (BLOCKING — reprovado pelo CI)
 
-É **proibido** forkar ou modificar os seguintes pacotes core (em `node_modules/@ohif/*`, via `patch-package`, ou
-copiando seu código para dentro do repo):
+É **proibido** forkar ou modificar os pacotes core. São **quatro** as formas de fazer isso, e a quarta
+esteve fora desta lista até 19/08/2026 — o texto enumerava só as três primeiras, e o gate do CI, que
+espelhava o texto, também:
 
-- `@ohif/core`
-- `@ohif/app`
-- `@ohif/ui` e `@ohif/ui-next`
-- `@ohif/extension-cornerstone`
-- `@ohif/extension-default`
-- `@ohif/extension-cornerstone-dicom-sr`
-- `@ohif/extension-cornerstone-dicom-seg`
+1. editar em `node_modules/@ohif/*`;
+2. aplicar `patch-package` sobre um pacote core;
+3. copiar código core para dentro do repo;
+4. **editar o diretório do pacote neste monorepo** — porque `@ohif/core` *é* `platform/core` aqui, e
+   `platform/core/src/foo.ts` não contém a string `@ohif/core` em nenhum lugar do caminho.
+
+| Pacote | Onde vive neste repo |
+|---|---|
+| `@ohif/core` | `platform/core` |
+| `@ohif/app` | `platform/app` |
+| `@ohif/ui` | `platform/ui` |
+| `@ohif/ui-next` | `platform/ui-next` |
+| `@ohif/extension-cornerstone` | `extensions/cornerstone` |
+| `@ohif/extension-default` | `extensions/default` |
+| `@ohif/extension-cornerstone-dicom-sr` | `extensions/cornerstone-dicom-sr` |
+| `@ohif/extension-cornerstone-dicom-seg` | `extensions/cornerstone-dicom-seg` |
+
+### Pontos de integração permitidos dentro de `platform/app`
+
+Registrar uma extensão tem de acontecer em algum lugar, e não é um fork. Estes dois caminhos são
+exceções explícitas no gate:
+
+- `platform/app/pluginConfig.json` — manifesto das extensões registradas;
+- `platform/app/public/config/**` — configuração de runtime (datasources, hanging protocols).
+
+Qualquer outro arquivo sob os diretórios da tabela reprova.
+
+### Sync de upstream e bump de versão
+
+Esses legitimamente tocam o core. O gate reprova por padrão e a dispensa é explícita:
+`ARCH_GUARD_WAIVE_CORE=1`. Ela é registrada no log nomeando os arquivos, para aparecer na revisão —
+não é uma barreira de segurança, é disciplina. (Os commits de `chore(version)` carregam `[skip ci]`
+e portanto nunca acionam o gate; só o PR de sync precisa da dispensa.)
 
 > Se uma feature **parece** exigir fork do core, **escale antes** (abra discussão / marque o arquiteto na PR).
 > Quase sempre existe um customization point que ainda não conhecemos. Atualizações upstream do OHIF v3 devem
