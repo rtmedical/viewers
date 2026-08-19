@@ -91,8 +91,10 @@ export function diffRecords(before: TreatmentRecord, after: TreatmentRecord): Fi
   const changes: FieldChange[] = [];
   const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]);
   for (const key of keys) {
-    const a = (before as Record<string, unknown>)?.[key];
-    const b = (after as Record<string, unknown>)?.[key];
+    // Via unknown: a leitura aqui e deliberadamente dinamica (percorre chaves), e o cast
+    // direto entre TreatmentRecord e Record<string, unknown> nao tem sobreposicao suficiente.
+    const a = (before as unknown as Record<string, unknown>)?.[key];
+    const b = (after as unknown as Record<string, unknown>)?.[key];
     const same =
       typeof a === 'object' || typeof b === 'object'
         ? JSON.stringify(a) === JSON.stringify(b)

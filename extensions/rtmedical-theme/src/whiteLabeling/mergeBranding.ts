@@ -30,13 +30,13 @@ export function mergeBranding(
     const baseValue = result[key];
     if (isPlainObject(overrideValue) && isPlainObject(baseValue)) {
       result[key] = mergeBranding(
-        baseValue as BrandingConfig,
-        overrideValue as Partial<BrandingConfig>
+        baseValue as unknown as BrandingConfig,
+        overrideValue as unknown as Partial<BrandingConfig>
       );
     } else {
       result[key] = overrideValue;
     }
   }
 
-  return result as BrandingConfig;
+  return result as unknown as BrandingConfig;
 }

@@ -179,11 +179,14 @@ export interface StoneSizeResult {
  * for a stone that will not pass.
  */
 export function stoneSize(input: StoneSizeInput): StoneSizeResult {
-  const candidates: Array<{ value: number; plane: 'axial' | 'coronal' | 'sagittal' }> = [
+  // O literal e anotado ANTES do .filter(): a anotacao em `candidates` nao alcanca o
+  // literal atraves da chamada, e sem ela `plane` infere como `string`.
+  const measured: Array<{ value: number; plane: 'axial' | 'coronal' | 'sagittal' }> = [
     { value: num(input?.axialMaxMm), plane: 'axial' },
     { value: num(input?.coronalMaxMm), plane: 'coronal' },
     { value: num(input?.sagittalMaxMm), plane: 'sagittal' },
-  ].filter(c => Number.isFinite(c.value) && c.value > 0);
+  ];
+  const candidates = measured.filter(c => Number.isFinite(c.value) && c.value > 0);
 
   const warnings: string[] = [];
   if (!candidates.length) {
