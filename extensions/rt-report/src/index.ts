@@ -45,6 +45,8 @@
  * Framework-free and time-injectable; there is no editor here and no backend
  * client. Follows RTV-114 (extension-first, zero fork).
  */
+import getPanelModule from './getPanelModule';
+
 export * from './reportWorkflow';
 export * from './macros';
 export * from './criticalFindings';
@@ -64,15 +66,20 @@ export * from './radsPacks';
 export * from './safetyNet';
 export * from './fhirExport';
 
-const id = '@ohif/extension-rt-report';
-
-const rtReportExtension = { id };
-
-export { id };
-export default rtReportExtension;
 export * from './signOff';
 export * from './versionDiff';
 export * from './audioCapture';
+
+const id = '@ohif/extension-rt-report';
+
+/**
+ * Primeiro painel desta extensao (RTV-222). Opt-in pelo modo, via
+ * '@ohif/extension-rt-report.panelModule.reportingHub'.
+ */
+const rtReportExtension = { id, getPanelModule };
+
+export { id };
+export default rtReportExtension;
 export * from './reportDocument';
 export * from './aiCopilot';
 export * from './workspaceLayout';
