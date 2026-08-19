@@ -11,7 +11,9 @@
  */
 import React from 'react';
 import ReportingHubPanel, { type HubPanelQueue } from './ReportingHubPanel';
+import SignOffPanel from './SignOffPanel';
 import type { HubFilterContext } from '../hubQueue';
+import type { SignReportDraft, SignSignature } from '../signOff';
 
 interface PanelModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -49,6 +51,36 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
           servicesManager={servicesManager}
         />
       ),
+    },
+    {
+      name: 'signOff',
+      iconName: 'tab-linear',
+      iconLabel: 'Assinatura',
+      label: 'Assinatura do laudo',
+      /**
+       * O painel NAO cria a assinatura: ele avalia a prontidao pelo nucleo e delega o ato
+       * a `onSign`. Criar a assinatura exige digesto, signatario e delegacoes, que sao do
+       * hospedeiro -- e manter isso fora daqui e o que deixa o portao testavel sem
+       * infraestrutura de certificado.
+       */
+      component: (props: Record<string, unknown>) => {
+        const draft = props.draft as SignReportDraft | undefined;
+        if (!draft) {
+          // Sem rascunho nao ha o que avaliar, e renderizar "pode assinar" seria uma
+          // afirmacao sobre um laudo que nao chegou.
+          return <p data-testid="sign-no-draft">Nenhum laudo em edicao.</p>;
+        }
+        return (
+          <SignOffPanel
+            draft={draft}
+            signature={props.signature as SignSignature | null | undefined}
+            onSign={props.onSign as never}
+            onFocusSubject={props.onFocusSubject as never}
+            onOpenDistribution={props.onOpenDistribution as never}
+            servicesManager={servicesManager}
+          />
+        );
+      },
     },
   ];
 }
