@@ -12,8 +12,10 @@
 import React from 'react';
 import ReportingHubPanel, { type HubPanelQueue } from './ReportingHubPanel';
 import SignOffPanel from './SignOffPanel';
+import AiCopilotPanel from './AiCopilotPanel';
 import type { HubFilterContext } from '../hubQueue';
 import type { SignReportDraft, SignSignature } from '../signOff';
+import type { AiPolicy, AiSegment, AiSuggestion } from '../aiCopilot';
 
 interface PanelModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -77,6 +79,40 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
             onSign={props.onSign as never}
             onFocusSubject={props.onFocusSubject as never}
             onOpenDistribution={props.onOpenDistribution as never}
+            servicesManager={servicesManager}
+          />
+        );
+      },
+    },
+    {
+      name: 'aiCopilot',
+      iconName: 'tab-linear',
+      iconLabel: 'IA',
+      label: 'Copiloto de IA',
+      /**
+       * A politica e obrigatoria e vem do hospedeiro. Sem ela o painel nao decide se a IA
+       * roda -- e "assumir habilitado" poria sugestoes de maquina na frente de um
+       * radiologista de uma instituicao que decidiu contra (ver RTV-230).
+       */
+      component: (props: Record<string, unknown>) => {
+        const policy = props.policy as AiPolicy | undefined;
+        if (!policy) {
+          return (
+            <p data-testid="ai-no-policy">
+              Politica de IA nao informada. O copiloto nao roda sem ela.
+            </p>
+          );
+        }
+        return (
+          <AiCopilotPanel
+            policy={policy}
+            context={(props.context as { role: string; modality: string }) ?? { role: '', modality: '' }}
+            suggestions={(props.suggestions as readonly AiSuggestion[]) ?? []}
+            segments={(props.segments as readonly AiSegment[]) ?? []}
+            currentReportVersion={(props.currentReportVersion as number) ?? 1}
+            actorId={(props.actorId as string) ?? ''}
+            nowMs={props.nowMs as number}
+            onDecision={props.onDecision as never}
             servicesManager={servicesManager}
           />
         );
