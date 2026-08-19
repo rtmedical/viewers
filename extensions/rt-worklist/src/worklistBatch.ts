@@ -148,10 +148,13 @@ export async function runBatch(
       aborted = true;
     } else {
       const batch = chunks[index];
-      let outcome: ChunkOutcome | void;
+      // `undefined` e nao `void`: TypeScript nao estreita `void` fora de uma uniao com
+      // `??`, e uma funcao declarada `=> void` devolve `undefined` em runtime -- que e o
+      // que o `?? {}` abaixo trata.
+      let outcome: ChunkOutcome | undefined;
       let threw: string | null = null;
       try {
-        outcome = await apply(batch);
+        outcome = (await apply(batch)) as ChunkOutcome | undefined;
       } catch (error) {
         // Named binding on purpose — optional catch binding inside an async function
         // breaks @babel/plugin-transform-regenerator here.
@@ -163,7 +166,10 @@ export async function runBatch(
           failed.push({ id, message: threw });
         }
       } else {
-        const reported = outcome ?? {};
+        // Partial: um chunk que resolve sem nomear ids devolve void, e `outcome ?? {}`
+        // produz um objeto sem as propriedades. Em runtime o `?? []` abaixo trata; o
+        // tipo precisa dizer que os campos podem faltar.
+        const reported: Partial<ChunkOutcome> = outcome ?? {};
         const chunkFailed = (reported.failed ?? []).filter(f => f && f.id);
         const failedIds = chunkFailed.map(f => String(f.id));
         const chunkSucceeded = reported.succeeded

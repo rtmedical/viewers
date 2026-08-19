@@ -62,9 +62,11 @@ export function RtPrintPanel(): React.ReactElement {
         </Button>
       </div>
 
-      {select(paper, PAPERS, setPaper, 'Paper')}
-      {select(orientation, ORIENTATIONS, setOrientation, 'Orientation')}
-      {select(grid, GRIDS, setGrid, 'Grid')}
+      {/* Argumento de tipo explicito: com o setter do useState no lugar de onChange, a
+          inferencia de T fica ambigua e cai para `string`. */}
+      {select<PaperSize>(paper, PAPERS, setPaper, 'Paper')}
+      {select<Orientation>(orientation, ORIENTATIONS, setOrientation, 'Orientation')}
+      {select<GridPreset>(grid, GRIDS, setGrid, 'Grid')}
       <label className="mb-2 flex items-center justify-between gap-2">
         <span className="text-muted-foreground text-xs">Padding (mm)</span>
         <input type="number" className="w-16 rounded bg-black/30 p-1 text-sm" value={paddingMm}
