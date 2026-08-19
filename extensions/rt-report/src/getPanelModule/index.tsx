@@ -14,10 +14,12 @@ import ReportingHubPanel, { type HubPanelQueue } from './ReportingHubPanel';
 import SignOffPanel from './SignOffPanel';
 import AiCopilotPanel from './AiCopilotPanel';
 import VersionDiffPanel from './VersionDiffPanel';
+import DictationRecorderPanel from './DictationRecorderPanel';
 import type { HubFilterContext } from '../hubQueue';
 import type { SignReportDraft, SignSignature } from '../signOff';
 import type { AiPolicy, AiSegment, AiSuggestion } from '../aiCopilot';
 import type { DiffReportVersion } from '../versionDiff';
+import type { AudioBinding, AudioCapture, AudioEnvironment, AudioSignalSummary } from '../audioCapture';
 
 interface PanelModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -149,6 +151,49 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
             reviewerId={(props.reviewerId as string) ?? ''}
             nowMs={props.nowMs as number}
             onDecision={props.onDecision as never}
+            servicesManager={servicesManager}
+          />
+        );
+      },
+    },
+    {
+      name: 'dictationRecorder',
+      iconName: 'tab-linear',
+      iconLabel: 'Ditado',
+      label: 'Gravador de ditado',
+      /**
+       * O MediaRecorder e o AudioContext ficam no hospedeiro. O painel recebe o ambiente
+       * observado e o resumo de sinal AO VIVO, e devolve intencoes -- o que o mantem
+       * testavel sem microfone e o que permite ao indicador mostrar o nivel real em vez do
+       * estado do gravador.
+       *
+       * Sem ambiente o painel nao roda: assumir "pronto para gravar" poria um ponto
+       * vermelho na tela sem nada atras dele, que e a falha exata que este painel existe
+       * para impedir.
+       */
+      component: (props: Record<string, unknown>) => {
+        const environment = props.environment as AudioEnvironment | undefined;
+        const binding = props.binding as AudioBinding | undefined;
+        if (!environment || !binding) {
+          return (
+            <p data-testid="rec-no-context">
+              Ambiente de captura ou laudo em foco nao informados. O gravador nao roda sem
+              os dois.
+            </p>
+          );
+        }
+        return (
+          <DictationRecorderPanel
+            environment={environment}
+            binding={binding}
+            recording={props.recording === true}
+            liveSignal={props.liveSignal as AudioSignalSummary | undefined}
+            capture={props.capture as AudioCapture | null | undefined}
+            nowMs={props.nowMs as number}
+            reportSigned={props.reportSigned === true}
+            onStart={props.onStart as never}
+            onStop={props.onStop as never}
+            onAttach={props.onAttach as never}
             servicesManager={servicesManager}
           />
         );
