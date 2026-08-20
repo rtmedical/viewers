@@ -15,11 +15,13 @@ import SignOffPanel from './SignOffPanel';
 import AiCopilotPanel from './AiCopilotPanel';
 import VersionDiffPanel from './VersionDiffPanel';
 import DictationRecorderPanel from './DictationRecorderPanel';
+import VoiceStructurePanel from './VoiceStructurePanel';
 import type { HubFilterContext } from '../hubQueue';
 import type { SignReportDraft, SignSignature } from '../signOff';
 import type { AiPolicy, AiSegment, AiSuggestion } from '../aiCopilot';
 import type { DiffReportVersion } from '../versionDiff';
 import type { AudioBinding, AudioCapture, AudioEnvironment, AudioSignalSummary } from '../audioCapture';
+import { VOICE_MODE_DICTATION, type VoiceChipKind, type VoiceMode } from '../voiceStructure';
 
 interface PanelModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -194,6 +196,56 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
             onStart={props.onStart as never}
             onStop={props.onStop as never}
             onAttach={props.onAttach as never}
+            servicesManager={servicesManager}
+          />
+        );
+      },
+    },
+    {
+      name: 'voiceStructure',
+      iconName: 'tab-linear',
+      iconLabel: 'Voz',
+      label: 'Fala para estrutura',
+      /**
+       * O reconhecedor de fala fica no hospedeiro. O painel recebe a transcricao e o modo, e
+       * devolve intencoes -- o que o mantem testavel sem microfone.
+       *
+       * Sem `actorId` o painel nao monta: toda acao daqui grava quem confirmou uma entidade
+       * estruturada ou decidiu o destino de uma transcricao, e um formulario completo cujo
+       * unico desfecho possivel e recusa por falta de responsavel e pior que dizer isso.
+       *
+       * Fala vazia NAO impede a montagem: e o estado normal antes de alguem falar, e o nucleo
+       * a recusa com a razao na tela.
+       */
+      component: (props: Record<string, unknown>) => {
+        const actorId = props.actorId as string | undefined;
+        if (!actorId) {
+          return (
+            <p data-testid="voice-no-actor">
+              Responsavel nao identificado. Confirmar uma entidade estruturada ou decidir o
+              destino da transcricao exige quem responde por isso.
+            </p>
+          );
+        }
+        return (
+          <VoiceStructurePanel
+            utterance={(props.utterance as string) ?? ''}
+            /*
+             * Ditado como padrao, e nao comando: em ditado nada executa, entao um hospedeiro
+             * que esqueceu de informar o modo perde uma conveniencia. O padrao inverso
+             * assinaria um laudo porque alguem descreveu um termo de consentimento.
+             */
+            mode={(props.mode as VoiceMode) ?? VOICE_MODE_DICTATION}
+            fieldIdAtStart={props.fieldIdAtStart as string | undefined}
+            fieldIdNow={props.fieldIdNow as string | undefined}
+            cdeBindings={props.cdeBindings as Partial<Record<VoiceChipKind, string>> | undefined}
+            actorId={actorId}
+            nowMs={props.nowMs as number}
+            onModeChange={props.onModeChange as never}
+            onInsertText={props.onInsertText as never}
+            onRunCommand={props.onRunCommand as never}
+            onCommitChip={props.onCommitChip as never}
+            onDecideRetention={props.onDecideRetention as never}
             servicesManager={servicesManager}
           />
         );

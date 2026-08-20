@@ -1038,6 +1038,52 @@ precisa de prazo e motivo; e mandar para um reconhecedor em nuvem precisa do pro
 
 87 testes.
 
+### O painel (`getPanelModule/VoiceStructurePanel.tsx`)
+
+O núcleo decide; o painel é onde a decisão pode ser desfeita. Quatro regras, cada uma fechando
+uma rota:
+
+**Nenhum chip se comita sozinho.** Um chip que aparece e "some" para dentro do campo estruturado
+depois de um instante parece fluido e é a pior coisa que este painel poderia fazer. Não há
+temporizador, não há "confirmar todos", e um teste varre os controles exigindo que cada botão de
+confirmar carregue `data-single-chip`.
+
+**O campo de correção aparece exatamente onde o núcleo recusaria.** A condição não é reescrita na
+UI: o painel chama `voiceCommitChip` com o chip e pergunta. O teste percorre sete falas e todos os
+chips de cada uma, exigindo que *"ofereceu correção"* e *"o núcleo recusa sem correção"* sejam o
+**mesmo conjunto** — é o que impede a regra de divergir numa mudança futura.
+
+**O rótulo do valor sai dos mapas do núcleo.** `chip.value` de polaridade é `present` e de
+lateralidade é `right`: valores de máquina. Duas telas traduzindo `unknown` por conta própria viram
+"desconhecido" numa e "ausente" na outra, e a segunda é uma afirmação clínica. Por isso
+`VOICE_POLARITY_LABELS` e `VOICE_LATERALITY_LABELS`, com teste de igualdade exata em cinco falas.
+
+**🚨 A confirmação de comando destrutivo fica presa à fala.** A primeira versão guardava um
+booleano: confirmar *"apagar achado"*, não executar, e em seguida dizer *"assinar laudo"* encontrava
+a confirmação ainda de pé — um laudo assinado com a confirmação dada para apagar um achado. Agora o
+estado guarda **qual fala** foi confirmada e só vale para ela, e vale **uma vez**. Prender ao texto
+é mais estrito que prender ao comando: falas diferentes podem cair no mesmo comando, mas a mesma
+fala nunca cai em comandos diferentes.
+
+Duas coisas que o painel deliberadamente **não** faz. Não usa `voiceDescribeChip` como
+`aria-label`: ela devolve `laterality - right - confianca baixa`, linha de log, e daria ao leitor de
+tela o valor de máquina enquanto a tela mostra "direito" — o texto visível e o texto acessível são o
+mesmo. E não imprime `interpretation.value.message` no ditado: a frase do núcleo está no passado
+("texto ditado inserido em achados") porque descreve um resultado, e ali nada foi inserido ainda — o
+campo vem do núcleo, a conjugação é da tela.
+
+O modo vem do hospedeiro, com padrão **ditado**: em ditado nada executa, então um hospedeiro que
+esqueceu de informar o modo perde uma conveniência; o padrão inverso assinaria um laudo porque
+alguém descreveu um termo de consentimento. Sem `actorId` o painel não monta — um formulário
+completo cujo único desfecho possível é recusa por falta de responsável é pior que dizer isso.
+
+A retenção da transcrição fica aqui, e não em outro painel, porque é a transcrição desta tela: sem
+destino pré-selecionado (o padrão "manter" seria a instalação decidindo guardar a gravação de um
+médico discutindo um paciente nomeado porque ninguém mexeu no campo), prazo só onde "manter" foi
+escolhido, provedor exigido quando a transcrição sai da instituição.
+
+51 testes de painel.
+
 ## Laudo inline no painel direito (`inlineReporting.ts`) — RTV-121
 
 Este ticket reusa a extensão de laudo num container menor, e **todo o risco de um reuso assim é que
