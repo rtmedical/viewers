@@ -118,6 +118,54 @@ carrega a identidade que o destinatário se autentica para ver; a mensagem não 
 O relatório de gestão mantém linha para achado **nunca enviado**: relatório que só lista
 notificações bem-sucedidas é relatório que esconde as falhas.
 
+### O painel (`getPanelModule/CriticalFindingsPanel.tsx`)
+
+**🚨 O painel não grava `sent` por um envio que ainda não aconteceu.** Esta distinção
+estruturou o componente, e a primeira versão dele errava. Chamar `dispatch` no clique escreve
+`sentAt` e inicia o relógio; para **telefone** isso está certo, porque a ligação já aconteceu e o
+que se faz é registrá-la. Para **WhatsApp e e-mail**, não: no clique o transporte ainda não rodou,
+e gravar `sent` ali produz exatamente a falha que o núcleo descreve — o radiologista acreditando
+que comunicou. Então há dois caminhos: telefone chama `dispatch` (que exige a atestação); canal de
+máquina entrega intenção e mensagem ao hospedeiro por `onRequestSend` e **não escreve nada**, com o
+achado seguindo em `pendingDispatch`, sob o bloqueio, até o hospedeiro registrar o resultado real.
+O rótulo do botão diz qual dos dois é — *"Registrar a ligação feita"* contra *"Solicitar envio ao
+sistema"*.
+
+**🚨 O relógio não pode ser capturado.** `escalationState` é derivado de `now` a cada chamada, e o
+núcleo explica por quê: flag guardada vale o que vale o timer que a escreve. Se o painel
+congelasse `now` na montagem, reproduziria a mesma falha uma camada acima — o crachá ficaria em
+"aguardando" para sempre. Isto é o **oposto** da regra do painel da fila de laudos, que congela
+`now` de propósito; lá o risco é reordenar linhas sob o cursor, aqui é um cronômetro parado. Há
+teste que avança `nowMs` sem remontar e exige `awaiting` → `callNow` → `supervisor`.
+
+**O radiologista não confirma o recebimento.** `acknowledge` é o ato do **destinatário**. Um botão
+no painel de quem enviou produziria a prova de que alguém foi avisado a partir do clique de quem
+avisou — e o caso em que esse registro importa é justamente o caso em que se está estabelecendo o
+que se sabia, quando, e quem foi informado. O controle não existe aqui, e um teste varre botões e
+inputs. A atestação de telefone não substitui: é declaração do remetente, não confirmação do
+destinatário.
+
+**A descrição não se edita, se complementa.** Nenhum campo é ligado a `description`; há campo de
+complemento, e um teste percorre todos os `input`/`textarea` exigindo que nenhum carregue o texto
+original como valor. Depois do complemento, a descrição original continua na tela e o log aparece
+inteiro, na ordem em que cresceu.
+
+**O não comunicado não se dispensa.** O bloqueio some quando o envio acontece, nunca por clique:
+não há "depois", "dispensar" nem "entendi", e um teste varre os controles por essa afordância. Um
+envio que **falhou** mantém o bloqueio e deixa o evento `sendFailed` na lista.
+
+**O nome do paciente não vai por padrão**, a decisão é por mensagem, e a prévia do texto aparece
+antes do envio — quem envia lê exatamente o que sai da instituição, e um teste compara o texto
+entregue ao hospedeiro com o nó renderizado na prévia. Quando a instituição não permite, o controle
+não é nem oferecido.
+
+**O limite de 200 caracteres não trunca em silêncio.** Sem `maxLength` no campo: o atributo faria a
+digitação simplesmente parar no 201º caractere, e um resumo clínico cortado no meio de uma palavra
+pode não ser notado por quem digitou. O contador mostra o excesso e o núcleo recusa com a razão
+dele. Há teste exigindo que o atributo esteja ausente.
+
+43 testes de painel.
+
 ## Revisão por pares (RTV-108)
 
 O ticket é explícito: **A escreve, B revisa, *depois* assina.** Então `awaitingReview` fica
