@@ -58,15 +58,23 @@ Compõe extensions existentes num workflow específico (rota). Define `routes`, 
 
 ## NÃO fazer (BLOCKING — reprovado pelo CI)
 
-É **proibido** forkar ou modificar os pacotes core. São **quatro** as formas de fazer isso, e a quarta
-esteve fora desta lista até 19/08/2026 — o texto enumerava só as três primeiras, e o gate do CI, que
-espelhava o texto, também:
+É **proibido** forkar ou modificar código do upstream. São **cinco** as formas de fazer isso. As três
+primeiras eram as únicas listadas até 19/08/2026 — e o gate do CI, que espelhava o texto, também só
+cobria essas — e a quinta entrou em 20/08/2026:
 
 1. editar em `node_modules/@ohif/*`;
 2. aplicar `patch-package` sobre um pacote core;
 3. copiar código core para dentro do repo;
 4. **editar o diretório do pacote neste monorepo** — porque `@ohif/core` *é* `platform/core` aqui, e
-   `platform/core/src/foo.ts` não contém a string `@ohif/core` em nenhum lugar do caminho.
+   `platform/core/src/foo.ts` não contém a string `@ohif/core` em nenhum lugar do caminho;
+5. **editar um mode do upstream** — `modes/basic` e os outros oito `@ohif/mode-*` são código upstream,
+   e a seção 3 acima manda **estender** o `basic` num pacote `@rt/mode-<workflow>`. Editar o do
+   upstream faz o próximo sync conflitar, que é exatamente o que esta decisão existe para evitar.
+
+A lista de modes protegidos é **derivada** do campo `name` de cada `modes/*/package.json`, não fixada
+no gate: os nossos são `@rt/mode-*`, os do upstream são `@ohif/mode-*`. Um mode novo que o upstream
+traga já nasce protegido, e um `@rt/mode-*` novo nasce livre, sem depender de alguém lembrar de editar
+o script.
 
 | Pacote | Onde vive neste repo |
 |---|---|
@@ -150,8 +158,18 @@ Todo pacote `@rt/extension-*` e `@rt/mode-*` **deve** ter um `README.md` documen
 - Executa `.github/scripts/check-no-core-fork.sh` (também rodável localmente), que **falha** se a PR:
   - adiciona/altera arquivos dentro de qualquer `node_modules/@ohif/*`;
   - adiciona/altera patches `patch-package` (`patches/@ohif+*.patch`) que toquem pacotes core;
-  - copia código-fonte de pacote core proibido para dentro do repo.
+  - copia código-fonte de pacote core proibido para dentro do repo;
+  - altera o **diretório** de um pacote core (tabela acima), fora dos pontos de integração;
+  - altera o diretório de um **mode do upstream** (`@ohif/mode-*`).
+- Esta lista tem de espelhar a seção "NÃO fazer" item por item. As duas já divergiram duas vezes — em
+  19/08 e em 20/08/2026 — e nas duas o resultado foi o mesmo: a política proibia e a verificação dava
+  ✅. Ao acrescentar um mecanismo lá, acrescente aqui e no script, no mesmo commit.
 - O `pull_request_template.md` inclui um checkbox de conformidade arquitetural obrigatório.
+
+> **Estado do CI (20/08/2026):** o GitHub Actions da organização não executa desde 07/08/2026 — 60
+> runs enfileirados com 0 steps (RTV-232, precisa de `admin:org` para diagnosticar cota/billing).
+> Enquanto isso, este gate só roda quando alguém o executa localmente:
+> `bash .github/scripts/check-no-core-fork.sh`. Um gate que ninguém executa não é um gate.
 
 ## Referências
 
