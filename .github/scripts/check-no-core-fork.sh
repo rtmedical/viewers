@@ -11,8 +11,20 @@
 #   - patches/@ohif+<core>*.patch          (patch-package em pacote core)
 #   - extensions|modes/**/@ohif/<core>/... (cópia de código core para dentro do repo)
 #   - o DIRETÓRIO do pacote core neste monorepo (ver CORE_PATHS abaixo)
+#   - o diretório de um MODE upstream (derivado em tempo de execução, ver abaixo)
 #
-# A última regra é uma correção de 19/08/2026. As três primeiras casam o literal
+# A regra dos modes é uma correção de 20/08/2026, encontrada ao fiar um painel num
+# mode (RTV-233). O ARCH.md manda ESTENDER o mode `basic` em vez de redeclarar, e
+# `modes/basic` é código upstream -- mas nenhuma das regras acima casa com
+# `modes/basic/src/index.tsx`, então editá-lo passava com ✅. Mesma classe de buraco
+# que a correção de 19/08: a política proibia, a verificação não detectava.
+#
+# A lista de modes upstream é DERIVADA do "name" de cada modes/*/package.json em vez
+# de fixada: nossos modes são @rt/mode-*, os do upstream são @ohif/mode-*. Assim um
+# mode novo que o upstream traga já nasce protegido, e um @rt/mode-* novo nasce livre,
+# sem ninguém precisar lembrar de editar este arquivo.
+#
+# A última regra de CORE_PATHS é uma correção de 19/08/2026. As três primeiras casam o literal
 # "@ohif/<core>" no caminho, e nenhuma delas casa com `platform/core/src/foo.ts` --
 # que é onde @ohif/core REALMENTE mora neste monorepo. O guard dava ✅ para uma
 # edição direta na lógica do core, que é justamente a forma fácil de violar o
@@ -55,6 +67,31 @@ CORE_PATH_ALLOW=(
   "platform/app/public/config/"
 )
 
+# Modes que pertencem ao upstream, derivados do "name" do package.json de cada um.
+# Fallback conservador: diretório sem package.json legível e sem o prefixo do projeto
+# conta como upstream -- inclusive quando a mudança é a REMOÇÃO do mode, que também é
+# uma divergência do upstream.
+UPSTREAM_MODE_DIRS=()
+for mode_dir in modes/*/; do
+  mode_dir="${mode_dir%/}"
+  [[ -d "${mode_dir}" ]] || continue
+  mode_name=""
+  if [[ -r "${mode_dir}/package.json" ]]; then
+    mode_name=$(grep -m1 '"name"' "${mode_dir}/package.json" \
+      | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  fi
+  case "${mode_name}" in
+    @rt/*) ;;
+    @ohif/*) UPSTREAM_MODE_DIRS+=("${mode_dir}") ;;
+    *)
+      case "${mode_dir}" in
+        modes/rtmedical-*) ;;
+        *) UPSTREAM_MODE_DIRS+=("${mode_dir}") ;;
+      esac
+      ;;
+  esac
+done
+
 # Resolve a base de comparação.
 BASE="${1:-}"
 if [[ -z "${BASE}" ]]; then
@@ -96,6 +133,7 @@ is_allowed_core_path() {
 # Padrões proibidos.
 VIOLATIONS=""
 CORE_EDITS=""
+UPSTREAM_MODE_EDITS=""
 while IFS= read -r f; do
   [[ -z "${f}" ]] && continue
   if [[ "${f}" =~ ^node_modules/@ohif/(${ALT})(/|$) ]] \
@@ -110,7 +148,13 @@ while IFS= read -r f; do
       if ! is_allowed_core_path "${f}"; then
         CORE_EDITS+="  - ${f}"$'\n'
       fi
-      break
+      continue 2
+    fi
+  done
+  for dir in "${UPSTREAM_MODE_DIRS[@]}"; do
+    if [[ "${f}" == "${dir}/"* ]]; then
+      UPSTREAM_MODE_EDITS+="  - ${f}"$'\n'
+      continue 2
     fi
   done
 done <<< "${CHANGED}"
@@ -151,5 +195,28 @@ if [[ -n "${CORE_EDITS}" ]]; then
   exit 1
 fi
 
-echo "✅ RTV-114 OK — nenhuma modificação em pacote core do OHIF."
+if [[ -n "${UPSTREAM_MODE_EDITS}" ]]; then
+  if [[ "${ARCH_GUARD_WAIVE_CORE:-}" == "1" ]]; then
+    echo ""
+    echo "⚠️  RTV-114 DISPENSADO por ARCH_GUARD_WAIVE_CORE=1 — mode upstream alterado:"
+    echo "${UPSTREAM_MODE_EDITS}"
+    echo "Motivo esperado: sync de upstream. Confira na revisão."
+    exit 0
+  fi
+  echo ""
+  echo "❌ RTV-114 VIOLADO — esta PR altera um mode do upstream:"
+  echo "${UPSTREAM_MODE_EDITS}"
+  echo "Política (ARCH.md): ESTENDA o mode basic num pacote @rt/mode-<workflow> em vez"
+  echo "de editar o do upstream. Editar aqui faz o próximo sync conflitar."
+  echo ""
+  echo "Modes deste projeto, onde a mudança provavelmente deveria estar:"
+  for dir in modes/rtmedical-*/; do
+    [[ -d "${dir}" ]] && echo "  - ${dir%/}"
+  done
+  echo ""
+  echo "Se é sync de upstream, rode com ARCH_GUARD_WAIVE_CORE=1."
+  exit 1
+fi
+
+echo "✅ RTV-114 OK — nenhum pacote core nem mode upstream do OHIF modificado."
 exit 0
