@@ -16,12 +16,14 @@ import AiCopilotPanel from './AiCopilotPanel';
 import VersionDiffPanel from './VersionDiffPanel';
 import DictationRecorderPanel from './DictationRecorderPanel';
 import VoiceStructurePanel from './VoiceStructurePanel';
+import CriticalFindingsPanel from './CriticalFindingsPanel';
 import type { HubFilterContext } from '../hubQueue';
 import type { SignReportDraft, SignSignature } from '../signOff';
 import type { AiPolicy, AiSegment, AiSuggestion } from '../aiCopilot';
 import type { DiffReportVersion } from '../versionDiff';
 import type { AudioBinding, AudioCapture, AudioEnvironment, AudioSignalSummary } from '../audioCapture';
 import { VOICE_MODE_DICTATION, type VoiceChipKind, type VoiceMode } from '../voiceStructure';
+import type { CriticalFinding, Recipient } from '../criticalFindings';
 
 interface PanelModuleParams {
   servicesManager: { services: Record<string, any> };
@@ -246,6 +248,56 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
             onRunCommand={props.onRunCommand as never}
             onCommitChip={props.onCommitChip as never}
             onDecideRetention={props.onDecideRetention as never}
+            servicesManager={servicesManager}
+          />
+        );
+      },
+    },
+    {
+      name: 'criticalFindings',
+      iconName: 'tab-linear',
+      iconLabel: 'Critico',
+      label: 'Achados criticos',
+      /**
+       * Sem radiologista identificado ou sem estudo o painel nao monta: os dois entram no
+       * registro append-only de quem comunicou o que, e e esse registro que alguem vai ler
+       * quando estiver estabelecendo o que se sabia e quem foi informado.
+       *
+       * `nowMs` e obrigatorio e o hospedeiro deve atualiza-lo: a escalacao e derivada do relogio
+       * a cada render, de proposito -- um valor congelado aqui faria o cracha parar de cobrar,
+       * que e exatamente a falha que o nucleo evitou nao guardando flag.
+       */
+      component: (props: Record<string, unknown>) => {
+        const radiologist = props.radiologist as Recipient | undefined;
+        const studyInstanceUid = props.studyInstanceUid as string | undefined;
+        if (!radiologist || !radiologist.id || !studyInstanceUid) {
+          return (
+            <p data-testid="cf-no-context">
+              Radiologista responsavel ou estudo nao informados. A comunicacao de achado
+              critico e um registro de quem avisou quem, e nao pode ser aberta sem os dois.
+            </p>
+          );
+        }
+        return (
+          <CriticalFindingsPanel
+            findings={(props.findings as readonly CriticalFinding[]) ?? []}
+            studyInstanceUid={studyInstanceUid}
+            patientId={props.patientId as string | undefined}
+            patientName={props.patientName as string | undefined}
+            radiologist={radiologist}
+            recipients={(props.recipients as readonly Recipient[]) ?? []}
+            studyLink={(props.studyLink as string) ?? ''}
+            newFindingId={props.newFindingId as string | undefined}
+            /*
+             * Padrao false: por omissao o nome do paciente NAO vai num canal de terceiros. A
+             * instituicao que decidir o contrario tem de dizer isso explicitamente.
+             */
+            allowPatientNameInMessage={props.allowPatientNameInMessage === true}
+            nowMs={props.nowMs as number}
+            onCreate={props.onCreate as never}
+            onDispatch={props.onDispatch as never}
+            onRequestSend={props.onRequestSend as never}
+            onAmend={props.onAmend as never}
             servicesManager={servicesManager}
           />
         );
