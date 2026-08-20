@@ -54,6 +54,8 @@ export const rtmedical = {
   // RTV-173: per-record Treatment Details + DICOM-derivable Dose Corrections.
   treatmentDetails: '@ohif/extension-rt-record.panelModule.treatmentDetails',
   doseCorrection: '@ohif/extension-rt-record.panelModule.doseCorrection',
+  // RTV-172/233: metadados de aquisicao da imagem de setup e troca para Revisao Offline.
+  imageDetails: '@ohif/extension-rt-timeline.panelModule.imageDetails',
 };
 
 export const extensionDependencies = {
@@ -69,6 +71,7 @@ export const extensionDependencies = {
   '@ohif/extension-rt-fusion-timeline': '^3.0.0',
   '@ohif/extension-rt-print': '^3.0.0',
   '@ohif/extension-rt-record': '^3.0.0',
+  '@ohif/extension-rt-timeline': '^3.0.0',
   // RTV-32: density line-profile tool + panel.
   '@ohif/extension-measurements': '^3.0.0',
   // RTV-146 (Wave 3a): RTSTRUCT-in-MPR command (contour→labelmap).
@@ -131,6 +134,7 @@ export const radiotherapyLayout = {
       // dose-analysis panels (manual RIS dose corrections land with RTV-169).
       rtmedical.treatmentDetails,
       rtmedical.doseCorrection,
+      rtmedical.imageDetails,
       rtmedical.fusionTimeline,
       rtmedical.keyImages,
       cornerstone.measurements,

@@ -5,6 +5,7 @@
 import React from 'react';
 import CourseTimelinePanel from './CourseTimelinePanel';
 import ImageDetailsPanel from './ImageDetailsPanel';
+import ImageDetailsContainer from './ImageDetailsContainer';
 import type { ImgImagingEvent, ImgTreatmentSession, ImgListFilter } from '../imageDetails';
 
 interface PanelModuleParams {
@@ -38,10 +39,25 @@ function getPanelModule({ servicesManager }: PanelModuleParams) {
       component: (props: Record<string, unknown>) => {
         const events = props.events as readonly ImgImagingEvent[] | undefined;
         if (!events) {
+          /*
+           * Sem eventos injetados o container os resolve dos servicos (RTV-233). Antes deste
+           * caminho o painel so dizia "nao informados" e nao havia como chegar a ele por um
+           * modo -- ele estava mesclado, testado e inalcancavel.
+           *
+           * Quem injeta `events` continua mandando: um modo que os resolva de outra fonte nao
+           * precisa competir com o container.
+           */
           return (
-            <p data-testid="img-no-events">
-              Eventos de imagem nao informados. Isto nao e o mesmo que um curso sem imagens.
-            </p>
+            <ImageDetailsContainer
+              servicesManager={servicesManager}
+              sessions={props.sessions as never}
+              filter={props.filter as ImgListFilter | undefined}
+              sessionToleranceMs={props.sessionToleranceMs as number | undefined}
+              unsavedReview={props.unsavedReview}
+              acknowledgedInferredSession={props.acknowledgedInferredSession === true}
+              courseId={props.courseId as string | undefined}
+              onSwitchToOfflineReview={props.onSwitchToOfflineReview as never}
+            />
           );
         }
         return (

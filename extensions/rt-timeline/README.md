@@ -239,3 +239,73 @@ Revisão pendente não é recusa nem descarte silencioso: volta como status pró
 fração com erro de setup desaparece numa troca de tela.
 
 99 testes.
+
+### De onde vêm os números (`imageDetailsSource.ts`) — RTV-233
+
+O núcleo decide o que uma linha significa; este módulo decide de onde cada número vem. É a peça
+que faltava entre um painel testado e um painel que alguém abre: os painéis deste repositório não
+buscam dado de propósito, e a consequência é que sem adaptador eles não tinham rota até um modo.
+Puro e sem framework — recebe display sets tipados por pato (`{ Modality, instances: [tags DICOM
+naturalizadas] }`) e devolve eventos; a assinatura de serviço fica no `getPanelModule`.
+
+**O que deliberadamente NÃO é mapeado.** Campo ausente faz o núcleo dizer `Nao informado`, que é
+verdade. Campo preenchido por aproximação faz ele dizer um número, que é mentira — e a capacidade
+de distinguir os dois é o motivo do núcleo existir. Então: `fractionNumber` fica de fora porque
+RT Image referencia um *grupo* de frações (`ReferencedFractionGroupNumber`), que não é a fração
+entregue, e confundir os dois imprimiria "Fração 1" ao lado de uma imagem do vigésimo dia;
+`sessionRef` fica de fora porque nenhum atributo DICOM o carrega, e a inferência por horário já
+existe no núcleo *rotulada* como `inferred-by-time`; `ssd` fica de fora porque
+`SourceToSurfaceDistance` em RT Beams é a geometria do feixe de tratamento, não da imagem —
+geometria diferente, número parecido; `imagingDose` fica de fora porque não há atributo padrão e
+os privados vêm em unidade de fabricante.
+
+**Unidade é declarada, nunca adivinhada.** Cada quantidade sai como `{ value, unit }` com a unidade
+que o padrão fixa para aquele atributo. `KVP` é kV porque a norma diz, e isso é um tipo de
+conhecimento diferente de "80 parece kV". Dois atributos são convertidos, ambos exatos:
+`ExposureInuAs` e `XRayTubeCurrentInuA` são em microampere, o núcleo não modela microampere, e
+dividir por mil não arredonda. Deixá-los sem ler imprimiria `Nao informado` para uma exposição que
+o objeto declarou — afirmação falsa de ausência, pior que uma conversão sem perda.
+
+**🚨 RTIMAGE é classificado pelo que o objeto declara.** `Modality` é `RTIMAGE` tanto para imagem
+de setup em kV quanto para portal em MV, e as linhas de cada um são linhas diferentes. A decisão
+sai dos parâmetros declarados: `KVP` presente significa que um tubo disparou, `NominalBeamEnergy`
+sem `KVP` significa que o feixe de tratamento disparou. Nunca da descrição da série — há teste com
+`SeriesDescription: 'kV setup AP'` exigindo que ela seja ignorada. Sem nenhum dos dois o módulo
+devolve `RTIMAGE`, que o núcleo não reconhece, e o painel recusa a tabela inteira com a razão. É o
+desfecho pretendido: um RT Image não classificado ganharia linhas de kV lendo `Nao informado` para
+parâmetros que nunca existiram para ele, e isso se lê como dado faltando, não como dado
+inaplicável.
+
+**Os dígitos do horário são preservados, o fuso não é inventado.** Data e hora DICOM são locais ao
+equipamento a menos que `TimezoneOffsetFromUTC` esteja lá, e em geral não está. Como
+`imgFormatEpochUtc` imprime em UTC, este módulo codifica os dígitos da aquisição *como* UTC: o
+painel devolve o mesmo relógio de parede que o console mostrou, e dois eventos do mesmo
+equipamento seguem comparáveis, que é do que `imgResolveSession` precisa. A limitação é real e
+delimitada — comparar aquisições de fusos diferentes erra pela diferença de offset. Usar o fuso
+local de quem olha corromperia os dígitos de *toda* imagem, que é o pior dos dois. Data que não
+existe é recusada, não rolada: `20260231` não vira 3 de março.
+
+**🚨 O emparelhamento da prévia não é fabricado.** Copiar o UID dos metadados para a referência de
+prévia faria a checagem de `imgVerifyPreviewPairing` passar por construção e removeria a única
+proteção contra prévia de cache desenhada ao lado dos números de uma aquisição mais nova. Então o
+UID da prévia tem de vir do que está na tela — e os serviços disponíveis não dão isso de forma
+confiável: `cornerstoneViewportService` emite `viewportDataChanged` e `viewportVolumesChanged` e
+**nada** para imagem nova dentro de uma pilha. Ler o `imageId` corrente daria resposta que envelhece
+numa rolagem sem evento para reagir, e um UID velho que ainda casa é o emparelhamento fabricado
+outra vez, com passos extras.
+
+Por isso a afirmação só é feita onde rolar não pode invalidá-la: um display set com **exatamente
+uma** instância renderiza aquela instância, e não há para onde rolar. Imagens de setup e portal são
+objetos de instância única, que é o caso deste painel. Para pilha de CT ou CBCT o módulo devolve
+indefinido e o painel reporta a prévia como não emparelhada — que é a verdade: com estes eventos, o
+emparelhamento não pode ser provado.
+
+O container (`getPanelModule/ImageDetailsContainer.tsx`) separa mais uma coisa que costuma ser
+achatada: **serviço ausente não é estudo sem imagem**. Sem `displaySetService` não sabemos nada e o
+texto diz isso; com o serviço e nenhuma série de imagem, é fato verificado sobre o estudo. Quem
+injeta `events` continua mandando, então um modo que resolva de outra fonte não compete com o
+container.
+
+O painel está no `rightPanels` do modo `rtmedical-radiotherapy`.
+
+57 testes do adaptador, 16 do container.
