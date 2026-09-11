@@ -25,7 +25,6 @@ import {
   onModeEnter as basicOnModeEnter,
   onModeExit as basicOnModeExit,
   sopClassHandlers as basicSopClassHandlers,
-  toolbarButtons as basicToolbarButtons,
   modeFactory,
 } from '@ohif/mode-basic';
 
@@ -473,10 +472,26 @@ export const modeInstance = {
   hide: false,
   routes: [radiologyRoute],
   toolbarSections: radiologyToolbarSections,
-  // RTV-203: basic buttons + the Secondary Capture pair (registered by the
-  // inherited basicOnModeEnter via toolbarService.register).
-  // RTV-15/19: + the slab projection (MIP/MinIP/AvgIP) and Slab +/− buttons.
-  toolbarButtons: [...basicToolbarButtons, ...scToolbarButtons, ...mipSlabToolbarButtons],
+  /*
+   * RTV-203: basic buttons + the Secondary Capture pair (registered by the
+   * inherited basicOnModeEnter via toolbarService.register).
+   * RTV-15/19: + the slab projection (MIP/MinIP/AvgIP) and Slab +/− buttons.
+   *
+   * RTV-234 — a primeira entrada e o marcador de composicao do basic, nao um array de
+   * botoes. Isto aqui era `...basicToolbarButtons`, um named import que o @ohif/mode-basic
+   * NUNCA exportou: resolvia para undefined e `[...undefined]` derrubava o modulo inteiro na
+   * carga. `toolbarButtons` deixou de ser lista plana quando o upstream passou a composicao
+   * para o CustomizationService -- hoje e uma lista de `{ $reference }` que o servico expande
+   * na leitura, achatando os pacotes e deixando os literais passarem na ordem.
+   *
+   * Herdamos a lista do basic em vez de escrever `{ $reference: 'cornerstone.toolbarButtons' }`
+   * a mao: se o upstream trocar quais pacotes o basic usa, vem de graca.
+   */
+  toolbarButtons: [
+    ...basicModeInstance.toolbarButtons,
+    ...scToolbarButtons,
+    ...mipSlabToolbarButtons,
+  ],
   // Overrides basic's implicit list so the CAD SR handler runs (see the
   // sopClassHandlers export above).
   sopClassHandlers,
