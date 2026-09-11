@@ -37,7 +37,7 @@
  * no console, nao ha teste vermelho -- so uma cor errada que ninguem consegue explicar. Por isso
  * a guarda compara FORMATO, e nao so presenca.
  */
-import { CARBON_G100_TOKENS, CARBON_G80_TOKENS } from './carbonTheme';
+import { CARBON_G100_TOKENS, CARBON_G80_TOKENS, resolveCarbonTheme } from './carbonTheme';
 import fs from 'fs';
 import path from 'path';
 
@@ -149,5 +149,54 @@ describe('tema Carbon: cobertura dos tokens do ui-next (RTV-235)', () => {
     for (const token of ['--primary', '--ring', '--foreground', '--radius', '--destructive']) {
       expect(CARBON_G80_TOKENS[token]).toBe(CARBON_G100_TOKENS[token]);
     }
+  });
+});
+
+/**
+ * O tema e SEMPRE escuro, e o `g80` guarda a rampa do g90 do Carbon apesar do nome.
+ *
+ * Duas decisoes de produto que ate agora viviam so em comentario. Comentario nao impede
+ * ninguem de mudar o valor; teste impede.
+ */
+describe('tema Carbon: as duas decisoes de produto (RTV-235)', () => {
+  /** Luminosidade de um triplete `H S% L%`. */
+  function luz(triplete: string): number {
+    const partes = triplete.trim().split(/\s+/);
+    return parseFloat(partes[partes.length - 1]);
+  }
+
+  /**
+   * O viewer nunca abre claro.
+   *
+   * `resolveCarbonTheme` cai no g100 para qualquer coisa que nao seja 'g80' -- inclusive nomes
+   * de tema CLARO do proprio Carbon, que e o caso que interessa: 'white' e 'g10' existem, sao
+   * plausiveis numa URL, e nao podem acender a tela de quem esta lendo imagem no escuro.
+   */
+  it('nenhuma entrada, nem os temas claros do Carbon, produz um tema claro', () => {
+    const entradas = ['white', 'g10', 'light', 'G100', 'g90', '', '   ', 'lixo', null, undefined];
+    for (const entrada of entradas) {
+      const tokens = resolveCarbonTheme(entrada as string);
+      // Fundo escuro e texto claro — a definicao operacional de "tema preto".
+      expect(luz(tokens['--background'])).toBeLessThan(25);
+      expect(luz(tokens['--foreground'])).toBeGreaterThan(75);
+    }
+  });
+
+  /**
+   * Ver o cabecalho de CARBON_G80_TOKENS: o nome diverge do Carbon DE PROPOSITO, porque ja esta
+   * persistido no localStorage das estacoes. O perigo e alguem "corrigir" os valores para casar
+   * com o nome e escurecer a rampa para Gray 80/70/60. Estes numeros sao o tema g90 do Carbon.
+   */
+  it('o g80 mantem a rampa do g90 do Carbon: Gray 90 / 80 / 70', () => {
+    expect(CARBON_G80_TOKENS['--background']).toBe('0 0% 14.9%'); // Gray 90 #262626
+    expect(CARBON_G80_TOKENS['--card']).toBe('0 0% 22.4%'); // Gray 80 #393939
+    expect(CARBON_G80_TOKENS['--secondary']).toBe('0 0% 32.2%'); // Gray 70 #525252
+  });
+
+  /** E o g100 continua sendo o default do produto: base Gray 100. */
+  it('o g100 e a base Gray 100 do Carbon', () => {
+    expect(CARBON_G100_TOKENS['--background']).toBe('0 0% 8.6%'); // Gray 100 #161616
+    expect(CARBON_G100_TOKENS['--card']).toBe('0 0% 14.9%'); // Gray 90 #262626
+    expect(CARBON_G100_TOKENS['--secondary']).toBe('0 0% 22.4%'); // Gray 80 #393939
   });
 });
