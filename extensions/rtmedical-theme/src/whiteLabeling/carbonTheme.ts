@@ -41,6 +41,64 @@ export const CARBON_G100_TOKENS: Record<string, string> = {
   '--neutral-light': '0 0% 77.6%',
   '--neutral-dark': '0 0% 22.4%',
   '--radius': '0rem', // Carbon = square corners
+
+  /*
+   * RTV-235 — o resto da paleta que o ui-next declara e o tema nao pintava.
+   *
+   * ATENCAO AO FORMATO, porque ele NAO e uniforme no tailwind.css do ui-next e errar aqui
+   * produz cor invisivel em vez de erro:
+   *   - `--destructive` e `--chart-*` sao TRIPLETES (`H S% L%`), consumidos como
+   *     `hsl(var(--token))` pelo tailwind.config.js;
+   *   - as quatro familias semanticas sao declaradas com a COR COMPLETA (`hsl(49, 100%, 97%)`).
+   * Como `applyCarbonTheme` grava o valor verbatim, cada token vai no formato do seu par.
+   *
+   * O QUE E DIVIDA DE HOJE E O QUE E SEGURO CONTRA AMANHA. Medido em 11/09/2026: so
+   * `--destructive`/`--destructive-foreground` tem consumidor (cinco lugares usando
+   * `bg-destructive`/`text-destructive`); as doze semanticas e os cinco `--chart-*` estao
+   * declarados no ui-next e nao sao usados por ninguem. Entao pintar `--destructive` corrige
+   * algo visivel agora, e pintar o resto e apolice: no dia em que um componente do upstream
+   * comecar a usar `--warning-bg`, ele ja nasce Carbon em vez de nascer com a cor CLARA que o
+   * tailwind.css declara (`hsl(49, 100%, 97%)`, quase branco -- as semanticas so existem no
+   * bloco claro e NUNCA sao redefinidas no `.dark`).
+   *
+   * A guarda de cobertura em carbonThemeCoverage.test.ts e o que impede essa apolice de
+   * envelhecer: token novo do ui-next reprova ate alguem decidir o valor Carbon dele.
+   */
+
+  // Vermelho de acao destrutiva — Carbon Red 50 #fa4d56, o tom de erro dos temas escuros.
+  '--destructive': '357 94.5% 64.1%',
+  '--destructive-foreground': '0 0% 100%',
+
+  /*
+   * Familias semanticas, no padrao de notificacao do Carbon para tema escuro: a superficie e a
+   * camada (layer-01), e quem carrega o significado sao a borda e o texto na cor de suporte.
+   * Pintar o FUNDO com a cor de suporte daria o bloco saturado dos temas claros, que em g100
+   * vira uma mancha e ainda perde contraste com o texto.
+   */
+  '--error-bg': 'hsl(0, 0%, 14.9%)', // Gray 90 — layer-01
+  '--error-border': 'hsl(357, 94.5%, 64.1%)', // Red 50
+  '--error-text': 'hsl(357, 94.5%, 64.1%)', // Red 50
+  '--success-bg': 'hsl(0, 0%, 14.9%)',
+  '--success-border': 'hsl(137, 48.8%, 50.2%)', // Green 40
+  '--success-text': 'hsl(137, 48.8%, 50.2%)',
+  '--warning-bg': 'hsl(0, 0%, 14.9%)',
+  '--warning-border': 'hsl(47, 88.4%, 52.5%)', // Yellow 30
+  '--warning-text': 'hsl(47, 88.4%, 52.5%)',
+  '--info-bg': 'hsl(0, 0%, 14.9%)',
+  '--info-border': 'hsl(218, 100%, 73.5%)', // Blue 40
+  '--info-text': 'hsl(218, 100%, 73.5%)',
+
+  /*
+   * Paleta categorica. A ordem e de MATIZ SEPARADO, nao de gradiente: series vizinhas num
+   * grafico precisam ser distinguiveis lado a lado, e um degrade de azuis falha nisso -- e
+   * falha de vez para quem tem deficiencia de visao de cores. Todos sao tons 40/50 do Carbon,
+   * que e a faixa legivel sobre fundo escuro.
+   */
+  '--chart-1': '218 100% 73.5%', // Blue 40
+  '--chart-2': '334 82% 62.9%', // Magenta 50
+  '--chart-3': '179 91.9% 38.6%', // Teal 40
+  '--chart-4': '263 100% 71.6%', // Purple 50
+  '--chart-5': '47 88.4% 52.5%', // Yellow 30
 };
 
 /**
@@ -61,6 +119,16 @@ export const CARBON_G80_TOKENS: Record<string, string> = {
   '--border': '0 0% 32.2%',
   '--input': '0 0% 32.2%',
   '--neutral-dark': '0 0% 32.2%',
+  /*
+   * RTV-235 — as superficies semanticas acompanham a camada do tema. Se ficassem no Gray 90 do
+   * g100, um aviso em g80 apareceria mais escuro que o painel em volta e leria como buraco.
+   * Borda e texto NAO mudam: as cores de suporte do Carbon sao as mesmas nos dois temas, e e
+   * delas que vem o significado.
+   */
+  '--error-bg': 'hsl(0, 0%, 22.4%)', // Gray 80 — layer-01 do g80
+  '--success-bg': 'hsl(0, 0%, 22.4%)',
+  '--warning-bg': 'hsl(0, 0%, 22.4%)',
+  '--info-bg': 'hsl(0, 0%, 22.4%)',
 };
 
 export type CarbonThemeName = 'g100' | 'g80';
