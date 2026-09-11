@@ -212,3 +212,178 @@ describe('registro de paineis: o que os nossos modos pedem existe', () => {
     expect(missing).toEqual([]);
   });
 });
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * ## Painel registrado que nenhum modo pede (RTV-233)
+ *
+ * O inverso da checagem acima, e o caso que de fato aconteceu. Um painel pode estar escrito,
+ * testado, mesclado e registrado no `getPanelModule` da extensao -- e nao aparecer em
+ * `rightPanels`/`leftPanels` de modo nenhum. Nada falha: a extensao carrega, o registro
+ * acontece, e simplesmente nao existe caminho de UI para chegar ao painel.
+ *
+ * Isso nao e teoria. Em 20/08/2026 uma auditoria mediu doze paineis nessa situacao, entre eles
+ * os sete da rt-report e os dois da rt-timeline. Cada um tinha ticket fechado e suite verde. O
+ * criterio de aceite do RTV-202 pedia "disponivel em modo de laudo", e o painel entregue nao
+ * satisfazia isso -- sem nenhum sinal vermelho em lugar nenhum.
+ *
+ * ## Por que uma lista de excecoes, e nao um teste que so falha
+ *
+ * O orfao E o estado atual de parte do repo: os sete paineis da rt-report dependem de fila,
+ * rascunho, politica, historico e registro de achados, e nada disso existe client-side hoje.
+ * Um teste sem lista nasceria vermelho e seria desligado na primeira semana.
+ *
+ * A lista e EXATA nos dois sentidos, e e isso que a torna util em vez de decorativa:
+ *   - um painel novo que nasce inalcancavel falha, porque nao esta na lista;
+ *   - um painel que finalmente foi fiado e continua na lista TAMBEM falha, o que forca a
+ *     lista a encolher junto com a divida em vez de virar um cemiterio.
+ *
+ * ## O recorte: extensoes deste projeto
+ *
+ * A checagem cobre so as nossas extensoes, derivadas do campo `repository` do package.json
+ * (`rtmedical/viewers` contra `OHIF/Viewers`) -- a mesma tecnica que o gate do RTV-114 usa para
+ * separar mode nosso de mode upstream, em vez de uma lista fixa que alguem tem de lembrar de
+ * editar. A cornerstone registra `panelSegmentation`, a tmtv registra `petSUV`, e nenhum modo
+ * nosso os cita: sao paineis do upstream, pedidos por modos do upstream, e cobra-los aqui
+ * geraria ruido sobre codigo que o ARCH.md nos proibe de mudar.
+ */
+describe('registro de paineis: painel nosso que nenhum modo nosso alcanca (RTV-233)', () => {
+  /**
+   * Painel registrado que ainda nao tem modo, com a razao. A chave e `<diretorio>:<painel>`
+   * porque uma extensao pode ser pedida por mais de um id (nome do pacote e id do ponto de
+   * entrada), e o diretorio identifica uma so.
+   */
+  const PENDING: { [key: string]: string } = {
+    // Falta a camada de dados, nao a linha de fiacao (RTV-233). Estes paineis recebem o estado
+    // por prop de proposito; fia-los hoje daria sete abas renderizando "nao informado", que
+    // afirma menos que aba nenhuma.
+    'rt-report:reportingHub': 'RTV-222 — precisa da fila do Reporting Hub (backend)',
+    'rt-report:signOff': 'RTV-228 — precisa de credencial de assinatura e do rascunho',
+    'rt-report:aiCopilot': 'RTV-224 — precisa da politica de IA do servico',
+    'rt-report:versionDiff': 'RTV-227 — precisa do historico de versoes do laudo',
+    'rt-report:dictationRecorder': 'RTV-111 — precisa do ambiente de captura de audio',
+    'rt-report:voiceStructure': 'RTV-225 — precisa do ambiente de captura de audio',
+    'rt-report:criticalFindings': 'RTV-202 — precisa do registro de achados criticos',
+    'rt-record:cachedPlans': 'RTV-179 — precisa do inventario do cache local/daemon',
+
+    // Estes resolvem os proprios dados; o que falta e a decisao de qual modo os hospeda, que
+    // pertence ao ticket da feature. Ficam aqui medidos, e nao esquecidos.
+    'deid:deid': 'RTV-113 — de-identificacao ainda sem modo que a exponha',
+    'dose-tracking:doseReport': 'RTV-201 — dose tracking ainda sem modo',
+    'mammography:birads': 'RTV-78 — BI-RADS depende de um modo de mamografia (RTV-75/76)',
+    'measurements:measurements': 'RTV-27/28/29/30/46 — calculadoras avancadas sem modo',
+    'rt-4d:rt4d': 'RTV-93/51 — 4D/gating ainda sem modo',
+    'rt-fusion:fusion': 'RTV-197 — fusao sem modo (o modal completo e RTV-134)',
+    'rt-mr-quant:parametricMap': 'RTV-82 — mapas parametricos sem modo',
+    'rt-struct:rtStruct': 'RTV-31/213 — tabela de estruturas; os modos usam o roiWorkspace',
+    'rtmedical-theme:rtMeasurements': 'RTV-151 — tabela de medidas propria sem modo',
+    'rtmedical-theme:srTree': 'arvore de SR sem modo',
+  };
+
+  /** Nossas extensoes, derivadas do package.json (ver o cabecalho deste bloco). */
+  function isOurs(dir: string): boolean {
+    let pkg: { repository?: string | { url?: string } } = {};
+    try {
+      pkg = JSON.parse(readIfPresent(path.join(EXTENSIONS_DIR, dir, 'package.json')) || '{}');
+    } catch (error) {
+      return false;
+    }
+    const repository = pkg.repository;
+    const url = typeof repository === 'string' ? repository : (repository || {}).url || '';
+    return url.indexOf('rtmedical/viewers') >= 0;
+  }
+
+  const OURS = REGISTRATIONS.filter(registration => isOurs(registration.dir));
+
+  const cited = new Set<string>();
+  for (const file of walk(MODES_DIR, []).filter(f =>
+    path.relative(MODES_DIR, f).startsWith('rtmedical-')
+  )) {
+    const source = fs.readFileSync(file, 'utf8');
+    CITATION.lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = CITATION.exec(source)) !== null) {
+      cited.add(match[1] + '.panelModule.' + match[2]);
+    }
+  }
+
+  const orphans: string[] = [];
+  for (const registration of OURS) {
+    for (const name of registration.names) {
+      const reachable = registration.ids.some(id => cited.has(id + '.panelModule.' + name));
+      if (!reachable) {
+        orphans.push(registration.dir + ':' + name);
+      }
+    }
+  }
+
+  it('separa as nossas extensoes das do upstream (se isto zerar, a checagem morreu)', () => {
+    expect(OURS.length > 5).toBe(true);
+    expect(OURS.length < REGISTRATIONS.length).toBe(true);
+    // A cornerstone e do upstream e registra painel: tem de ficar de fora.
+    expect(OURS.map(r => r.dir)).not.toContain('cornerstone');
+  });
+
+  it('nenhum painel nosso nasce inalcancavel sem estar declarado como pendente', () => {
+    const undeclared = orphans.filter(key => !(key in PENDING)).sort();
+    expect(undeclared).toEqual([]);
+  });
+
+  it('painel ja fiado nao continua na lista de pendentes', () => {
+    const stale = Object.keys(PENDING)
+      .filter(key => orphans.indexOf(key) < 0)
+      .sort();
+    expect(stale).toEqual([]);
+  });
+
+  /**
+   * O mapa de ids do modo nao prova que o painel foi colocado.
+   *
+   * Os modos deste repo declaram os ids num objeto (`const rtmedical = { dvh: '...panelModule.dvh' }`)
+   * e so depois referenciam `rtmedical.dvh` dentro de `rightPanels`/`leftPanels`. A checagem de
+   * citacao acima e textual: ela ve a string no mapa e ja da o painel por alcancavel. Quem
+   * acrescenta a entrada no mapa e esquece de coloca-la no layout -- que e metade do defeito
+   * que o RTV-233 mediu -- passa pelas duas checagens anteriores.
+   *
+   * Esta exige que a chave seja usada em algum outro lugar do arquivo. Nao verifica em QUAL
+   * array ela entrou: o layout do rt-tps tambem hospeda painel (a Info Window do fundo, onde
+   * vivem Ficha/DVH/Isodoses), e exigir `rightPanels` reprovaria fiacao que funciona.
+   *
+   * As proprias citacoes sao apagadas do texto antes da contagem. Sem isso a checagem nao
+   * detecta nada no caso comum: a chave do mapa costuma ter o nome do painel, e entao
+   * `.cachedPlans` casa DENTRO de `'....panelModule.cachedPlans'`, a entrada parece usada por
+   * si mesma e o teste passa sempre. Foi assim que esta versao nasceu, e so apareceu ao
+   * verificar que a guarda sabia ficar vermelha.
+   */
+  it('id declarado no mapa de um modo e usado em algum lugar do modo', () => {
+    const declaredUnused: string[] = [];
+    for (const file of walk(MODES_DIR, []).filter(f =>
+      path.relative(MODES_DIR, f).startsWith('rtmedical-')
+    )) {
+      const source = fs.readFileSync(file, 'utf8');
+      // Ver o cabecalho: a citacao nao pode contar como uso dela mesma.
+      const withoutCitations = source.replace(CITATION, '');
+      CITATION.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = CITATION.exec(source)) !== null) {
+        const lineStart = source.lastIndexOf('\n', match.index) + 1;
+        const key = source.slice(lineStart, match.index).match(/^\s*([A-Za-z0-9_]+):\s*$/);
+        if (!key) {
+          // Literal direto dentro do array de paineis: ja esta colocado.
+          continue;
+        }
+        const uses = withoutCitations.match(new RegExp('\\.' + key[1] + '\\b', 'g'));
+        if (!uses || uses.length === 0) {
+          declaredUnused.push(path.relative(REPO_DIR, file) + ': ' + key[1]);
+        }
+      }
+    }
+    expect(declaredUnused).toEqual([]);
+  });
+
+  it('toda pendencia tem razao escrita', () => {
+    const empty = Object.keys(PENDING).filter(key => !PENDING[key] || PENDING[key].length < 10);
+    expect(empty).toEqual([]);
+  });
+});
