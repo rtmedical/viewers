@@ -107,6 +107,21 @@ export const CARBON_G100_TOKENS: Record<string, string> = {
  * shifts. Only the neutral surfaces shift; the Blue50 accent, foreground and
  * radius are shared with g100. NOT the default: opt in per workstation via
  * `?theme=g80` (persisted) — the product default remains g100.
+ *
+ * ## O nome "g80" nao e um nome do Carbon, e isso e deliberado (RTV-235)
+ *
+ * O Carbon tem QUATRO temas: White, g10, g90 e g100. **Nao existe g80.** A rampa abaixo e,
+ * valor por valor, o tema **g90** do Carbon: base Gray 90 #262626, layer-01 Gray 80 #393939,
+ * layer-02 Gray 70 #525252.
+ *
+ * A decisao (11/09/2026) foi MANTER o nome `g80`, porque ele ja esta persistido no
+ * `localStorage` das estacoes que o usaram e renomear exigiria migracao — o autoseg passou por
+ * isso e carrega ate hoje um `// Migrate legacy g90 to g100` no ThemeContext dele.
+ *
+ * O risco de um nome errado e alguem "corrigir" os VALORES para casar com o nome, escurecendo a
+ * rampa para Gray 80/70/60 e quebrando um tema que esta certo. Por isso os cinzas estao fixados
+ * por teste em `carbonThemeCoverage.test.ts`: a divergencia fica onde esta, no nome, e nao
+ * escorrega para a cor.
  */
 export const CARBON_G80_TOKENS: Record<string, string> = {
   ...CARBON_G100_TOKENS,
