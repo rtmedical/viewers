@@ -30,7 +30,6 @@ import {
   onModeEnter as basicOnModeEnter,
   onModeExit as basicOnModeExit,
   sopClassHandlers as basicSopClassHandlers,
-  toolbarButtons as basicToolbarButtons,
   modeFactory,
 } from '@ohif/mode-basic';
 
@@ -1081,8 +1080,24 @@ const mipSlabToolbarButtons = [
   },
 ];
 
+/*
+ * RTV-234 — a primeira entrada e o marcador de composicao do basic, nao um array de botoes.
+ *
+ * Isto aqui era `...basicToolbarButtons`, um named import que o @ohif/mode-basic NUNCA
+ * exportou: resolvia para undefined, e `[...undefined]` lanca. Como a expressao esta em escopo
+ * de modulo, o modo inteiro morria na CARGA -- nao no uso da toolbar.
+ *
+ * `toolbarButtons` deixou de ser lista plana quando o upstream passou a composicao para o
+ * CustomizationService. Hoje e uma lista de marcadores `{ $reference }` que o servico expande
+ * na leitura, achatando os pacotes e deixando os literais passarem na ordem (ha teste disso em
+ * platform/core: "composes multiple packs and mixes in literals"). Os nossos botoes abaixo sao
+ * literais e continuam valendo.
+ *
+ * Herdamos a lista do basic em vez de escrever `{ $reference: 'cornerstone.toolbarButtons' }` a
+ * mao: se o upstream trocar quais pacotes o basic usa, vem de graca.
+ */
 export const radiotherapyToolbarButtons = [
-  ...basicToolbarButtons,
+  ...basicModeInstance.toolbarButtons,
   ...rtPanelButtons,
   // RTV-15/19: slab projection (MIP/MinIP/AvgIP) and Slab +/− buttons.
   ...mipSlabToolbarButtons,

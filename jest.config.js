@@ -11,7 +11,11 @@ module.exports = {
   projects: [
     '<rootDir>/platform/*/jest.config.js',
     '<rootDir>/extensions/*/jest.config.js',
-    //'<rootDir>/modes/*/jest.config.js' // Enable if any mode definitions start including tests
+    // RTV-234: habilitado. A nota original dizia "Enable if any mode definitions start
+    // including tests" -- e enquanto ninguem habilitava, os modos deste projeto lancavam na
+    // carga sem nada ficar vermelho. So os modos com jest.config.js entram, e os do upstream
+    // nao tem nenhum, entao isto nao passa a executar codigo que nao e nosso.
+    '<rootDir>/modes/*/jest.config.js',
   ],
   coverageDirectory: '<rootDir>/coverage/',
 };
