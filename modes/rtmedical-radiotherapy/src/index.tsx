@@ -56,6 +56,21 @@ export const rtmedical = {
   doseCorrection: '@ohif/extension-rt-record.panelModule.doseCorrection',
   // RTV-172/233: metadados de aquisicao da imagem de setup e troca para Revisao Offline.
   imageDetails: '@ohif/extension-rt-timeline.panelModule.imageDetails',
+  /*
+   * RTV-233 — os tres paineis de entrega que ja liam os proprios dados e mesmo assim nao
+   * tinham como ser abertos.
+   *
+   * Diferente do imageDetails (RTV-172), que precisou de um adaptador para existir num modo,
+   * estes tres ja resolvem tudo do displaySetService: leem os display sets RTRECORD, se
+   * inscrevem em DISPLAY_SETS_ADDED/CHANGED/REMOVED e reparseiam. Nao faltava dado -- faltava
+   * a linha que os cita. Ficaram mesclados e testados por semanas sem nenhum caminho de UI.
+   *
+   * O estudo sem RTRECORD nao produz painel mudo: os tres dizem por que estao vazios
+   * (`rec_no_records`, `tl_empty`), que e o contrato que o RTV-233 exige de um painel fiado.
+   */
+  courseTimeline: '@ohif/extension-rt-timeline.panelModule.courseTimeline',
+  rtRecord: '@ohif/extension-rt-record.panelModule.rtRecord',
+  doseInformation: '@ohif/extension-rt-record.panelModule.doseInformation',
 };
 
 export const extensionDependencies = {
@@ -130,6 +145,11 @@ export const radiotherapyLayout = {
       cornerstone.segmentation,
       rtmedical.dvh,
       rtmedical.isodose,
+      // RTV-233: a entrega lida do curso para a imagem — linha do tempo do curso,
+      // resumo dos registros, dose acumulada — antes do detalhe por registro.
+      rtmedical.courseTimeline,
+      rtmedical.rtRecord,
+      rtmedical.doseInformation,
       // RTV-173: delivery detail + DICOM corrections/overrides next to the
       // dose-analysis panels (manual RIS dose corrections land with RTV-169).
       rtmedical.treatmentDetails,
