@@ -135,10 +135,18 @@ const RUNTIME = ESCAPES.filter(e => e.runtime).map(e => e.chave).sort();
 /**
  * Acoplamentos de runtime que existem hoje, com a razao. Todos no rt-tps; ver RTV-237.
  *
- * Os tres primeiros sao os caros: apontam para dentro da extensao `default`, que e do UPSTREAM.
- * Nao foram desfeitos aqui porque nenhuma das saidas e barata nem verificavel sem build --
- * copiar os 607 linhas para dentro do rt-tps seria um fork com passos extras, e refazer o
- * layout por CustomizationService e trabalho de feature, nao de guarda. Ficam medidos.
+ * Todos apontam para dentro da extensao `default`, que e do UPSTREAM, e nenhuma saida e barata
+ * nem verificavel sem risco: copiar as 607 linhas para dentro do rt-tps seria um fork com
+ * passos extras, e refazer o layout por CustomizationService e trabalho de feature, nao de
+ * guarda. Ficam medidos.
+ *
+ * ERA QUATRO ATE 15/09/2026. O quarto -- `PlanFieldsTable.tsx` importando
+ * `'../../../rt-plan/src/isocenters'` -- saiu, e a razao de ele ter ficado aqui na primeira
+ * versao estava ERRADA. Eu registrei que trocar pelo barril "puxa o getSopClassHandlerModule
+ * junto e isso muda o bundle". Medido com o build de producao, nao muda: o tree-shaking do
+ * rspack descarta o que nao e usado, e o bundle com barril ficou 783 BYTES MENOR no total
+ * (133.759.159 contra 133.759.942), com 10 bytes a mais no app.bundle -- ruido de tamanho de
+ * string de caminho. A troca foi feita.
  */
 const CONHECIDOS: { [chave: string]: string } = {
   "extensions/rt-tps/src/TpsViewerLayout.tsx -> '../../default/src/ViewerLayout/ViewerHeader'":
@@ -147,9 +155,6 @@ const CONHECIDOS: { [chave: string]: string } = {
     'RTV-237 — entranha da extensao default (upstream)',
   "extensions/rt-tps/src/TpsViewerLayout.tsx -> '../../default/src/ViewerLayout/ResizablePanelsHook'":
     'RTV-237 — entranha da extensao default (upstream)',
-  "extensions/rt-tps/src/components/PlanFieldsTable.tsx -> '../../../rt-plan/src/isocenters'":
-    'RTV-237 — pacote NOSSO; da para trocar por @ohif/extension-rt-plan, mas o barrel puxa o ' +
-    'getSopClassHandlerModule junto e isso muda o bundle — decidir com build disponivel',
 };
 
 describe('fronteira de pacote: import relativo nao atravessa em runtime (RTV-237)', () => {
