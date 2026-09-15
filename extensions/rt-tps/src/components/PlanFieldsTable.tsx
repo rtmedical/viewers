@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { usePlanData } from '../hooks/usePlanData';
 // Workspace-relative import (package-subpath doesn't resolve under rspack —
 // same pattern as usePlanData's type import from rt-plan).
-import { collectIsocenters, formatIsocenter } from '../../../rt-plan/src/isocenters';
+import { collectIsocenters, formatIsocenter } from '@ohif/extension-rt-plan';
 import { num, angle, pair, mmToCm } from '../format';
 
 /**

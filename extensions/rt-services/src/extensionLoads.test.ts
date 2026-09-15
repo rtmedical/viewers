@@ -44,26 +44,43 @@
  * `.webpack/resolveConfig.js`, e do tsconfig) e tambem `@ohif/core/src/utils/...` -- import
  * profundo, que precisa de regra propria. O `jest.config.js` deste pacote tem os detalhes.
  *
- * ## O pacote que nao da para carregar, e por que isso nao e um stub a mais
+ * ## O pacote que nao pode ser carregado aqui, e o que descobrimos tentando
  *
  * `rt-tps` importa tres arquivos da extensao `default` POR CAMINHO RELATIVO
  * (`'../../default/src/ViewerLayout/ViewerHeader'` e dois vizinhos). O `ViewerHeader` importa
- * `@ohif/app`, que puxa as rotas da aplicacao, que exigem `pluginImports` -- um arquivo GERADO
- * pelo build (`writePluginImportsFile.js`) e que esta no `.gitignore`. Nao existe na arvore.
+ * `@ohif/app` -- a APLICACAO -- e importar a aplicacao EXECUTA o bootstrap dela.
  *
- * Daria para stubar tambem. Nao foi feito de proposito: a essa altura a guarda ja nao estaria
- * perguntando "o ponto de entrada do rt-tps avalia", e sim "uma aplicacao inteira feita de
- * stubs avalia", que nao e afirmacao sobre nada. Melhor uma exclusao declarada, com a razao, do
- * que uma cobertura que mente.
+ * Medido em 15/09/2026, e o resultado corrige a primeira versao deste comentario: o `require`
+ * RETORNA SEM ERRO, e o processo morre depois, fora de qualquer `try`:
  *
- * A exclusao e EXATA nos dois sentidos, pelo mesmo motivo da lista de paineis orfaos do
- * RTV-233: pacote novo que nao carrega falha por nao estar na lista, e pacote que passou a
- * carregar e continua nela TAMBEM falha. A lista encolhe junto com a divida.
+ *     platform/app/src/loadDynamicConfig.js:8
+ *       const useDynamicConfig = config.dangerouslyUseDynamicConfig;
+ *     TypeError: Cannot read properties of undefined (reading 'dangerouslyUseDynamicConfig')
+ *       at platform/app/src/index.js:47
  *
- * O acoplamento em si -- codigo nosso importando as ENTRANHAS de uma extensao do upstream por
- * caminho relativo -- e um achado a parte. Nao e fork (nada foi modificado), entao o gate do
- * RTV-114 nao ve; e nao ha guarda que veja. Se o upstream mover `ViewerLayout/ViewerHeader`, o
- * layout TPS quebra no build e nada avisa antes.
+ * Nao e "o modulo nao carrega". E "carregar o modulo liga a aplicacao", e sem `window.config` a
+ * aplicacao cai levando o worker do jest junto. Nenhum `try/catch` sobrevive a isso, porque a
+ * falha nao acontece na pilha do `require`.
+ *
+ * ## Por que a checagem de pendencia NAO usa `require`
+ *
+ * A primeira versao afirmava "este pacote continua sem carregar" chamando `require` dentro de um
+ * `try`. Alem de nao capturar o caso acima, ela dependia de ESTADO DE BUILD: `pluginImports.js`
+ * e gerado por `writePluginImportsFile.js` e esta no `.gitignore`, entao em clone limpo o
+ * `require` falhava cedo (resolucao, capturavel) e depois de um build ele ia adiante e derrubava
+ * o processo. Uma guarda cujo resultado muda conforme alguem buildou ou nao nao e guarda.
+ *
+ * A checagem passou a ser ESTATICA: uma pendencia so continua valida enquanto o pacote ainda
+ * tiver um import relativo de runtime que escapa dele. Mesma regra do `packageBoundary.test.ts`,
+ * sem carregar nada, com o mesmo resultado em clone limpo e em arvore buildada.
+ *
+ * A exclusao continua EXATA nos dois sentidos, como a lista de paineis orfaos do RTV-233:
+ * pacote novo que nao carrega falha por nao estar na lista, e pendencia cujo motivo deixou de
+ * existir TAMBEM falha.
+ *
+ * O acoplamento em si e um achado a parte (RTV-237). Nao e fork -- nada foi modificado -- entao
+ * o gate do RTV-114 nao ve, e nenhuma outra guarda via. Se o upstream mover
+ * `ViewerLayout/ViewerHeader`, o layout TPS quebra no build e nada avisa antes.
  *
  * ## O custo, dito em voz alta
  *
@@ -132,6 +149,25 @@ const REGISTRADAS = new Set<string>(
     .filter(Boolean)
 );
 
+/** Varredura de fontes de um pacote (sem teste), usada pela checagem estatica de pendencia. */
+function walkSrc(dir: string, out: string[]): string[] {
+  if (!fs.existsSync(dir)) {
+    return out;
+  }
+  for (const entry of fs.readdirSync(dir)) {
+    if (entry === 'node_modules' || entry === 'dist') {
+      continue;
+    }
+    const full = path.join(dir, entry);
+    if (fs.statSync(full).isDirectory()) {
+      walkSrc(full, out);
+    } else if (/\.(ts|tsx)$/.test(entry) && !/\.test\./.test(entry)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
 const NOSSOS = fs
   .readdirSync(EXTENSIONS_DIR)
   .filter(entry => {
@@ -151,8 +187,9 @@ const REGISTRADAS_NOSSAS = NOSSOS.filter(dir => REGISTRADAS.has(packageName(dir)
  */
 const NAO_CARREGAM: { [dir: string]: string } = {
   'rt-tps':
-    'importa ../../default/src/ViewerLayout/ViewerHeader por caminho relativo; a cadeia chega ' +
-    'em @ohif/app e exige pluginImports, que o build gera e o .gitignore ignora',
+    'RTV-237 — importa ../../default/src/ViewerLayout/ViewerHeader por caminho relativo; a ' +
+    'cadeia chega em @ohif/app e carregar o modulo EXECUTA o bootstrap da aplicacao, que sem ' +
+    'window.config derruba o worker do jest fora de qualquer try/catch',
 };
 
 const CARREGAM = NOSSOS.filter(dir => !(dir in NAO_CARREGAM));
@@ -187,21 +224,28 @@ describe('pacotes nossos: o ponto de entrada carrega (RTV-236)', () => {
   });
 
   /**
-   * O outro sentido da lista. Se um pendente passou a carregar, a entrada tem de sair -- senao
-   * a lista vira cemiterio e a guarda passa a cobrir menos do que parece.
+   * O outro sentido da lista, ESTATICO (ver o cabecalho: `require` aqui derruba o worker e
+   * depende de estado de build). Uma pendencia so continua valida enquanto o motivo dela --
+   * um import relativo de runtime que escapa do pacote -- ainda estiver la.
    */
   it.each(Object.keys(NAO_CARREGAM).map(dir => [dir] as [string]))(
-    '%s continua sem carregar (se passou a carregar, tire da lista)',
+    '%s ainda tem o acoplamento que justifica a pendencia (se sumiu, tire da lista)',
     dir => {
-      let carregou = false;
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        require(entryPoint(dir));
-        carregou = true;
-      } catch (error) {
-        carregou = false;
-      }
-      expect(carregou).toBe(false);
+      const arquivos = walkSrc(path.join(EXTENSIONS_DIR, dir, 'src'), []);
+      const escapes = arquivos.filter(file => {
+        const fonte = fs.readFileSync(file, 'utf8');
+        const rx = /(?:^|\n)\s*import\s+([^;]*?)\s*from\s*'(\.[^']*)'/g;
+        let match: RegExpExecArray | null;
+        while ((match = rx.exec(fonte)) !== null) {
+          const soTipo = /^\s*type\b/.test(match[1] || '');
+          const alvo = path.resolve(path.dirname(file), match[2]);
+          if (!soTipo && !alvo.startsWith(path.join(EXTENSIONS_DIR, dir) + path.sep)) {
+            return true;
+          }
+        }
+        return false;
+      });
+      expect(escapes.length).toBeGreaterThan(0);
     }
   );
 
